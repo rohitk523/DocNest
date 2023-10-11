@@ -6,3 +6,4 @@ class Docs(BaseModel):
 	Pan: str
 	Phone: int
 
+allDocuments = []
