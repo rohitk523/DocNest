@@ -1,15 +1,31 @@
-from fastapi import FastAPI, HTTPException
-from model import Docs, allDocuments
+from fastapi import FastAPI,Depends
+from model import Documentinfo, Docs
+from database import engine, SessionLocal
+import model
+from sqlalchemy.orm import Session
+from typing import Annotated
+
 
 app = FastAPI()
+model.Base.metadata.create_all(bind=engine)
 
-@app.post('/Post a Document')
-async def addDoc(doc: Docs):
-    allDocuments.append(doc)
-    return doc
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+@app.post('/Add_document')
+def create_user(db: Annotated[Session,Depends(get_db)],docsinfo: Docs ):
+    db_doc = Documentinfo(User = docsinfo.User, Aadhar = docsinfo.Aadhar, Pan = docsinfo.Pan, Phone = docsinfo.Phone)
+    db.add(db_doc)
+    db.commit()
+    db.refresh(db_doc)
+    return db_doc
 
 
-@app.get('/Get All Documents')
-async def getAllDocs():
-    return allDocuments
-        
+@app.get('/Get_All_Documents')
+def getAllDocuments(db: Annotated[Session, Depends(get_db)]):
+    return db.query(Documentinfo).all()
+
