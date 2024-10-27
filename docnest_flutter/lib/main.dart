@@ -22,4 +22,5 @@ class MyApp extends StatelessWidget {
       theme: Provider.of<ThemeProvider>(context).currentTheme,
       home: const LoginScreen(),
     );
+  }
 }
