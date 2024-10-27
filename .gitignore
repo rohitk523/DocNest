@@ -1,0 +1,3 @@
+**/__pycache__/
+docnest_fastapi/env
+.env
