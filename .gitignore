@@ -2,3 +2,4 @@
 docnest_fastapi/env
 .env
 **/.DS_Store
+docnest_backend/venv
