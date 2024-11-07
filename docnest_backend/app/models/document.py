@@ -1,5 +1,5 @@
 # app/models/document.py
-from sqlalchemy import Column, String, DateTime, ForeignKey, Text, Integer, Enum as SQLEnum
+from sqlalchemy import Column, String, DateTime, ForeignKey, Text, Integer, Enum as SQLEnum, Boolean
 from sqlalchemy.orm import relationship
 import enum
 from datetime import datetime

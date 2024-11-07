@@ -1,11 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from sqlalchemy.orm import Session
 from typing import List, Optional
-from ....db.session import get_db
-from ....core.auth import get_current_user
-from ....schemas.document import DocumentCreate, DocumentResponse, DocumentUpdate
-from ....services.document import DocumentService
-from ....models.document import DocumentType
+from app.db.session import get_db
+from app.core.auth import get_current_user
+from app.schemas.document import DocumentCreate, DocumentResponse, DocumentUpdate
+from app.models.document import DocumentType
+from app.services.document import DocumentService
 
 api_router = APIRouter()
 
@@ -16,7 +16,7 @@ async def create_document(
     db: Session = Depends(get_db),
     document_in: DocumentCreate,
     file: Optional[UploadFile] = File(None),
-    current_user = Depends(get_current_user)
+    # current_user = Depends(get_current_user)
 ):
     """Create a new document."""
     document_service = DocumentService()
