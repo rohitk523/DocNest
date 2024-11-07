@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../widgets/quick_actions_bar.dart';
-import '../widgets/document_section.dart.dart';
+import '../widgets/document_section.dart';
 import '../widgets/profile_tab.dart';
 import '../widgets/settings_tab.dart';
 import './login_screen.dart';
+import '../providers/document_provider.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -15,20 +17,74 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
 
-  final Map<String, List<Map<String, dynamic>>> _documentSections = {
+  final Map<String, List<Document>> _documentSections = {
     'Educational Documents': [
-      {'name': 'Transcript', 'date': '2024-03-15'},
-      {'name': 'Degree Certificate', 'date': '2024-03-10'},
+      Document(
+        id: 'edu1',
+        name: 'Transcript',
+        content: 'Academic transcript details',
+        category: 'Educational',
+        createdAt: DateTime.parse('2024-03-15'),
+        modifiedAt: DateTime.parse('2024-03-15'),
+      ),
+      Document(
+        id: 'edu2',
+        name: 'Degree Certificate',
+        content: 'Degree certificate details',
+        category: 'Educational',
+        createdAt: DateTime.parse('2024-03-10'),
+        modifiedAt: DateTime.parse('2024-03-10'),
+      ),
     ],
     'Government Documents': [
-      {'name': 'Passport', 'date': '2024-03-08'},
-      {'name': 'Driver License', 'date': '2024-03-05'},
+      Document(
+        id: 'gov1',
+        name: 'Passport',
+        content: 'Passport details',
+        category: 'Government',
+        createdAt: DateTime.parse('2024-03-08'),
+        modifiedAt: DateTime.parse('2024-03-08'),
+      ),
+      Document(
+        id: 'gov2',
+        name: 'Driver License',
+        content: 'Driver license details',
+        category: 'Government',
+        createdAt: DateTime.parse('2024-03-05'),
+        modifiedAt: DateTime.parse('2024-03-05'),
+      ),
     ],
     'Medical Documents': [
-      {'name': 'Health Insurance', 'date': '2024-03-01'},
-      {'name': 'Medical Report', 'date': '2024-02-28'},
+      Document(
+        id: 'med1',
+        name: 'Health Insurance',
+        content: 'Health insurance policy details',
+        category: 'Medical',
+        createdAt: DateTime.parse('2024-03-01'),
+        modifiedAt: DateTime.parse('2024-03-01'),
+      ),
+      Document(
+        id: 'med2',
+        name: 'Medical Report',
+        content: 'Medical report details',
+        category: 'Medical',
+        createdAt: DateTime.parse('2024-02-28'),
+        modifiedAt: DateTime.parse('2024-02-28'),
+      ),
     ],
   };
+
+  @override
+  void initState() {
+    super.initState();
+    // Load all documents into the DocumentProvider
+    Future.microtask(() {
+      final documentProvider = context.read<DocumentProvider>();
+      _documentSections.values.forEach((documents) {
+        documents.forEach((doc) => documentProvider.addDocument(doc));
+      });
+    });
+  }
 
   Widget _buildBody() {
     switch (_currentIndex) {
@@ -98,7 +154,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 style: TextStyle(fontFamily: 'Helvetica'),
               ),
               onTap: () {
-                // Navigate to government documents
                 Navigator.pop(context);
                 setState(() => _currentIndex = 0);
               },
@@ -110,7 +165,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 style: TextStyle(fontFamily: 'Helvetica'),
               ),
               onTap: () {
-                // Navigate to medical documents
                 Navigator.pop(context);
                 setState(() => _currentIndex = 0);
               },
@@ -122,7 +176,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 style: TextStyle(fontFamily: 'Helvetica'),
               ),
               onTap: () {
-                // Navigate to educational documents
                 Navigator.pop(context);
                 setState(() => _currentIndex = 0);
               },
