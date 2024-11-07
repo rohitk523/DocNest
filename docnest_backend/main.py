@@ -8,6 +8,10 @@ from app.api.v1.router import api_router
 from app.core.config import settings
 from app.db.session import SessionLocal
 from app.core.logger import setup_logging
+# In main.py, add:
+from app.api.v1.auth_router import auth_router
+
+
 
 # Setup logging
 logger = setup_logging()
@@ -56,6 +60,12 @@ async def global_exception_handler(request: Request, exc: Exception):
 app.include_router(
     api_router,
     prefix=settings.API_V1_STR
+)
+
+app.include_router(
+    auth_router,
+    prefix=f"{settings.API_V1_STR}/auth",
+    tags=["authentication"]
 )
 
 # Health check endpoint

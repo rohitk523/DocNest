@@ -2,6 +2,13 @@ from pydantic_settings import BaseSettings
 from typing import Optional, List
 
 class Settings(BaseSettings):
+
+
+    # File upload settings
+    UPLOAD_DIR: str = "uploads"
+    MAX_FILE_SIZE: int = 10 * 1024 * 1024  # 10MB
+    ALLOWED_EXTENSIONS: List[str] = [".pdf", ".doc", ".docx", ".jpg", ".jpeg", ".png"]
+    
     # Project settings
     PROJECT_NAME: str = "DocNest"
     VERSION: str = "1.0.0"
