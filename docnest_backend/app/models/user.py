@@ -1,4 +1,3 @@
-# app/models/user.py
 from sqlalchemy import Boolean, Column, String, DateTime
 from sqlalchemy.orm import relationship
 from datetime import datetime
@@ -10,7 +9,7 @@ class User(Base):
 
     id = Column(String, primary_key=True, default=lambda: str(uuid4()))
     email = Column(String, unique=True, index=True, nullable=False)
-    hashed_password = Column(String, nullable=False)
+    hashed_password = Column(String, nullable=True)  # Changed to nullable for Google users
     full_name = Column(String)
     is_active = Column(Boolean, default=True)
     is_google_user = Column(Boolean, default=False)

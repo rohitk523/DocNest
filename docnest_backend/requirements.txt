@@ -11,3 +11,5 @@ python-dotenv==1.0.0
 boto3==1.34.14
 python-magic==0.4.27
 pydantic-settings
+google-auth
+requests
