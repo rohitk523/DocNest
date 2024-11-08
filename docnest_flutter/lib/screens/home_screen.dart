@@ -1,12 +1,14 @@
 // lib/screens/home_screen.dart
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../widgets/profile_tab.dart';
 import '../widgets/settings_tab.dart';
 import '../widgets/upload_dialog.dart';
-import '../widgets/document_section.dart'; // Updated import
+import '../widgets/document_section.dart';
 import '../widgets/quick_actions_bar.dart';
 import '../services/document_service.dart';
 import '../models/document.dart';
+import '../providers/document_provider.dart';
 
 class HomeScreen extends StatefulWidget {
   final String token;
@@ -19,7 +21,6 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 1;
-  List<Document> _documents = [];
   bool _isLoading = true;
   late DocumentService _documentService;
 
@@ -41,10 +42,13 @@ class _HomeScreenState extends State<HomeScreen> {
     try {
       setState(() => _isLoading = true);
       final docs = await _documentService.getDocuments();
-      setState(() {
-        _documents = docs;
-        _isLoading = false;
-      });
+
+      // Update the DocumentProvider with the loaded documents
+      if (mounted) {
+        context.read<DocumentProvider>().setDocuments(docs);
+      }
+
+      setState(() => _isLoading = false);
     } catch (e) {
       setState(() => _isLoading = false);
       if (mounted) {
@@ -59,7 +63,8 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   List<Document> _getDocumentsByCategory(String category) {
-    return _documents
+    final provider = context.read<DocumentProvider>();
+    return provider.documents
         .where((doc) => doc.category.toLowerCase() == category.toLowerCase())
         .toList();
   }
@@ -165,11 +170,9 @@ class _HomeScreenState extends State<HomeScreen> {
           file: result['file'],
         );
 
-        setState(() {
-          _documents.add(uploadedDoc);
-        });
-
         if (mounted) {
+          context.read<DocumentProvider>().addDocument(uploadedDoc);
+
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Document uploaded successfully'),

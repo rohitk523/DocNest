@@ -7,6 +7,8 @@ class DocumentProvider with ChangeNotifier {
   String _searchQuery = '';
   bool _isSelectionMode = false;
   Set<String> _selectedDocuments = {};
+  List<String> _searchHistory = [];
+  static const int maxHistoryItems = 10;
 
   // Getters
   List<Document> get documents => _documents;
@@ -14,17 +16,38 @@ class DocumentProvider with ChangeNotifier {
       _documents.where((doc) => _selectedDocuments.contains(doc.id)).toList();
   bool get isSelectionMode => _isSelectionMode;
   int get selectedCount => _selectedDocuments.length;
+  List<String> get searchHistory => _searchHistory;
 
-  // Get documents by category
-  List<Document> getDocumentsByCategory(String category) {
-    return _documents
-        .where((doc) => doc.category.toLowerCase() == category.toLowerCase())
-        .toList();
+  // Search History Methods
+  void addToSearchHistory(String query) {
+    if (query.trim().isEmpty) return;
+
+    // Remove if exists (to avoid duplicates) and add to front
+    _searchHistory.remove(query);
+    _searchHistory.insert(0, query);
+
+    // Keep only the last N items
+    if (_searchHistory.length > maxHistoryItems) {
+      _searchHistory = _searchHistory.take(maxHistoryItems).toList();
+    }
+
+    notifyListeners();
   }
 
-  // Search documents
+  void clearSearchHistory() {
+    _searchHistory.clear();
+    notifyListeners();
+  }
+
+  void removeFromSearchHistory(String query) {
+    _searchHistory.remove(query);
+    notifyListeners();
+  }
+
+  // Document Search
   List<Document> searchDocuments(String query) {
-    if (query.isEmpty) return _documents;
+    if (query.isEmpty) return [];
+
     final lowercaseQuery = query.toLowerCase();
     return _documents.where((doc) {
       return doc.name.toLowerCase().contains(lowercaseQuery) ||
@@ -33,7 +56,7 @@ class DocumentProvider with ChangeNotifier {
     }).toList();
   }
 
-  // Selection methods
+  // Selection Methods
   void toggleSelection(String documentId) {
     if (_selectedDocuments.contains(documentId)) {
       _selectedDocuments.remove(documentId);
@@ -59,7 +82,7 @@ class DocumentProvider with ChangeNotifier {
 
   bool isSelected(String documentId) => _selectedDocuments.contains(documentId);
 
-  // Document operations
+  // Document Operations
   void setDocuments(List<Document> documents) {
     _documents = documents;
     notifyListeners();
@@ -70,16 +93,24 @@ class DocumentProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> removeSelectedDocuments() async {
+    try {
+      // Here you would typically call your API to delete the documents
+      _documents.removeWhere((doc) => _selectedDocuments.contains(doc.id));
+      _selectedDocuments.clear();
+      _isSelectionMode = false;
+      notifyListeners();
+    } catch (e) {
+      // Re-throw the error to be handled by the UI
+      throw Exception('Failed to delete documents: $e');
+    }
+  }
+
   void removeDocument(String id) {
     _documents.removeWhere((doc) => doc.id == id);
     _selectedDocuments.remove(id);
     if (_selectedDocuments.isEmpty) _isSelectionMode = false;
     notifyListeners();
-  }
-
-  void removeSelectedDocuments() {
-    _documents.removeWhere((doc) => _selectedDocuments.contains(doc.id));
-    clearSelection();
   }
 
   void updateDocument(Document updatedDoc) {
@@ -90,12 +121,15 @@ class DocumentProvider with ChangeNotifier {
     }
   }
 
-  // Sharing functionality
+  // Sharing Functionality
   void markAsShared(List<String> documentIds) {
     for (final id in documentIds) {
       final index = _documents.indexWhere((doc) => doc.id == id);
       if (index != -1) {
-        _documents[index] = _documents[index].copyWith(isShared: true);
+        // Since Document is immutable, we need to create a new instance
+        // This assumes Document has a copyWith method
+        final updatedDoc = _documents[index].copyWith(isShared: true);
+        _documents[index] = updatedDoc;
       }
     }
     notifyListeners();
@@ -115,9 +149,11 @@ Modified: ${doc.modifiedAt}
     }).join('\n---\n');
   }
 
+  @override
   void dispose() {
     _documents.clear();
     _selectedDocuments.clear();
+    _searchHistory.clear();
     super.dispose();
   }
 }

@@ -1,9 +1,14 @@
 // lib/widgets/quick_actions_bar.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:path_provider/path_provider.dart';
+import 'dart:io';
 import '../providers/document_provider.dart';
-import '../models/document.dart'; // Add this import
+import '../models/document.dart';
+import '../utils/formatters.dart';
 import 'document_search.dart';
+import 'upload_dialog.dart';
 
 class QuickActionsBar extends StatelessWidget {
   const QuickActionsBar({super.key});
@@ -142,7 +147,29 @@ class QuickActionsBar extends StatelessWidget {
   }
 
   Future<void> _handleUpload(BuildContext context) async {
-    // Implement file upload functionality
+    final result = await showDialog<Map<String, dynamic>>(
+      context: context,
+      builder: (context) => UploadDocumentDialog(),
+    );
+
+    if (result != null && context.mounted) {
+      final provider = context.read<DocumentProvider>();
+      try {
+        // Handle the upload result
+        // This would typically involve calling your document service
+        // and then updating the provider
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Document uploaded successfully')),
+        );
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error uploading document: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _handleSearch(BuildContext context) async {
@@ -152,13 +179,25 @@ class QuickActionsBar extends StatelessWidget {
     }
 
     final Document? result = await showDialog<Document>(
-      // Updated this line
       context: context,
       builder: (BuildContext context) => const SearchDialog(),
     );
 
-    if (result != null) {
+    if (result != null && context.mounted) {
       // Handle the selected document
+      provider.clearSelection();
+      provider.toggleSelection(result.id);
+
+      // Show a snackbar to confirm selection
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Selected document: ${result.name}'),
+          action: SnackBarAction(
+            label: 'Clear',
+            onPressed: () => provider.clearSelection(),
+          ),
+        ),
+      );
     }
   }
 
@@ -172,11 +211,72 @@ class QuickActionsBar extends StatelessWidget {
     }
 
     try {
-      // Get selected documents and handle sharing
-      final content = provider.getShareableContent();
-      // Implement share functionality
+      final selectedDocs = provider.selectedDocuments;
+
+      // Create a temporary directory to store files for sharing
+      final tempDir = await getTemporaryDirectory();
+      final shareDir = await Directory('${tempDir.path}/share').create();
+
+      // List to store paths of files to share
+      List<String> filePaths = [];
+      List<XFile> shareFiles = [];
+
+      // Prepare text content for documents without files
+      String textContent = 'Shared Documents:\n\n';
+
+      for (var doc in selectedDocs) {
+        if (doc.filePath != null && File(doc.filePath!).existsSync()) {
+          // Copy file to temp directory with a clean name
+          final fileName = '${doc.name}.${doc.filePath!.split('.').last}';
+          final tempFile = File('${shareDir.path}/$fileName');
+          await File(doc.filePath!).copy(tempFile.path);
+          filePaths.add(tempFile.path);
+          shareFiles.add(XFile(tempFile.path));
+        }
+
+        // Add document details to text content
+        textContent += '''
+Document: ${doc.name}
+Category: ${doc.category}
+Description: ${doc.description}
+Created: ${formatDate(doc.createdAt)}
+Modified: ${formatDate(doc.modifiedAt)}
+-------------------
+''';
+      }
+
+      if (shareFiles.isNotEmpty) {
+        // Share files if available
+        await Share.shareXFiles(
+          shareFiles,
+          text: textContent,
+          subject: 'Shared Documents from DocNest',
+        );
+      } else {
+        // Share only text content if no files
+        await Share.share(
+          textContent,
+          subject: 'Shared Documents from DocNest',
+        );
+      }
+
+      // Clean up temporary files
+      for (var path in filePaths) {
+        try {
+          await File(path).delete();
+        } catch (e) {
+          print('Error deleting temporary file: $e');
+        }
+      }
+      await shareDir.delete(recursive: true);
 
       provider.clearSelection();
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Documents shared successfully')),
+        );
+      }
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -214,10 +314,23 @@ class QuickActionsBar extends StatelessWidget {
     );
 
     if (confirmed == true && context.mounted) {
-      provider.removeSelectedDocuments();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Selected documents deleted')),
-      );
+      try {
+        await provider.removeSelectedDocuments();
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Selected documents deleted')),
+          );
+        }
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error deleting documents: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
     }
   }
 }
