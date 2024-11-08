@@ -19,14 +19,19 @@ class QuickActionsBar extends StatelessWidget {
       builder: (context, provider, child) {
         final isSelectionMode = provider.isSelectionMode;
         final selectedCount = provider.selectedCount;
+        final theme = Theme.of(context);
 
         return Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Theme.of(context).scaffoldBackgroundColor,
+            color: theme.brightness == Brightness.dark
+                ? theme.colorScheme.surface
+                : theme.scaffoldBackgroundColor,
             boxShadow: [
               BoxShadow(
-                color: Colors.grey.withOpacity(0.2),
+                color: theme.brightness == Brightness.dark
+                    ? Colors.black26
+                    : Colors.grey.withOpacity(0.2),
                 spreadRadius: 1,
                 blurRadius: 3,
               ),
@@ -65,7 +70,6 @@ class QuickActionsBar extends StatelessWidget {
                       if (isSelectionMode) {
                         provider.clearSelection();
                       } else {
-                        // Start selection mode by selecting first document
                         final documents = provider.documents;
                         if (documents.isNotEmpty) {
                           provider.toggleSelection(documents.first.id);
@@ -83,6 +87,8 @@ class QuickActionsBar extends StatelessWidget {
   }
 
   Widget _buildSelectionBar(BuildContext context, DocumentProvider provider) {
+    final theme = Theme.of(context);
+
     return Container(
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(
@@ -90,22 +96,31 @@ class QuickActionsBar extends StatelessWidget {
         children: [
           Text(
             '${provider.selectedCount} selected',
-            style: Theme.of(context).textTheme.titleSmall,
+            style: theme.textTheme.titleSmall?.copyWith(
+              color: theme.colorScheme.onSurface,
+            ),
           ),
           Row(
             children: [
               TextButton(
                 onPressed: () => provider.selectAll(),
-                child: const Text('Select All'),
+                child: Text(
+                  'Select All',
+                  style: TextStyle(color: theme.colorScheme.primary),
+                ),
               ),
               const SizedBox(width: 8),
               TextButton(
                 onPressed: provider.selectedCount > 0
                     ? () => _handleDelete(context, provider)
                     : null,
-                child: const Text(
+                child: Text(
                   'Delete',
-                  style: TextStyle(color: Colors.red),
+                  style: TextStyle(
+                    color: theme.brightness == Brightness.dark
+                        ? Colors.redAccent
+                        : Colors.red,
+                  ),
                 ),
               ),
             ],
@@ -122,26 +137,41 @@ class QuickActionsBar extends StatelessWidget {
     VoidCallback? onTap,
   ) {
     final theme = Theme.of(context);
+    final isEnabled = onTap != null;
+
+    // Use colorScheme for better dark mode support
+    final iconColor = isEnabled
+        ? theme.colorScheme.primary
+        : theme.colorScheme.onSurface.withOpacity(0.38);
+
+    final textColor = isEnabled
+        ? theme.colorScheme.onSurface
+        : theme.colorScheme.onSurface.withOpacity(0.38);
+
     return InkWell(
       onTap: onTap,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            icon,
-            color: onTap != null ? theme.primaryColor : theme.disabledColor,
-          ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 12,
-              color: onTap != null
-                  ? theme.textTheme.bodyMedium?.color
-                  : theme.disabledColor,
+      borderRadius: BorderRadius.circular(8),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              color: iconColor,
+              size: 24,
             ),
-          ),
-        ],
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                color: textColor,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

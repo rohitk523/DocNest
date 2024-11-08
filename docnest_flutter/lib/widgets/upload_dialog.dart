@@ -1,9 +1,11 @@
+// lib/widgets/upload_dialog.dart
 import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 
 class UploadDocumentDialog extends StatefulWidget {
+  const UploadDocumentDialog({super.key});
+
   @override
   _UploadDocumentDialogState createState() => _UploadDocumentDialogState();
 }
@@ -31,16 +33,25 @@ class _UploadDocumentDialogState extends State<UploadDocumentDialog> {
         });
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error picking file: $e')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error picking file: $e')),
+        );
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDarkMode = theme.brightness == Brightness.dark;
+
     return AlertDialog(
-      title: const Text('Upload Document'),
+      title: Text(
+        'Upload Document',
+        style: TextStyle(color: theme.colorScheme.onSurface),
+      ),
+      backgroundColor: theme.dialogBackgroundColor,
       content: Form(
         key: _formKey,
         child: SingleChildScrollView(
@@ -49,37 +60,130 @@ class _UploadDocumentDialogState extends State<UploadDocumentDialog> {
             children: [
               TextFormField(
                 controller: _nameController,
-                decoration: const InputDecoration(labelText: 'Name'),
+                decoration: InputDecoration(
+                  labelText: 'Name',
+                  labelStyle: TextStyle(color: theme.colorScheme.onSurface),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(
+                      color: theme.colorScheme.outline,
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(
+                      color: theme.colorScheme.primary,
+                      width: 2,
+                    ),
+                  ),
+                ),
+                style: TextStyle(color: theme.colorScheme.onSurface),
                 validator: (value) =>
                     value?.isEmpty ?? true ? 'Required' : null,
               ),
+              const SizedBox(height: 16),
               TextFormField(
                 controller: _descriptionController,
-                decoration: const InputDecoration(labelText: 'Description'),
+                decoration: InputDecoration(
+                  labelText: 'Description',
+                  labelStyle: TextStyle(color: theme.colorScheme.onSurface),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(
+                      color: theme.colorScheme.outline,
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(
+                      color: theme.colorScheme.primary,
+                      width: 2,
+                    ),
+                  ),
+                ),
+                style: TextStyle(color: theme.colorScheme.onSurface),
+                maxLines: 3,
               ),
+              const SizedBox(height: 16),
               DropdownButtonFormField<String>(
                 value: _selectedCategory,
-                decoration: const InputDecoration(labelText: 'Category'),
+                decoration: InputDecoration(
+                  labelText: 'Category',
+                  labelStyle: TextStyle(color: theme.colorScheme.onSurface),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(
+                      color: theme.colorScheme.outline,
+                    ),
+                  ),
+                ),
+                dropdownColor: theme.dialogBackgroundColor,
+                style: TextStyle(color: theme.colorScheme.onSurface),
                 items: const [
                   DropdownMenuItem(
-                      value: 'government', child: Text('Government')),
-                  DropdownMenuItem(value: 'medical', child: Text('Medical')),
+                    value: 'government',
+                    child: Text('Government'),
+                  ),
                   DropdownMenuItem(
-                      value: 'educational', child: Text('Educational')),
-                  DropdownMenuItem(value: 'other', child: Text('Other')),
+                    value: 'medical',
+                    child: Text('Medical'),
+                  ),
+                  DropdownMenuItem(
+                    value: 'educational',
+                    child: Text('Educational'),
+                  ),
+                  DropdownMenuItem(
+                    value: 'other',
+                    child: Text('Other'),
+                  ),
                 ],
                 onChanged: (value) =>
                     setState(() => _selectedCategory = value!),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 24),
               ElevatedButton.icon(
-                icon: const Icon(Icons.attach_file),
-                label:
-                    Text(_selectedFile == null ? 'Select File' : 'Change File'),
+                icon: Icon(
+                  Icons.attach_file,
+                  color: isDarkMode ? Colors.black : Colors.white,
+                ),
+                label: Text(
+                  _selectedFile == null ? 'Select File' : 'Change File',
+                  style: TextStyle(
+                    color: isDarkMode ? Colors.black : Colors.white,
+                  ),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: theme.colorScheme.primary,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 12,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
                 onPressed: _pickFile,
               ),
               if (_selectedFile != null)
-                Text(_selectedFile!.path.split('/').last),
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Text(
+                    _selectedFile!.path.split('/').last,
+                    style: TextStyle(
+                      color: theme.colorScheme.primary,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
             ],
           ),
         ),
@@ -87,7 +191,10 @@ class _UploadDocumentDialogState extends State<UploadDocumentDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
+          child: Text(
+            'Cancel',
+            style: TextStyle(color: theme.colorScheme.primary),
+          ),
         ),
         ElevatedButton(
           onPressed: () {
@@ -106,6 +213,13 @@ class _UploadDocumentDialogState extends State<UploadDocumentDialog> {
               });
             }
           },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: theme.colorScheme.primary,
+            foregroundColor: isDarkMode ? Colors.black : Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
           child: const Text('Upload'),
         ),
       ],

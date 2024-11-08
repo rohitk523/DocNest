@@ -1,6 +1,6 @@
-// lib/screens/login_screen.dart
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
+import '../services/google_auth_service.dart';
 import './home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -13,7 +13,7 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _authService = AuthService();
-
+  final _googleAuthService = GoogleAuthService();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _fullNameController = TextEditingController();
@@ -153,19 +153,24 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _handleGoogleSignIn() async {
     setState(() => _isLoading = true);
-
     try {
-      // TODO: Implement Google Sign In
-      await Future.delayed(
-          const Duration(seconds: 2)); // Simulate network delay
+      final result = await _googleAuthService.signInWithGoogle();
 
-      if (mounted) {
-        _showErrorSnackBar('Google Sign In not implemented yet');
-      }
+      if (!mounted) return;
+
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (context) => HomeScreen(token: result['access_token']),
+        ),
+      );
     } catch (e) {
-      if (mounted) {
-        _showErrorSnackBar(e.toString());
-      }
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString()),
+          backgroundColor: Colors.red,
+        ),
+      );
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
