@@ -1,107 +1,64 @@
+// lib/widgets/settings_tab.dart
 import 'package:flutter/material.dart';
 
 class SettingsTab extends StatelessWidget {
   final VoidCallback onLogout;
 
   const SettingsTab({
-    super.key,
+    Key? key,
     required this.onLogout,
-  });
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        _buildSettingSwitch(
-          icon: Icons.notifications,
-          title: 'Notifications',
-          value: true,
-          onChanged: (value) {
-            // Handle notification toggle
-          },
-        ),
-        _buildSettingSwitch(
-          icon: Icons.dark_mode,
-          title: 'Dark Mode',
-          value: false,
-          onChanged: (value) {
-            // Handle dark mode toggle
-          },
-        ),
-        _buildSettingOption(
-          icon: Icons.language,
-          title: 'Language',
-          onTap: () {
-            // Handle language settings
-          },
-        ),
-        _buildSettingOption(
-          icon: Icons.help,
-          title: 'Help & Support',
-          onTap: () {
-            // Handle help and support
-          },
-        ),
-        _buildSettingOption(
-          icon: Icons.info,
-          title: 'About',
-          onTap: () {
-            // Handle about section
-          },
-        ),
-        const SizedBox(height: 16),
-        ElevatedButton(
-          onPressed: onLogout,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.red,
-            minimumSize: const Size(double.infinity, 50),
+        ListTile(
+          leading: const Icon(Icons.dark_mode),
+          title: const Text('Dark Mode'),
+          trailing: Switch(
+            value: false, // Replace with actual theme state
+            onChanged: (value) {
+              // TODO: Implement theme switching
+            },
           ),
-          child: const Text(
+        ),
+        ListTile(
+          leading: const Icon(Icons.notifications),
+          title: const Text('Notifications'),
+          trailing: Switch(
+            value: true, // Replace with actual notification state
+            onChanged: (value) {
+              // TODO: Implement notification settings
+            },
+          ),
+        ),
+        const Divider(),
+        ListTile(
+          leading: const Icon(Icons.info),
+          title: const Text('About'),
+          onTap: () {
+            // TODO: Show about dialog
+          },
+        ),
+        ListTile(
+          leading: const Icon(Icons.help),
+          title: const Text('Help & Support'),
+          onTap: () {
+            // TODO: Show help and support
+          },
+        ),
+        const Divider(),
+        ListTile(
+          leading: const Icon(Icons.logout, color: Colors.red),
+          title: const Text(
             'Logout',
-            style: TextStyle(
-              fontFamily: 'Helvetica',
-              fontSize: 16,
-              color: Colors.white,
-            ),
+            style: TextStyle(color: Colors.red),
           ),
+          onTap: onLogout,
         ),
       ],
-    );
-  }
-
-  Widget _buildSettingOption({
-    required IconData icon,
-    required String title,
-    required VoidCallback onTap,
-  }) {
-    return ListTile(
-      leading: Icon(icon),
-      title: Text(
-        title,
-        style: const TextStyle(fontFamily: 'Helvetica'),
-      ),
-      trailing: const Icon(Icons.arrow_forward_ios),
-      onTap: onTap,
-    );
-  }
-
-  Widget _buildSettingSwitch({
-    required IconData icon,
-    required String title,
-    required bool value,
-    required ValueChanged<bool> onChanged,
-  }) {
-    return ListTile(
-      leading: Icon(icon),
-      title: Text(
-        title,
-        style: const TextStyle(fontFamily: 'Helvetica'),
-      ),
-      trailing: Switch(
-        value: value,
-        onChanged: onChanged,
-      ),
     );
   }
 }

@@ -2,11 +2,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/document_provider.dart';
+import '../models/document.dart';
+import '../utils/formatters.dart';
 
 class SearchDialog extends StatefulWidget {
-  final List<Document> documents;
-
-  const SearchDialog({super.key, required this.documents});
+  const SearchDialog({Key? key}) : super(key: key);
 
   @override
   State<SearchDialog> createState() => _SearchDialogState();
@@ -14,6 +14,7 @@ class SearchDialog extends StatefulWidget {
 
 class _SearchDialogState extends State<SearchDialog> {
   final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
 
   @override
   Widget build(BuildContext context) {
@@ -29,22 +30,30 @@ class _SearchDialogState extends State<SearchDialog> {
               decoration: InputDecoration(
                 hintText: 'Search documents...',
                 prefixIcon: const Icon(Icons.search),
+                suffixIcon: _searchQuery.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear),
+                        onPressed: () {
+                          _searchController.clear();
+                          setState(() => _searchQuery = '');
+                        },
+                      )
+                    : null,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
               ),
-              onChanged: (query) {
-                // Update the search query in DocumentProvider
-                context.read<DocumentProvider>().setSearchQuery(query);
+              onChanged: (value) {
+                setState(() => _searchQuery = value);
               },
             ),
             const SizedBox(height: 16),
             Expanded(
               child: Consumer<DocumentProvider>(
-                builder: (context, documentProvider, child) {
-                  final searchResults = documentProvider.filteredDocuments;
+                builder: (context, provider, _) {
+                  final searchResults = provider.searchDocuments(_searchQuery);
 
-                  if (searchResults.isEmpty && _searchController.text.isEmpty) {
+                  if (searchResults.isEmpty && _searchQuery.isEmpty) {
                     return const Center(
                       child: Text('Start typing to search documents'),
                     );
@@ -61,16 +70,42 @@ class _SearchDialogState extends State<SearchDialog> {
                     itemBuilder: (context, index) {
                       final document = searchResults[index];
                       return ListTile(
-                        leading: const Icon(Icons.description),
-                        title: Text(document.name),
-                        subtitle: Text(
-                          document.content,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                        leading: Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: getCategoryColor(document.category)
+                                .withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Icon(
+                            getCategoryIcon(document.category),
+                            color: getCategoryColor(document.category),
+                          ),
                         ),
-                        onTap: () {
-                          Navigator.pop(context, document);
-                        },
+                        title: Text(
+                          document.name,
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              document.description,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              formatDate(document.createdAt),
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                          ],
+                        ),
+                        onTap: () => Navigator.pop(context, document),
                       );
                     },
                   );
@@ -86,9 +121,6 @@ class _SearchDialogState extends State<SearchDialog> {
   @override
   void dispose() {
     _searchController.dispose();
-    context
-        .read<DocumentProvider>()
-        .clearSearch(); // Clear search when dialog is closed
     super.dispose();
   }
 }

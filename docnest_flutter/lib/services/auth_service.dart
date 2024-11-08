@@ -1,59 +1,67 @@
-// import 'package:google_sign_in/google_sign_in.dart';
-// import 'package:http/http.dart' as http;
-// import 'dart:convert';
-// import '../models/user.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
-// class AuthService {
-//   final GoogleSignIn _googleSignIn = GoogleSignIn(
-//     scopes: [
-//       'email',
-//       'profile',
-//     ],
-//   );
-  
-//   final String _baseUrl = 'http://your-api-url/api/v1';
+class AuthService {
+  // Update the base URL to match your FastAPI server
+  static const String baseUrl =
+      'http://10.0.2.2:8000/api/v1/auth'; // For Android Emulator
+  // Use 'http://localhost:8000/api/v1/auth' for iOS simulator
+  // Use your actual IP address if testing on a physical device
 
-//   Future<User?> signInWithGoogle() async {
-//     try {
-//       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-//       if (googleUser == null) return null;
+  Future<Map<String, dynamic>> login(String email, String password) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/login'),
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: {
+          'username': email, // FastAPI OAuth2 expects 'username'
+          'password': password,
+        },
+      );
 
-//       final GoogleSignInAuthentication googleAuth = 
-//           await googleUser.authentication;
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      } else {
+        throw Exception(json.decode(response.body)['detail'] ?? 'Login failed');
+      }
+    } catch (e) {
+      if (e.toString().contains('Connection refused')) {
+        throw Exception(
+            'Unable to connect to server. Please check your internet connection.');
+      }
+      throw Exception('Login failed: ${e.toString()}');
+    }
+  }
 
-//       // Send token to your backend
-//       final response = await http.post(
-//         Uri.parse('$_baseUrl/auth/google'),
-//         headers: {'Content-Type': 'application/json'},
-//         body: json.encode({
-//           'token': googleAuth.idToken,
-//         }),
-//       );
+  Future<Map<String, dynamic>> register(
+    String email,
+    String password,
+    String fullName,
+  ) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/register'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'email': email,
+          'password': password,
+          'full_name': fullName,
+        }),
+      );
 
-//       if (response.statusCode == 200) {
-//         final userData = json.decode(response.body);
-//         // Save auth token
-//         await _saveAuthToken(userData['access_token']);
-//         return User.fromJson(userData['user']);
-//       } else {
-//         throw Exception('Failed to sign in with Google');
-//       }
-//     } catch (e) {
-//       print('Error signing in with Google: $e');
-//       return null;
-//     }
-//   }
+      final responseData = json.decode(response.body);
 
-//   Future<void> signOut() async {
-//     await _googleSignIn.signOut();
-//     await _clearAuthToken();
-//   }
-
-//   Future<void> _saveAuthToken(String token) async {
-//     // Implement secure token storage (e.g., using flutter_secure_storage)
-//   }
-
-//   Future<void> _clearAuthToken() async {
-//     // Implement token cleanup
-//   }
-// }
+      if (response.statusCode == 200) {
+        return responseData;
+      } else {
+        throw Exception(responseData['detail'] ?? 'Registration failed');
+      }
+    } catch (e) {
+      if (e.toString().contains('Connection refused')) {
+        throw Exception(
+            'Unable to connect to server. Please check your internet connection.');
+      }
+      throw Exception('Registration failed: ${e.toString()}');
+    }
+  }
+}

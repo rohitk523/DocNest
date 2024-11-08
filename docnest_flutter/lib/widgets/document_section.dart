@@ -2,6 +2,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/document_provider.dart';
+import '../models/document.dart';
+import '../utils/formatters.dart';
 
 class DocumentSection extends StatelessWidget {
   final String title;
@@ -15,6 +17,10 @@ class DocumentSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (documents.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -25,66 +31,79 @@ class DocumentSection extends StatelessWidget {
             style: const TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
-              fontFamily: 'Helvetica',
             ),
           ),
         ),
         Card(
           child: Consumer<DocumentProvider>(
-            builder: (context, documentProvider, child) {
-              return ListView.builder(
+            builder: (context, provider, _) {
+              return ListView.separated(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 itemCount: documents.length,
+                separatorBuilder: (context, index) => const Divider(height: 1),
                 itemBuilder: (context, index) {
                   final document = documents[index];
-                  final bool isSelected =
-                      documentProvider.isDocumentSelected(document.id);
-                  final bool isSelectionMode = documentProvider.isSelectionMode;
+                  final bool isSelected = provider.isSelected(document.id);
+                  final bool isSelectionMode = provider.isSelectionMode;
 
                   return ListTile(
-                    leading: isSelectionMode
-                        ? CircleAvatar(
-                            radius: 12,
-                            backgroundColor: isSelected
-                                ? Theme.of(context).primaryColor
-                                : Colors.grey.shade300,
-                            child: Icon(
-                              Icons.check,
-                              size: 16,
-                              color: isSelected
-                                  ? Colors.white
-                                  : Colors.transparent,
-                            ),
-                          )
-                        : const Icon(Icons.description),
+                    leading: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: getCategoryColor(document.category)
+                            .withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(
+                        getCategoryIcon(document.category),
+                        color: getCategoryColor(document.category),
+                      ),
+                    ),
                     title: Text(
                       document.name,
                       style: TextStyle(
-                        fontFamily: 'Helvetica',
                         fontWeight:
                             isSelected ? FontWeight.bold : FontWeight.normal,
                       ),
                     ),
-                    subtitle: Text(
-                      document.createdAt.toString().split(' ')[0],
-                      style: const TextStyle(fontFamily: 'Helvetica'),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          document.description,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          formatDate(document.createdAt),
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                      ],
                     ),
                     trailing: isSelectionMode
-                        ? null
+                        ? Checkbox(
+                            value: isSelected,
+                            onChanged: (_) =>
+                                provider.toggleSelection(document.id),
+                          )
                         : const Icon(Icons.arrow_forward_ios),
                     tileColor: isSelected ? Colors.blue.withOpacity(0.1) : null,
                     onTap: () {
                       if (isSelectionMode) {
-                        documentProvider.toggleDocumentSelection(document.id);
+                        provider.toggleSelection(document.id);
                       } else {
                         // Handle document tap
                       }
                     },
                     onLongPress: () {
                       if (!isSelectionMode) {
-                        documentProvider.toggleSelectionMode();
-                        documentProvider.toggleDocumentSelection(document.id);
+                        provider.toggleSelection(document.id);
                       }
                     },
                   );

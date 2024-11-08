@@ -1,7 +1,8 @@
+// lib/widgets/quick_actions_bar.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:share_plus/share_plus.dart';
 import '../providers/document_provider.dart';
+import '../models/document.dart'; // Add this import
 import 'document_search.dart';
 
 class QuickActionsBar extends StatelessWidget {
@@ -49,14 +50,23 @@ class QuickActionsBar extends StatelessWidget {
                     context,
                     Icons.share,
                     'Share${selectedCount > 0 ? " ($selectedCount)" : ""}',
-                    () => _handleShare(context),
-                    isEnabled: selectedCount > 0,
+                    selectedCount > 0 ? () => _handleShare(context) : null,
                   ),
                   _buildActionButton(
                     context,
                     isSelectionMode ? Icons.close : Icons.checklist,
                     isSelectionMode ? 'Cancel' : 'Select',
-                    () => _handleSelectionMode(context),
+                    () {
+                      if (isSelectionMode) {
+                        provider.clearSelection();
+                      } else {
+                        // Start selection mode by selecting first document
+                        final documents = provider.documents;
+                        if (documents.isNotEmpty) {
+                          provider.toggleSelection(documents.first.id);
+                        }
+                      }
+                    },
                   ),
                 ],
               ),
@@ -80,12 +90,14 @@ class QuickActionsBar extends StatelessWidget {
           Row(
             children: [
               TextButton(
-                onPressed: () => provider.selectAllDocuments(),
+                onPressed: () => provider.selectAll(),
                 child: const Text('Select All'),
               ),
               const SizedBox(width: 8),
               TextButton(
-                onPressed: () => _handleDelete(context),
+                onPressed: provider.selectedCount > 0
+                    ? () => _handleDelete(context, provider)
+                    : null,
                 child: const Text(
                   'Delete',
                   style: TextStyle(color: Colors.red),
@@ -102,26 +114,24 @@ class QuickActionsBar extends StatelessWidget {
     BuildContext context,
     IconData icon,
     String label,
-    VoidCallback onTap, {
-    bool isEnabled = true,
-  }) {
+    VoidCallback? onTap,
+  ) {
     final theme = Theme.of(context);
     return InkWell(
-      onTap: isEnabled ? onTap : null,
+      onTap: onTap,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(
             icon,
-            color: isEnabled ? theme.primaryColor : theme.disabledColor,
+            color: onTap != null ? theme.primaryColor : theme.disabledColor,
           ),
           const SizedBox(height: 4),
           Text(
             label,
             style: TextStyle(
-              fontFamily: 'Helvetica',
               fontSize: 12,
-              color: isEnabled
+              color: onTap != null
                   ? theme.textTheme.bodyMedium?.color
                   : theme.disabledColor,
             ),
@@ -133,40 +143,27 @@ class QuickActionsBar extends StatelessWidget {
 
   Future<void> _handleUpload(BuildContext context) async {
     // Implement file upload functionality
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Upload functionality coming soon')),
-    );
   }
 
-  void _handleSearch(BuildContext context) async {
+  Future<void> _handleSearch(BuildContext context) async {
     final provider = context.read<DocumentProvider>();
     if (provider.isSelectionMode) {
-      provider.toggleSelectionMode();
+      provider.clearSelection();
     }
 
-    final documents = provider.documents;
-    final Document? result = await showDialog(
+    final Document? result = await showDialog<Document>(
+      // Updated this line
       context: context,
-      builder: (BuildContext context) {
-        return SearchDialog(documents: documents);
-      },
+      builder: (BuildContext context) => const SearchDialog(),
     );
 
     if (result != null) {
       // Handle the selected document
-      // For example:
-      // Navigator.push(
-      //   context,
-      //   MaterialPageRoute(
-      //     builder: (context) => DocumentDetailScreen(document: result),
-      //   ),
-      // );
     }
   }
 
   Future<void> _handleShare(BuildContext context) async {
     final provider = context.read<DocumentProvider>();
-
     if (provider.selectedCount == 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please select documents to share')),
@@ -175,70 +172,25 @@ class QuickActionsBar extends StatelessWidget {
     }
 
     try {
-      final selectedDocs = provider.selectedDocumentObjects;
+      // Get selected documents and handle sharing
+      final content = provider.getShareableContent();
+      // Implement share functionality
 
-      // For sharing text content
-      String shareText = selectedDocs.map((doc) => '''
-Document: ${doc.name}
-Category: ${doc.category}
-Content: ${doc.content}
-''').join('\n---\n');
-
-      // For sharing files (if path is available)
-      List<String> filePaths = selectedDocs
-          .where((doc) => doc.path != null)
-          .map((doc) => doc.path!)
-          .toList();
-
-      if (filePaths.isNotEmpty) {
-        // Share files if available
-        await Share.shareXFiles(
-          filePaths.map((path) => XFile(path)).toList(),
-          text: 'Sharing ${filePaths.length} documents',
-        );
-      } else {
-        // Share text content if no files
-        await Share.share(
-          shareText,
-          subject: 'Shared Documents (${selectedDocs.length})',
-        );
-      }
-
-      // Mark documents as shared
-      provider.markDocumentsAsShared(provider.selectedDocuments.toList());
-
-      // Show success message
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Documents shared successfully')),
-        );
-      }
-
-      // Clear selection after sharing
       provider.clearSelection();
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error sharing documents: ${e.toString()}'),
+            content: Text('Error sharing documents: $e'),
             backgroundColor: Colors.red,
           ),
         );
-        debugPrint('Sharing error: $e');
       }
     }
   }
 
-  void _handleSelectionMode(BuildContext context) {
-    final provider = context.read<DocumentProvider>();
-    provider.toggleSelectionMode();
-  }
-
-  Future<void> _handleDelete(BuildContext context) async {
-    final provider = context.read<DocumentProvider>();
-
-    if (provider.selectedCount == 0) return;
-
+  Future<void> _handleDelete(
+      BuildContext context, DocumentProvider provider) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (BuildContext context) {
