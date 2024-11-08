@@ -121,12 +121,13 @@ class DocumentService:
             
         return query.order_by(Document.created_at.desc()).all()
 
+
     async def update_document(
         self,
         db: Session,
         document_id: str,
         owner_id: str,
-        document_in: DocumentUpdate,
+        document_in: dict,  # Changed from DocumentUpdate to dict
         file: Optional[UploadFile] = None
     ) -> Document:
         document = self.get_document(db, document_id, owner_id)
@@ -140,7 +141,7 @@ class DocumentService:
                 os.remove(document.file_path)
 
             # Save new file
-            ext = self._get_file_extension(file.filename)
+            ext = os.path.splitext(file.filename)[1].lower()
             filename = f"{owner_id}_{datetime.utcnow().timestamp()}{ext}"
             file_path = os.path.join(self.upload_dir, filename)
             
@@ -153,8 +154,10 @@ class DocumentService:
             document.version += 1
 
         # Update other fields
-        for field, value in document_in.dict(exclude_unset=True).items():
-            setattr(document, field, value)
+        # Changed this part to handle dict directly
+        for field, value in document_in.items():
+            if value is not None:  # Only update non-None values
+                setattr(document, field, value)
 
         db.commit()
         db.refresh(document)

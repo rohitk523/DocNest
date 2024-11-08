@@ -1,9 +1,10 @@
 # app/api/v1/auth_router.py
+from app.core.auth import get_password_hash
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from datetime import datetime
-
+from app.models.user import User
 from app.db.session import get_db
 from app.core.auth import (
     authenticate_user,

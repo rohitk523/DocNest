@@ -104,6 +104,7 @@ async def get_document(
     )
     return document
 
+# app/api/v1/router.py
 @api_router.put("/documents/{document_id}", response_model=DocumentResponse)
 async def update_document(
     document_id: str,
@@ -120,7 +121,7 @@ async def update_document(
     try:
         document_service = DocumentService()
         
-        # Create update data
+        # Create update data dictionary
         update_data = {
             "name": name,
             "description": description,
