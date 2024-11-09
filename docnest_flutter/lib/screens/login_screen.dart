@@ -149,11 +149,11 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  Future<void> _handleGoogleSignIn() async {
+  Future<void> _loginWithGoogle() async {
     setState(() => _isLoading = true);
 
     try {
-      final result = await _authService.signInWithGoogle();
+      final result = await _authService.loginWithGoogle();
       if (!mounted) return;
 
       // Navigate to home screen
@@ -303,7 +303,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           'Sign in with Google',
                           style: TextStyle(fontSize: 16),
                         ),
-                        onPressed: _isLoading ? null : _handleGoogleSignIn,
+                        onPressed: _isLoading ? null : _loginWithGoogle,
                         style: ElevatedButton.styleFrom(
                           minimumSize: const Size(double.infinity, 50),
                           shape: RoundedRectangleBorder(

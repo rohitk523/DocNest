@@ -5,13 +5,40 @@ import 'package:google_sign_in/google_sign_in.dart';
 
 class AuthService {
   static const String baseUrl = 'http://10.0.2.2:8000/api/v1/auth';
-
   final GoogleSignIn _googleSignIn = GoogleSignIn(
     scopes: [
       'email',
       'profile',
     ],
   );
+
+  Future<Map<String, dynamic>> loginWithGoogle() async {
+    try {
+      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+      if (googleUser == null) throw Exception('Google Sign In was canceled');
+
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
+      final String idToken = googleAuth.idToken!;
+
+      final response = await http.post(
+        Uri.parse('$baseUrl/google/signin'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'token': idToken,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      } else {
+        throw Exception(
+            json.decode(response.body)['detail'] ?? 'Google sign in failed');
+      }
+    } catch (e) {
+      throw Exception('Failed to sign in with Google: $e');
+    }
+  }
 
   Future<Map<String, dynamic>> login(String email, String password) async {
     try {
@@ -54,12 +81,11 @@ class AuthService {
         }),
       );
 
-      final responseData = json.decode(response.body);
-
       if (response.statusCode == 200) {
-        return responseData;
+        return json.decode(response.body);
       } else {
-        throw Exception(responseData['detail'] ?? 'Registration failed');
+        throw Exception(
+            json.decode(response.body)['detail'] ?? 'Registration failed');
       }
     } catch (e) {
       if (e.toString().contains('Connection refused')) {
@@ -70,59 +96,10 @@ class AuthService {
     }
   }
 
-  Future<Map<String, dynamic>> signInWithGoogle() async {
-    try {
-      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-      if (googleUser == null) {
-        throw Exception('Google Sign In was cancelled');
-      }
-
-      // Get auth details
-      final GoogleSignInAuthentication googleAuth =
-          await googleUser.authentication;
-      final String? idToken = googleAuth.idToken;
-
-      if (idToken == null) {
-        throw Exception('Failed to get ID token');
-      }
-
-      // Send token to backend
-      final response = await http.post(
-        Uri.parse('$baseUrl/google/signin'),
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: json.encode({
-          'token': idToken,
-        }),
-      );
-
-      if (response.statusCode == 200) {
-        final responseData = json.decode(response.body);
-        print('Google Sign In Response: $responseData'); // Debug print
-        return responseData;
-      } else {
-        final error =
-            json.decode(response.body)['detail'] ?? 'Google sign in failed';
-        print('Google Sign In Error: $error'); // Debug print
-        throw Exception(error);
-      }
-    } catch (e) {
-      print('Google Sign In Exception: $e'); // Debug print
-      throw Exception('Failed to sign in with Google: $e');
-    }
-  }
-
   Future<void> signOut() async {
-    try {
-      // Sign out from Google
-      await _googleSignIn.signOut();
-
-      // You might want to also clear any stored tokens or user data here
-    } catch (e) {
-      print('Sign Out Error: $e'); // Debug print
-      throw Exception('Failed to sign out: $e');
-    }
+    // No need to call Google Sign-In SDK directly anymore
+    // Just clear local auth state
+    // You might want to also make a backend call to invalidate the session
   }
 
   Future<Map<String, dynamic>> refreshToken(String token) async {
