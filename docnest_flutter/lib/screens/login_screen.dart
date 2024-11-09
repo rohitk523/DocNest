@@ -1,6 +1,6 @@
+// lib/screens/login_screen.dart
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
-import '../services/google_auth_service.dart';
 import './home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -13,7 +13,7 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _authService = AuthService();
-  final _googleAuthService = GoogleAuthService();
+
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _fullNameController = TextEditingController();
@@ -117,11 +117,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
         if (!mounted) return;
 
-        // Remove the const keyword here
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
-            builder: (context) =>
-                HomeScreen(token: response['access_token']), // Removed const
+            builder: (context) => HomeScreen(token: response['access_token']),
           ),
         );
       } else {
@@ -153,11 +151,12 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _handleGoogleSignIn() async {
     setState(() => _isLoading = true);
-    try {
-      final result = await _googleAuthService.signInWithGoogle();
 
+    try {
+      final result = await _authService.signInWithGoogle();
       if (!mounted) return;
 
+      // Navigate to home screen
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
           builder: (context) => HomeScreen(token: result['access_token']),
@@ -165,12 +164,7 @@ class _LoginScreenState extends State<LoginScreen> {
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e.toString()),
-          backgroundColor: Colors.red,
-        ),
-      );
+      _showErrorSnackBar(e.toString().replaceAll('Exception: ', ''));
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);

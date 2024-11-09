@@ -5,6 +5,7 @@ import 'screens/login_screen.dart';
 import 'providers/document_provider.dart'; // We'll create this
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(
     MultiProvider(
       providers: [
