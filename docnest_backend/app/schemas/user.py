@@ -30,3 +30,25 @@ class UserInDB(UserBase):
 
 class UserResponse(UserInDB):
     pass
+
+class TokenResponse(BaseModel):
+    access_token: str
+    token_type: str
+    user: Optional[UserResponse] = None
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+                "token_type": "bearer",
+                "user": {
+                    "id": "123",
+                    "email": "user@example.com",
+                    "full_name": "John Doe",
+                    "is_active": True,
+                    "is_google_user": False,
+                    "created_at": "2024-01-01T00:00:00",
+                    "last_login": "2024-01-01T00:00:00"
+                }
+            }
+        }

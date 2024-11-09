@@ -1,90 +1,154 @@
-# app/api/v1/auth_router.py
-from app.core.auth import get_password_hash
+from typing import Optional, Dict, Any
+from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, status, Body
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
-from datetime import datetime
-from app.models.user import User
-from app.db.session import get_db
+from pydantic import ValidationError
+
 from app.core.auth import (
     authenticate_user,
     create_access_token,
     create_refresh_token,
-    get_current_user
+    get_current_user,
+    get_password_hash
 )
-from app.schemas.user import UserCreate, UserResponse
+from app.models.user import User
+from app.schemas.user import UserCreate, UserResponse, TokenResponse
+from app.db.session import get_db
 from app.services.google_auth_service import GoogleAuthService
+from app.core.exceptions import (
+    InvalidCredentialsException,
+    UserAlreadyExistsException,
+    GoogleAuthenticationError
+)
 
 auth_router = APIRouter()
 
-@auth_router.post("/login")
+@auth_router.post("/login", response_model=TokenResponse)
 async def login(
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db)
-):
-    """Login with username and password"""
-    user = authenticate_user(db, form_data.username, form_data.password)
-    if not user:
+) -> Dict[str, str]:
+    """
+    Authenticate user and return access token
+    
+    Args:
+        form_data: OAuth2 password request form containing username and password
+        db: Database session
+        
+    Returns:
+        Dict containing access token and token type
+        
+    Raises:
+        InvalidCredentialsException: If username or password is incorrect
+    """
+    try:
+        user = authenticate_user(db, form_data.username, form_data.password)
+        if not user:
+            raise InvalidCredentialsException()
+
+        if not user.is_active:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Inactive user account"
+            )
+
+        # Update last login
+        user.last_login = datetime.utcnow()
+        db.commit()
+
+        return {
+            "access_token": create_access_token(data={"sub": user.id}),
+            "token_type": "bearer"
+        }
+    except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password",
+            detail=str(e),
             headers={"WWW-Authenticate": "Bearer"},
         )
-
-    # Update last login
-    user.last_login = datetime.utcnow()
-    db.commit()
-
-    return {
-        "access_token": create_access_token(data={"sub": user.id}),
-        "token_type": "bearer"
-    }
 
 @auth_router.post("/register", response_model=UserResponse)
 async def register(
     *,
     db: Session = Depends(get_db),
     user_in: UserCreate
-):
-    """Register a new user"""
-    # Check if user exists
-    user = db.query(User).filter(User.email == user_in.email).first()
-    if user:
+) -> User:
+    """
+    Register a new user
+    
+    Args:
+        db: Database session
+        user_in: User creation data
+        
+    Returns:
+        Created user object
+        
+    Raises:
+        UserAlreadyExistsException: If email is already registered
+    """
+    try:
+        # Check if user exists
+        existing_user = db.query(User).filter(User.email == user_in.email).first()
+        if existing_user:
+            raise UserAlreadyExistsException()
+
+        user = User(
+            email=user_in.email,
+            hashed_password=get_password_hash(user_in.password),
+            full_name=user_in.full_name,
+            is_active=True,
+            is_google_user=False,
+            created_at=datetime.utcnow()
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+        return user
+    except ValidationError as e:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(e)
+        )
+    except Exception as e:
+        db.rollback()
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Email already registered"
+            detail=str(e)
         )
 
-    user = User(
-        email=user_in.email,
-        hashed_password=get_password_hash(user_in.password),
-        full_name=user_in.full_name,
-        is_active=True,
-        is_google_user=False
-    )
-    db.add(user)
-    db.commit()
-    db.refresh(user)
-    return user
-
 @auth_router.get("/me", response_model=UserResponse)
-async def read_users_me(current_user = Depends(get_current_user)):
-    """Get current user"""
+async def read_users_me(
+    current_user: User = Depends(get_current_user)
+) -> User:
+    """
+    Get current authenticated user
+    
+    Args:
+        current_user: Current authenticated user from token
+        
+    Returns:
+        Current user object
+    """
     return current_user
 
-@auth_router.post("/google/signin", response_model=dict)
+@auth_router.post("/google/signin", response_model=TokenResponse)
 async def google_signin(
     token: str = Body(..., embed=True),
     db: Session = Depends(get_db)
-):
+) -> Dict[str, Any]:
     """
-    Handle Google Sign-in
+    Handle Google Sign-in authentication
     
     Args:
-        token: The ID token obtained from Google Sign-in on the client side
+        token: Google ID token from client
+        db: Database session
         
     Returns:
-        dict: Contains access token and user info
+        Dict containing access token, token type and user info
+        
+    Raises:
+        GoogleAuthenticationError: If Google token validation fails
     """
     try:
         google_service = GoogleAuthService()
@@ -93,6 +157,10 @@ async def google_signin(
         
         # Get or create user
         user = await google_service.get_or_create_user(db, user_data)
+        
+        # Update last login
+        user.last_login = datetime.utcnow()
+        db.commit()
         
         # Create access token
         access_token = create_access_token(data={"sub": user.id})
@@ -104,32 +172,56 @@ async def google_signin(
         }
         
     except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=f"Could not validate Google credentials: {str(e)}",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+        raise GoogleAuthenticationError(str(e))
 
-@auth_router.post("/refresh")
+@auth_router.post("/refresh", response_model=TokenResponse)
 async def refresh_token(
     current_user: User = Depends(get_current_user),
-):
+) -> Dict[str, str]:
     """
-    Refresh access token
+    Refresh access token for current user
+    
+    Args:
+        current_user: Current authenticated user from token
+        
+    Returns:
+        Dict containing new access token and token type
     """
-    access_token = create_access_token(data={"sub": current_user.id})
-    return {
-        "access_token": access_token,
-        "token_type": "bearer"
-    }
+    try:
+        access_token = create_access_token(data={"sub": current_user.id})
+        return {
+            "access_token": access_token,
+            "token_type": "bearer"
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
 
 @auth_router.post("/logout")
-async def logout(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+async def logout(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+) -> Dict[str, str]:
     """
-    Logout user
-    """
-    # Update last login time
-    current_user.last_login = datetime.utcnow()
-    db.commit()
+    Logout current user and update last login time
     
-    return {"message": "Successfully logged out"}
+    Args:
+        current_user: Current authenticated user from token
+        db: Database session
+        
+    Returns:
+        Success message
+    """
+    try:
+        # Update last login time
+        current_user.last_login = datetime.utcnow()
+        db.commit()
+        return {"message": "Successfully logged out"}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
