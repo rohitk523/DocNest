@@ -1,15 +1,81 @@
-// lib/widgets/settings_tab.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../theme/app_theme.dart';
+import '../services/auth_service.dart';
+import '../screens/login_screen.dart';
 
 class SettingsTab extends StatelessWidget {
-  final VoidCallback onLogout;
-
   const SettingsTab({
     Key? key,
-    required this.onLogout,
   }) : super(key: key);
+
+  Future<void> _handleLogout(BuildContext context) async {
+    final authService = AuthService();
+
+    try {
+      // Show confirmation dialog
+      final bool? confirm = await showDialog<bool>(
+        context: context,
+        builder: (BuildContext context) => AlertDialog(
+          title: const Text('Confirm Logout'),
+          content: const Text('Are you sure you want to logout?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.red,
+              ),
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Logout'),
+            ),
+          ],
+        ),
+      );
+
+      if (confirm != true) return;
+
+      // Show loading indicator
+      if (context.mounted) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (BuildContext context) => const Center(
+            child: CircularProgressIndicator(),
+          ),
+        );
+      }
+
+      // Perform logout
+      await authService.signOut();
+
+      // Navigate to login screen and remove all previous routes
+      if (context.mounted) {
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (context) => const LoginScreen()),
+          (Route<dynamic> route) => false,
+        );
+      }
+    } catch (e) {
+      // Hide loading indicator if showing
+      if (context.mounted) {
+        Navigator.of(context).pop();
+      }
+
+      // Show error message
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Logout failed: ${e.toString()}'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -32,7 +98,7 @@ class SettingsTab extends StatelessWidget {
               leading: const Icon(Icons.notifications),
               title: const Text('Notifications'),
               trailing: Switch(
-                value: true, // Replace with actual notification state
+                value: true,
                 onChanged: (value) {
                   // TODO: Implement notification settings
                 },
@@ -60,7 +126,7 @@ class SettingsTab extends StatelessWidget {
                 'Logout',
                 style: TextStyle(color: Colors.red),
               ),
-              onTap: onLogout,
+              onTap: () => _handleLogout(context),
             ),
           ],
         );

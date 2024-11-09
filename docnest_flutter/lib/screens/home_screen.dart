@@ -118,9 +118,7 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           const ProfileTab(),
           _buildHomeContent(),
-          SettingsTab(onLogout: () {
-            // TODO: Implement logout
-          }),
+          const SettingsTab(),
         ],
       ),
       bottomNavigationBar: NavigationBar(
