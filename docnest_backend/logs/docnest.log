@@ -947,3 +947,13 @@ NameError: name 'get_password_hash' is not defined
 2024-11-10 16:10:52,195 - docnest - INFO - Path: /api/v1/documents/ Method: GET Status: 200 Duration: 0.11s
 2024-11-10 16:11:17,238 - docnest - INFO - Path: /api/v1/documents/ Method: POST Status: 200 Duration: 0.15s
 2024-11-10 16:11:17,238 - docnest - INFO - Path: /api/v1/documents/ Method: POST Status: 200 Duration: 0.15s
+2024-11-10 16:37:31,373 - docnest - INFO - Path: /api/v1/auth/google/signin Method: POST Status: 200 Duration: 1.00s
+2024-11-10 16:37:31,373 - docnest - INFO - Path: /api/v1/auth/google/signin Method: POST Status: 200 Duration: 1.00s
+2024-11-10 16:37:32,946 - docnest - INFO - Path: /api/v1/documents Method: GET Status: 307 Duration: 0.00s
+2024-11-10 16:37:32,946 - docnest - INFO - Path: /api/v1/documents Method: GET Status: 307 Duration: 0.00s
+2024-11-10 16:37:33,828 - docnest - INFO - Path: /api/v1/documents/ Method: GET Status: 200 Duration: 0.06s
+2024-11-10 16:37:33,828 - docnest - INFO - Path: /api/v1/documents/ Method: GET Status: 200 Duration: 0.06s
+2024-11-10 16:38:16,410 - docnest - INFO - Path: /api/v1/documents Method: POST Status: 307 Duration: 0.00s
+2024-11-10 16:38:16,410 - docnest - INFO - Path: /api/v1/documents Method: POST Status: 307 Duration: 0.00s
+2024-11-10 16:40:16,757 - docnest - INFO - Path: /api/v1/documents/ Method: POST Status: 200 Duration: 2.91s
+2024-11-10 16:40:16,757 - docnest - INFO - Path: /api/v1/documents/ Method: POST Status: 200 Duration: 2.91s
