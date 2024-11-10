@@ -10,6 +10,7 @@ from datetime import datetime
 class GoogleAuth:
     def __init__(self):
         self.GOOGLE_CLIENT_ID = settings.GOOGLE_CLIENT_ID
+        self.GOOGLE_CLIENT_SECRET = settings.GOOGLE_CLIENT_SECRET
 
     async def verify_google_token(self, token: str) -> dict:
         try:
