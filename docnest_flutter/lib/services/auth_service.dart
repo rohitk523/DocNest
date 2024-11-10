@@ -2,6 +2,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:flutter/services.dart';
 
 class AuthService {
   static const String baseUrl = 'http://10.0.2.2:8000/api/v1/auth';
@@ -14,6 +15,17 @@ class AuthService {
 
   Future<Map<String, dynamic>> loginWithGoogle() async {
     try {
+      // Try to sign out first to force account picker
+      try {
+        final isSignedIn = await _googleSignIn.isSignedIn();
+        if (isSignedIn) {
+          await _googleSignIn.signOut();
+        }
+      } catch (e) {
+        // Ignore sign out errors
+      }
+
+      // Trigger new sign in flow
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
       if (googleUser == null) throw Exception('Google Sign In was canceled');
 
@@ -97,9 +109,38 @@ class AuthService {
   }
 
   Future<void> signOut() async {
-    // No need to call Google Sign-In SDK directly anymore
-    // Just clear local auth state
-    // You might want to also make a backend call to invalidate the session
+    try {
+      // Check if user is signed in first
+      final isSignedIn = await _googleSignIn.isSignedIn();
+      if (isSignedIn) {
+        // Try to sign out gracefully
+        try {
+          await _googleSignIn.signOut();
+        } catch (e) {
+          print('Google sign out error (non-fatal): $e');
+        }
+      }
+
+      // Optional: Make a call to your backend to invalidate the session
+      try {
+        final response = await http.post(
+          Uri.parse('$baseUrl/logout'),
+          headers: {
+            'Content-Type': 'application/json',
+            // Add your authorization header if required
+          },
+        );
+
+        if (response.statusCode != 200) {
+          print('Backend logout warning: ${response.body}');
+        }
+      } catch (e) {
+        print('Backend logout error (non-fatal): $e');
+      }
+    } catch (e) {
+      // Log the error but don't throw
+      print('Sign out error (non-fatal): $e');
+    }
   }
 
   Future<Map<String, dynamic>> refreshToken(String token) async {

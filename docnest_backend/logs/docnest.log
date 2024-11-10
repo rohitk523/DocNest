@@ -699,3 +699,16 @@ NameError: name 'get_password_hash' is not defined
 2024-11-10 00:54:34,768 - docnest - INFO - Path: /api/v1/auth/google/signin Method: POST Status: 200 Duration: 0.38s
 2024-11-10 00:54:34,862 - docnest - INFO - Path: /api/v1/documents Method: GET Status: 307 Duration: 0.00s
 2024-11-10 00:54:34,886 - docnest - INFO - Path: /api/v1/documents/ Method: GET Status: 200 Duration: 0.01s
+2024-11-10 11:50:44,237 - docnest - INFO - Path: /api/v1/auth/google/signin Method: POST Status: 200 Duration: 1.03s
+2024-11-10 11:50:46,414 - docnest - INFO - Path: /api/v1/documents Method: GET Status: 307 Duration: 0.00s
+2024-11-10 11:50:47,011 - docnest - INFO - Path: /api/v1/documents/ Method: GET Status: 200 Duration: 0.02s
+2024-11-10 11:51:16,711 - docnest - INFO - Path: /api/v1/auth/google/signin Method: POST Status: 200 Duration: 0.30s
+2024-11-10 11:51:17,204 - docnest - INFO - Path: /api/v1/documents Method: GET Status: 307 Duration: 0.00s
+2024-11-10 11:51:17,256 - docnest - INFO - Path: /api/v1/documents/ Method: GET Status: 200 Duration: 0.01s
+2024-11-10 12:09:29,408 - docnest - INFO - Path: /api/v1/auth/google/signin Method: POST Status: 200 Duration: 0.40s
+2024-11-10 12:09:31,908 - docnest - INFO - Path: /api/v1/documents Method: GET Status: 307 Duration: 0.00s
+2024-11-10 12:09:32,630 - docnest - INFO - Path: /api/v1/documents/ Method: GET Status: 200 Duration: 0.02s
+2024-11-10 12:12:39,606 - docnest - INFO - Path: /api/v1/auth/logout Method: POST Status: 401 Duration: 0.12s
+2024-11-10 12:12:50,500 - docnest - INFO - Path: /api/v1/auth/google/signin Method: POST Status: 200 Duration: 0.24s
+2024-11-10 12:12:50,635 - docnest - INFO - Path: /api/v1/documents Method: GET Status: 307 Duration: 0.00s
+2024-11-10 12:12:50,641 - docnest - INFO - Path: /api/v1/documents/ Method: GET Status: 200 Duration: 0.00s
