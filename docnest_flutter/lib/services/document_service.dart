@@ -6,8 +6,16 @@ import 'package:http_parser/http_parser.dart';
 import '../models/document.dart'; // Import the Document model
 
 class DocumentService {
-  final String baseUrl =
-      'http://10.0.2.2:8000/api/v1/documents'; // Change this according to your setup
+  String get baseUrl {
+    final deviceIP = Platform.isAndroid ? "10.0.2.2" : "localhost";
+    final physicalDeviceIP = "192.168.0.101"; // Replace X with your IP
+
+    return Platform.isAndroid &&
+            !Platform.environment.containsKey('FLUTTER_TEST')
+        ? "http://$physicalDeviceIP:8000/api/v1/auth"
+        : "http://$deviceIP:8000/api/v1/auth";
+  }
+
   final String token;
 
   DocumentService({required this.token});
