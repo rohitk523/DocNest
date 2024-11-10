@@ -65,7 +65,6 @@ class Settings(BaseSettings):
             "POSTGRES_PASSWORD": self.POSTGRES_PASSWORD,
             "JWT_SECRET_KEY": self.JWT_SECRET_KEY,
             "GOOGLE_CLIENT_ID": self.GOOGLE_CLIENT_ID,
-            "GOOGLE_CLIENT_SECRET": self.GOOGLE_CLIENT_SECRET
         }
 
         missing_settings = [k for k, v in required_settings.items() if not v]
