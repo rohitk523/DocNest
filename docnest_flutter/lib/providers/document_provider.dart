@@ -1,6 +1,7 @@
 // lib/providers/document_provider.dart
 import 'package:flutter/foundation.dart';
 import '../models/document.dart';
+import '../services/document_service.dart';
 
 class DocumentProvider with ChangeNotifier {
   List<Document> _documents = [];
@@ -9,6 +10,13 @@ class DocumentProvider with ChangeNotifier {
   Set<String> _selectedDocuments = {};
   List<String> _searchHistory = [];
   static const int maxHistoryItems = 10;
+  String _token;
+
+  DocumentProvider({required String token}) : _token = token {
+    if (_token.isNotEmpty) {
+      refreshDocuments();
+    }
+  }
 
   // Getters
   List<Document> get documents => _documents;
@@ -17,16 +25,33 @@ class DocumentProvider with ChangeNotifier {
   bool get isSelectionMode => _isSelectionMode;
   int get selectedCount => _selectedDocuments.length;
   List<String> get searchHistory => _searchHistory;
+  String get token => _token;
+
+  // Token Management
+  void updateToken(String newToken) {
+    _token = newToken;
+    refreshDocuments();
+    notifyListeners();
+  }
+
+  Future<void> refreshDocuments() async {
+    try {
+      if (_token.isEmpty) return;
+      final documentService = DocumentService(token: _token);
+      final docs = await documentService.getDocuments();
+      setDocuments(docs);
+    } catch (e) {
+      print('Error refreshing documents: $e');
+    }
+  }
 
   // Search History Methods
   void addToSearchHistory(String query) {
     if (query.trim().isEmpty) return;
 
-    // Remove if exists (to avoid duplicates) and add to front
     _searchHistory.remove(query);
     _searchHistory.insert(0, query);
 
-    // Keep only the last N items
     if (_searchHistory.length > maxHistoryItems) {
       _searchHistory = _searchHistory.take(maxHistoryItems).toList();
     }
@@ -95,22 +120,36 @@ class DocumentProvider with ChangeNotifier {
 
   Future<void> removeSelectedDocuments() async {
     try {
-      // Here you would typically call your API to delete the documents
+      if (_token.isEmpty) throw Exception('No authentication token available');
+      final documentService = DocumentService(token: _token);
+
+      for (final documentId in _selectedDocuments) {
+        await documentService.deleteDocument(documentId);
+      }
+
       _documents.removeWhere((doc) => _selectedDocuments.contains(doc.id));
       _selectedDocuments.clear();
       _isSelectionMode = false;
       notifyListeners();
     } catch (e) {
-      // Re-throw the error to be handled by the UI
       throw Exception('Failed to delete documents: $e');
     }
   }
 
-  void removeDocument(String id) {
-    _documents.removeWhere((doc) => doc.id == id);
-    _selectedDocuments.remove(id);
-    if (_selectedDocuments.isEmpty) _isSelectionMode = false;
-    notifyListeners();
+  Future<void> removeDocument(String id) async {
+    try {
+      if (_token.isEmpty) throw Exception('No authentication token available');
+      final documentService = DocumentService(token: _token);
+
+      await documentService.deleteDocument(id);
+
+      _documents.removeWhere((doc) => doc.id == id);
+      _selectedDocuments.remove(id);
+      if (_selectedDocuments.isEmpty) _isSelectionMode = false;
+      notifyListeners();
+    } catch (e) {
+      throw Exception('Failed to delete document: $e');
+    }
   }
 
   void updateDocument(Document updatedDoc) {
@@ -126,8 +165,6 @@ class DocumentProvider with ChangeNotifier {
     for (final id in documentIds) {
       final index = _documents.indexWhere((doc) => doc.id == id);
       if (index != -1) {
-        // Since Document is immutable, we need to create a new instance
-        // This assumes Document has a copyWith method
         final updatedDoc = _documents[index].copyWith(isShared: true);
         _documents[index] = updatedDoc;
       }
