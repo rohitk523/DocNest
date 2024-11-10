@@ -71,6 +71,10 @@ class AuthService {
 
   Future<Map<String, dynamic>> loginWithGoogle() async {
     try {
+      // Sign out first to ensure the account picker is shown
+      await _googleSignIn.signOut();
+
+      // Show account picker and get selected account
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
       if (googleUser == null) throw Exception('Google Sign In was canceled');
 
