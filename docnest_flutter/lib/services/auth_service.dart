@@ -1,21 +1,10 @@
 // lib/services/auth_service.dart
-import 'dart:io';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:flutter/services.dart';
+import 'api_config.dart';
 
 class AuthService {
-  String get baseUrl {
-    final deviceIP = Platform.isAndroid ? "10.0.2.2" : "localhost";
-    final physicalDeviceIP = "192.168.0.101"; // Replace X with your IP
-
-    return Platform.isAndroid &&
-            !Platform.environment.containsKey('FLUTTER_TEST')
-        ? "http://$physicalDeviceIP:8000/api/v1/auth"
-        : "http://$deviceIP:8000/api/v1/auth";
-  }
-
   final GoogleSignIn _googleSignIn = GoogleSignIn(
     scopes: [
       'email',
@@ -23,49 +12,10 @@ class AuthService {
     ],
   );
 
-  Future<Map<String, dynamic>> loginWithGoogle() async {
-    try {
-      // Try to sign out first to force account picker
-      try {
-        final isSignedIn = await _googleSignIn.isSignedIn();
-        if (isSignedIn) {
-          await _googleSignIn.signOut();
-        }
-      } catch (e) {
-        // Ignore sign out errors
-      }
-
-      // Trigger new sign in flow
-      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-      if (googleUser == null) throw Exception('Google Sign In was canceled');
-
-      final GoogleSignInAuthentication googleAuth =
-          await googleUser.authentication;
-      final String idToken = googleAuth.idToken!;
-
-      final response = await http.post(
-        Uri.parse('$baseUrl/google/signin'),
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode({
-          'token': idToken,
-        }),
-      );
-
-      if (response.statusCode == 200) {
-        return json.decode(response.body);
-      } else {
-        throw Exception(
-            json.decode(response.body)['detail'] ?? 'Google sign in failed');
-      }
-    } catch (e) {
-      throw Exception('Failed to sign in with Google: $e');
-    }
-  }
-
   Future<Map<String, dynamic>> login(String email, String password) async {
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/login'),
+        Uri.parse('${ApiConfig.authUrl}/login'),
         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
         body: {
           'username': email,
@@ -76,7 +26,8 @@ class AuthService {
       if (response.statusCode == 200) {
         return json.decode(response.body);
       } else {
-        throw Exception(json.decode(response.body)['detail'] ?? 'Login failed');
+        final errorBody = json.decode(response.body);
+        throw Exception(errorBody['detail'] ?? 'Login failed');
       }
     } catch (e) {
       if (e.toString().contains('Connection refused')) {
@@ -94,8 +45,8 @@ class AuthService {
   ) async {
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/register'),
-        headers: {'Content-Type': 'application/json'},
+        Uri.parse('${ApiConfig.authUrl}/register'),
+        headers: ApiConfig.jsonHeaders,
         body: json.encode({
           'email': email,
           'password': password,
@@ -106,8 +57,8 @@ class AuthService {
       if (response.statusCode == 200) {
         return json.decode(response.body);
       } else {
-        throw Exception(
-            json.decode(response.body)['detail'] ?? 'Registration failed');
+        final errorBody = json.decode(response.body);
+        throw Exception(errorBody['detail'] ?? 'Registration failed');
       }
     } catch (e) {
       if (e.toString().contains('Connection refused')) {
@@ -118,75 +69,81 @@ class AuthService {
     }
   }
 
-  Future<void> signOut() async {
+  Future<Map<String, dynamic>> loginWithGoogle() async {
     try {
-      // Check if user is signed in first
-      final isSignedIn = await _googleSignIn.isSignedIn();
-      if (isSignedIn) {
-        // Try to sign out gracefully
-        try {
-          await _googleSignIn.signOut();
-        } catch (e) {
-          print('Google sign out error (non-fatal): $e');
-        }
-      }
+      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+      if (googleUser == null) throw Exception('Google Sign In was canceled');
 
-      // Optional: Make a call to your backend to invalidate the session
-      try {
-        final response = await http.post(
-          Uri.parse('$baseUrl/logout'),
-          headers: {
-            'Content-Type': 'application/json',
-            // Add your authorization header if required
-          },
-        );
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
+      final String idToken = googleAuth.idToken!;
 
-        if (response.statusCode != 200) {
-          print('Backend logout warning: ${response.body}');
-        }
-      } catch (e) {
-        print('Backend logout error (non-fatal): $e');
-      }
-    } catch (e) {
-      // Log the error but don't throw
-      print('Sign out error (non-fatal): $e');
-    }
-  }
-
-  Future<Map<String, dynamic>> refreshToken(String token) async {
-    try {
       final response = await http.post(
-        Uri.parse('$baseUrl/refresh'),
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json',
-        },
+        Uri.parse('${ApiConfig.authUrl}/google/signin'),
+        headers: ApiConfig.jsonHeaders,
+        body: json.encode({
+          'token': idToken,
+        }),
       );
 
       if (response.statusCode == 200) {
         return json.decode(response.body);
       } else {
-        throw Exception(
-            json.decode(response.body)['detail'] ?? 'Token refresh failed');
+        final errorBody = json.decode(response.body);
+        throw Exception(errorBody['detail'] ?? 'Google sign in failed');
       }
     } catch (e) {
-      throw Exception('Failed to refresh token: $e');
+      if (e.toString().contains('Connection refused')) {
+        throw Exception(
+            'Unable to connect to server. Please check your internet connection.');
+      }
+      throw Exception('Failed to sign in with Google: ${e.toString()}');
     }
   }
 
   Future<bool> verifyToken(String token) async {
     try {
       final response = await http.get(
-        Uri.parse('$baseUrl/me'),
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json',
-        },
+        Uri.parse('${ApiConfig.authUrl}/me'),
+        headers: ApiConfig.authHeaders(token),
       );
 
       return response.statusCode == 200;
     } catch (e) {
       return false;
+    }
+  }
+
+  Future<void> signOut(String token) async {
+    try {
+      await http.post(
+        Uri.parse('${ApiConfig.authUrl}/logout'),
+        headers: ApiConfig.authHeaders(token),
+      );
+
+      if (await _googleSignIn.isSignedIn()) {
+        await _googleSignIn.signOut();
+      }
+    } catch (e) {
+      print('Error during sign out: $e');
+      // Continue with sign out even if server request fails
+    }
+  }
+
+  Future<Map<String, dynamic>> refreshToken(String token) async {
+    try {
+      final response = await http.post(
+        Uri.parse('${ApiConfig.authUrl}/refresh'),
+        headers: ApiConfig.authHeaders(token),
+      );
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      } else {
+        throw Exception('Token refresh failed');
+      }
+    } catch (e) {
+      throw Exception('Failed to refresh token: ${e.toString()}');
     }
   }
 }

@@ -2,6 +2,8 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
+import '../models/document.dart';
+import '../utils/formatters.dart';
 
 class UploadDocumentDialog extends StatefulWidget {
   const UploadDocumentDialog({super.key});
@@ -16,17 +18,44 @@ class _UploadDocumentDialogState extends State<UploadDocumentDialog> {
   final _descriptionController = TextEditingController();
   String _selectedCategory = 'other';
   File? _selectedFile;
+  bool _isUploading = false;
+
+  final List<String> _categories = [
+    'government',
+    'medical',
+    'educational',
+    'other'
+  ];
 
   Future<void> _pickFile() async {
     try {
       final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
         allowedExtensions: ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png'],
+        allowMultiple: false,
       );
 
-      if (result != null) {
+      if (result != null && result.files.isNotEmpty) {
+        final file = File(result.files.single.path!);
+
+        // Check file size (10MB limit)
+        final fileSize = await file.length();
+        if (fileSize > 10 * 1024 * 1024) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                    'File size must be less than 10MB. Current size: ${formatFileSize(fileSize)}'),
+                backgroundColor: Colors.red,
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+          }
+          return;
+        }
+
         setState(() {
-          _selectedFile = File(result.files.single.path!);
+          _selectedFile = file;
           if (_nameController.text.isEmpty) {
             _nameController.text = result.files.single.name.split('.').first;
           }
@@ -35,8 +64,52 @@ class _UploadDocumentDialogState extends State<UploadDocumentDialog> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error picking file: $e')),
+          SnackBar(
+            content: Text('Error picking file: $e'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
         );
+      }
+    }
+  }
+
+  void _handleUpload() async {
+    if (!_formKey.currentState!.validate() || _selectedFile == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please fill all required fields and select a file'),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isUploading = true);
+
+    try {
+      final result = {
+        'name': _nameController.text.trim(),
+        'description': _descriptionController.text.trim(),
+        'category': _selectedCategory,
+        'file': _selectedFile,
+      };
+
+      Navigator.pop(context, result);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Upload failed: $e'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isUploading = false);
       }
     }
   }
@@ -82,7 +155,7 @@ class _UploadDocumentDialogState extends State<UploadDocumentDialog> {
                 ),
                 style: TextStyle(color: theme.colorScheme.onSurface),
                 validator: (value) =>
-                    value?.isEmpty ?? true ? 'Required' : null,
+                    (value?.isEmpty ?? true) ? 'Name is required' : null,
               ),
               const SizedBox(height: 16),
               TextFormField(
@@ -128,24 +201,14 @@ class _UploadDocumentDialogState extends State<UploadDocumentDialog> {
                 ),
                 dropdownColor: theme.dialogBackgroundColor,
                 style: TextStyle(color: theme.colorScheme.onSurface),
-                items: const [
-                  DropdownMenuItem(
-                    value: 'government',
-                    child: Text('Government'),
-                  ),
-                  DropdownMenuItem(
-                    value: 'medical',
-                    child: Text('Medical'),
-                  ),
-                  DropdownMenuItem(
-                    value: 'educational',
-                    child: Text('Educational'),
-                  ),
-                  DropdownMenuItem(
-                    value: 'other',
-                    child: Text('Other'),
-                  ),
-                ],
+                items: _categories.map((category) {
+                  return DropdownMenuItem(
+                    value: category,
+                    child: Text(
+                      category[0].toUpperCase() + category.substring(1),
+                    ),
+                  );
+                }).toList(),
                 onChanged: (value) =>
                     setState(() => _selectedCategory = value!),
               ),
@@ -171,48 +234,46 @@ class _UploadDocumentDialogState extends State<UploadDocumentDialog> {
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),
-                onPressed: _pickFile,
+                onPressed: _isUploading ? null : _pickFile,
               ),
-              if (_selectedFile != null)
-                Padding(
-                  padding: const EdgeInsets.only(top: 8),
-                  child: Text(
-                    _selectedFile!.path.split('/').last,
-                    style: TextStyle(
-                      color: theme.colorScheme.primary,
-                      fontWeight: FontWeight.w500,
-                    ),
+              if (_selectedFile != null) ...[
+                const SizedBox(height: 8),
+                Text(
+                  _selectedFile!.path.split('/').last,
+                  style: TextStyle(
+                    color: theme.colorScheme.primary,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
+                const SizedBox(height: 4),
+                FutureBuilder<int>(
+                  future: _selectedFile!.length(),
+                  builder: (context, snapshot) {
+                    if (!snapshot.hasData) return const SizedBox.shrink();
+                    return Text(
+                      formatFileSize(snapshot.data!),
+                      style: TextStyle(
+                        color: theme.colorScheme.onSurfaceVariant,
+                        fontSize: 12,
+                      ),
+                    );
+                  },
+                ),
+              ],
             ],
           ),
         ),
       ),
       actions: [
         TextButton(
-          onPressed: () => Navigator.pop(context),
+          onPressed: _isUploading ? null : () => Navigator.pop(context),
           child: Text(
             'Cancel',
             style: TextStyle(color: theme.colorScheme.primary),
           ),
         ),
         ElevatedButton(
-          onPressed: () {
-            if (_formKey.currentState!.validate()) {
-              if (_selectedFile == null) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Please select a file')),
-                );
-                return;
-              }
-              Navigator.pop(context, {
-                'name': _nameController.text,
-                'description': _descriptionController.text,
-                'category': _selectedCategory,
-                'file': _selectedFile,
-              });
-            }
-          },
+          onPressed: _isUploading ? null : _handleUpload,
           style: ElevatedButton.styleFrom(
             backgroundColor: theme.colorScheme.primary,
             foregroundColor: isDarkMode ? Colors.black : Colors.white,
@@ -220,7 +281,16 @@ class _UploadDocumentDialogState extends State<UploadDocumentDialog> {
               borderRadius: BorderRadius.circular(8),
             ),
           ),
-          child: const Text('Upload'),
+          child: _isUploading
+              ? const SizedBox(
+                  height: 20,
+                  width: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                )
+              : const Text('Upload'),
         ),
       ],
     );

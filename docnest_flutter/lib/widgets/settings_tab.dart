@@ -1,17 +1,18 @@
+// lib/widgets/settings_tab.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../theme/app_theme.dart';
 import '../services/auth_service.dart';
 import '../screens/login_screen.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart'; // Add this import
 
 class SettingsTab extends StatelessWidget {
-  const SettingsTab({
-    Key? key,
-  }) : super(key: key);
+  final storage = const FlutterSecureStorage();
+  final authService = AuthService();
+
+  SettingsTab({Key? key}) : super(key: key);
 
   Future<void> _handleLogout(BuildContext context) async {
-    final authService = AuthService();
-
     try {
       // Show confirmation dialog
       final bool? confirm = await showDialog<bool>(
@@ -48,8 +49,16 @@ class SettingsTab extends StatelessWidget {
         );
       }
 
-      // Perform logout
-      await authService.signOut();
+      // Get token from secure storage
+      final token = await storage.read(key: 'auth_token');
+
+      if (token != null) {
+        // Perform logout with token
+        await authService.signOut(token);
+      }
+
+      // Clear stored token
+      await storage.delete(key: 'auth_token');
 
       // Navigate to login screen and remove all previous routes
       if (context.mounted) {

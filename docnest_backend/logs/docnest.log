@@ -957,3 +957,7 @@ NameError: name 'get_password_hash' is not defined
 2024-11-10 16:38:16,410 - docnest - INFO - Path: /api/v1/documents Method: POST Status: 307 Duration: 0.00s
 2024-11-10 16:40:16,757 - docnest - INFO - Path: /api/v1/documents/ Method: POST Status: 200 Duration: 2.91s
 2024-11-10 16:40:16,757 - docnest - INFO - Path: /api/v1/documents/ Method: POST Status: 200 Duration: 2.91s
+2024-11-10 17:16:04,423 - docnest - INFO - Path: /docs Method: GET Status: 200 Duration: 0.00s
+2024-11-10 17:16:04,423 - docnest - INFO - Path: /docs Method: GET Status: 200 Duration: 0.00s
+2024-11-10 17:16:04,760 - docnest - INFO - Path: /openapi.json Method: GET Status: 200 Duration: 0.01s
+2024-11-10 17:16:04,760 - docnest - INFO - Path: /openapi.json Method: GET Status: 200 Duration: 0.01s

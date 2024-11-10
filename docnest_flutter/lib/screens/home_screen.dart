@@ -118,7 +118,7 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           const ProfileTab(),
           _buildHomeContent(),
-          const SettingsTab(),
+          SettingsTab(),
         ],
       ),
       bottomNavigationBar: NavigationBar(

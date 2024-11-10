@@ -1,53 +1,26 @@
+// lib/services/document_service.dart
 import 'dart:io';
 import 'package:http/http.dart' as http;
-import 'dart:convert';
 import 'package:http_parser/http_parser.dart';
+import 'dart:convert';
 import 'package:path/path.dart' as path;
 import '../models/document.dart';
+import 'api_config.dart';
 
 class DocumentService {
-  String get baseUrl {
-    final deviceIP = Platform.isAndroid ? "10.0.2.2" : "localhost";
-    final physicalDeviceIP = "192.168.0.101";
-
-    return Platform.isAndroid &&
-            !Platform.environment.containsKey('FLUTTER_TEST')
-        ? "http://$physicalDeviceIP:8000/api/v1/documents/"
-        : "http://$deviceIP:8000/api/v1/documents/";
-  }
-
   final String token;
 
   DocumentService({required this.token});
 
-  // Helper method to determine content type
-  MediaType _getMediaType(File file) {
-    final extension = path.extension(file.path).toLowerCase();
-    switch (extension) {
-      case '.pdf':
-        return MediaType('application', 'pdf');
-      case '.doc':
-      case '.docx':
-        return MediaType('application', 'msword');
-      case '.jpg':
-      case '.jpeg':
-        return MediaType('image', 'jpeg');
-      case '.png':
-        return MediaType('image', 'png');
-      default:
-        return MediaType('application', 'octet-stream');
-    }
-  }
-
   Future<List<Document>> getDocuments() async {
     try {
       final response = await http.get(
-        Uri.parse(baseUrl),
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Accept': 'application/json',
-        },
+        Uri.parse(ApiConfig.documentsUrl),
+        headers: ApiConfig.authHeaders(token),
       );
+
+      print('GetDocuments Response Status: ${response.statusCode}');
+      print('GetDocuments Response Body: ${response.body}');
 
       if (response.statusCode == 200) {
         List<dynamic> data = json.decode(response.body);
@@ -55,13 +28,23 @@ class DocumentService {
             .map((doc) => Document.fromJson(doc as Map<String, dynamic>))
             .toList();
       } else {
-        final errorMessage = _parseErrorMessage(response);
-        throw Exception('Failed to load documents: $errorMessage');
+        String errorMessage;
+        try {
+          final errorBody = json.decode(response.body);
+          errorMessage = errorBody['detail'] ?? 'Failed to load documents';
+        } catch (_) {
+          errorMessage =
+              'Failed to load documents. Status: ${response.statusCode}';
+        }
+        throw Exception(errorMessage);
       }
-    } on SocketException {
-      throw Exception('Network error: Please check your internet connection');
     } catch (e) {
-      throw Exception('Error connecting to server: $e');
+      print('Error in getDocuments: $e');
+      if (e.toString().contains('Connection refused')) {
+        throw Exception(
+            'Unable to connect to server. Please check your internet connection.');
+      }
+      throw Exception('Error loading documents: $e');
     }
   }
 
@@ -80,73 +63,212 @@ class DocumentService {
       }
 
       // Create multipart request
-      var uri = Uri.parse(baseUrl);
-      var request = http.MultipartRequest('POST', uri);
+      final uri = Uri.parse(ApiConfig.documentsUrl);
+      final request = http.MultipartRequest('POST', uri);
 
       // Add headers
-      request.headers.addAll({
-        'Authorization': 'Bearer $token',
-        'Accept': 'application/json',
-      });
+      request.headers.addAll(ApiConfig.authHeaders(token));
 
       // Add form fields
-      request.fields.addAll({
-        'name': name,
-        'description': description,
-        'category': category,
-      });
+      request.fields['name'] = name.trim();
+      request.fields['description'] = description.trim();
+      request.fields['category'] = category.toLowerCase();
 
-      // Prepare file
+      // Add file
       final fileName = path.basename(file.path);
-      final mediaType = _getMediaType(file);
+      final fileExtension = path.extension(fileName).toLowerCase();
+      final mimeType = _getContentType(fileExtension);
 
-      // Add file to request
-      request.files.add(
-        await http.MultipartFile.fromPath(
-          'file',
-          file.path,
-          contentType: mediaType,
-          filename: fileName,
-        ),
+      final stream = http.ByteStream(file.openRead());
+      final length = await file.length();
+
+      final multipartFile = http.MultipartFile(
+        'file',
+        stream,
+        length,
+        filename: fileName,
+        contentType: MediaType.parse(mimeType),
       );
 
-      // Send request
-      final streamedResponse = await request.send().timeout(
-        const Duration(minutes: 2),
-        onTimeout: () {
-          throw Exception('Upload timed out. Please try again.');
-        },
-      );
+      request.files.add(multipartFile);
 
-      // Get response
+      // Send request and get response
+      print('Sending upload request to: ${request.url}');
+      final streamedResponse = await request.send();
+      print('Upload response status: ${streamedResponse.statusCode}');
+
+      // Get response body
       final response = await http.Response.fromStream(streamedResponse);
+      print('Upload response body: ${response.body}');
 
       if (response.statusCode == 200 || response.statusCode == 201) {
+        if (response.body.isEmpty) {
+          throw Exception('Server returned empty response');
+        }
         try {
           return Document.fromJson(json.decode(response.body));
         } catch (e) {
-          throw Exception('Failed to parse server response: $e');
+          print('Error parsing upload response: $e');
+          throw Exception('Failed to parse server response');
         }
       } else {
-        final errorMessage = _parseErrorMessage(response);
-        throw Exception('Upload failed: $errorMessage');
+        String errorMessage;
+        try {
+          final errorBody = json.decode(response.body);
+          errorMessage = errorBody['detail'] ?? 'Upload failed';
+        } catch (_) {
+          errorMessage = response.body.isNotEmpty
+              ? response.body
+              : 'Upload failed with status ${response.statusCode}';
+        }
+        throw Exception(errorMessage);
       }
-    } on SocketException {
-      throw Exception('Network error: Please check your internet connection');
     } catch (e) {
-      if (e is Exception) {
-        rethrow;
-      }
+      print('Error in uploadDocument: $e');
       throw Exception('Error uploading document: $e');
     }
   }
 
-  String _parseErrorMessage(http.Response response) {
+  Future<Document> updateDocument({
+    required String documentId,
+    String? name,
+    String? description,
+    String? category,
+    File? file,
+  }) async {
     try {
-      final body = json.decode(response.body);
-      return body['detail'] ?? 'Unknown error occurred';
+      final request = http.MultipartRequest(
+        'PUT',
+        Uri.parse('${ApiConfig.documentsUrl}/$documentId'),
+      );
+
+      // Add headers
+      request.headers.addAll(ApiConfig.authHeaders(token));
+
+      // Add non-null fields
+      if (name != null) request.fields['name'] = name.trim();
+      if (description != null)
+        request.fields['description'] = description.trim();
+      if (category != null) request.fields['category'] = category.toLowerCase();
+
+      // Add file if provided
+      if (file != null) {
+        final fileSize = await file.length();
+        if (fileSize > 10 * 1024 * 1024) {
+          throw Exception('File size exceeds 10MB limit');
+        }
+
+        final fileName = path.basename(file.path);
+        final stream = http.ByteStream(file.openRead());
+        final length = await file.length();
+
+        final multipartFile = http.MultipartFile(
+          'file',
+          stream,
+          length,
+          filename: fileName,
+          contentType:
+              MediaType.parse(_getContentType(path.extension(fileName))),
+        );
+
+        request.files.add(multipartFile);
+      }
+
+      // Send request
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+
+      print('Update response status: ${response.statusCode}');
+      print('Update response body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        return Document.fromJson(json.decode(response.body));
+      } else {
+        String errorMessage;
+        try {
+          final errorBody = json.decode(response.body);
+          errorMessage = errorBody['detail'] ?? 'Update failed';
+        } catch (_) {
+          errorMessage = 'Update failed with status ${response.statusCode}';
+        }
+        throw Exception(errorMessage);
+      }
     } catch (e) {
-      return 'Status code: ${response.statusCode}';
+      print('Error in updateDocument: $e');
+      throw Exception('Error updating document: $e');
+    }
+  }
+
+  Future<void> deleteDocument(String documentId) async {
+    try {
+      final response = await http.delete(
+        Uri.parse('${ApiConfig.documentsUrl}/$documentId'),
+        headers: ApiConfig.authHeaders(token),
+      );
+
+      print('Delete response status: ${response.statusCode}');
+      print('Delete response body: ${response.body}');
+
+      if (response.statusCode != 204) {
+        String errorMessage;
+        try {
+          final errorBody = json.decode(response.body);
+          errorMessage = errorBody['detail'] ?? 'Delete failed';
+        } catch (_) {
+          errorMessage = 'Delete failed with status ${response.statusCode}';
+        }
+        throw Exception(errorMessage);
+      }
+    } catch (e) {
+      print('Error in deleteDocument: $e');
+      throw Exception('Error deleting document: $e');
+    }
+  }
+
+  String _getContentType(String extension) {
+    switch (extension.toLowerCase()) {
+      case '.pdf':
+        return 'application/pdf';
+      case '.doc':
+        return 'application/msword';
+      case '.docx':
+        return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+      case '.jpg':
+      case '.jpeg':
+        return 'image/jpeg';
+      case '.png':
+        return 'image/png';
+      default:
+        return 'application/octet-stream';
+    }
+  }
+
+  Future<Document> getDocumentById(String documentId) async {
+    try {
+      final response = await http.get(
+        Uri.parse('${ApiConfig.documentsUrl}/$documentId'),
+        headers: ApiConfig.authHeaders(token),
+      );
+
+      print('GetDocumentById Response Status: ${response.statusCode}');
+      print('GetDocumentById Response Body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        return Document.fromJson(json.decode(response.body));
+      } else {
+        String errorMessage;
+        try {
+          final errorBody = json.decode(response.body);
+          errorMessage = errorBody['detail'] ?? 'Failed to load document';
+        } catch (_) {
+          errorMessage =
+              'Failed to load document. Status: ${response.statusCode}';
+        }
+        throw Exception(errorMessage);
+      }
+    } catch (e) {
+      print('Error in getDocumentById: $e');
+      throw Exception('Error loading document: $e');
     }
   }
 }
