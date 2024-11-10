@@ -712,3 +712,6 @@ NameError: name 'get_password_hash' is not defined
 2024-11-10 12:12:50,500 - docnest - INFO - Path: /api/v1/auth/google/signin Method: POST Status: 200 Duration: 0.24s
 2024-11-10 12:12:50,635 - docnest - INFO - Path: /api/v1/documents Method: GET Status: 307 Duration: 0.00s
 2024-11-10 12:12:50,641 - docnest - INFO - Path: /api/v1/documents/ Method: GET Status: 200 Duration: 0.00s
+2024-11-10 12:30:40,268 - docnest - INFO - Path: /api/v1/auth/login Method: POST Status: 200 Duration: 1.39s
+2024-11-10 12:30:40,631 - docnest - INFO - Path: /api/v1/documents Method: GET Status: 307 Duration: 0.00s
+2024-11-10 12:30:40,657 - docnest - INFO - Path: /api/v1/documents/ Method: GET Status: 200 Duration: 0.02s
