@@ -3,4 +3,3 @@ docnest_fastapi/env
 .env
 **/.DS_Store
 docnest_backend/venv
-docnest_backend/app/core/config.py
