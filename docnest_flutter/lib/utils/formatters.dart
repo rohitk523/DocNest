@@ -37,3 +37,7 @@ Color getCategoryColor(String category) {
       return Colors.grey;
   }
 }
+
+String formatDateDetailed(DateTime date) {
+  return '${date.day}/${date.month}/${date.year} ${date.hour}:${date.minute.toString().padLeft(2, '0')}';
+}

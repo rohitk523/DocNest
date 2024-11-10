@@ -7,6 +7,8 @@ import '../providers/document_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
+import 'package:http/http.dart' as http;
+import '../services/api_config.dart';
 
 class DocumentTile extends StatelessWidget {
   final Document document;
@@ -20,6 +22,9 @@ class DocumentTile extends StatelessWidget {
     final provider = Provider.of<DocumentProvider>(context, listen: false);
 
     switch (action) {
+      case 'info':
+        await _showMetadata(context);
+        break;
       case 'share':
         await _shareDocument(context);
         break;
@@ -49,29 +54,129 @@ Created: ${formatDate(document.createdAt)}
     }
   }
 
-  Future<void> _downloadDocument(BuildContext context) async {
-    try {
-      if (document.filePath != null) {
-        final tempDir = await getTemporaryDirectory();
-        final fileName = document.filePath!.split('/').last;
-        final file = File('${tempDir.path}/$fileName');
-
-        // Download logic here using your DocumentService
-        _showSnackBar(context, 'Download feature coming soon');
-      } else {
-        throw Exception('No file available for download');
-      }
-    } catch (e) {
-      _showErrorSnackBar(context, 'Error downloading document: $e');
-    }
-  }
-
   Future<void> _printDocument(BuildContext context) async {
     try {
       // Implement print logic here
       _showSnackBar(context, 'Print feature coming soon');
     } catch (e) {
       _showErrorSnackBar(context, 'Error printing document: $e');
+    }
+  }
+
+  Future<void> _showMetadata(BuildContext context) async {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) => AlertDialog(
+        title: const Text('Document Information'),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _metadataRow('Name', document.name),
+              _metadataRow('Category', document.category),
+              _metadataRow('Description', document.description),
+              _metadataRow('File Size', formatFileSize(document.fileSize)),
+              _metadataRow('File Type', document.fileType ?? 'N/A'),
+              _metadataRow('Created', formatDateDetailed(document.createdAt)),
+              _metadataRow('Modified', formatDateDetailed(document.modifiedAt)),
+              _metadataRow('Version', document.version.toString()),
+              _metadataRow('Shared', document.isShared ? 'Yes' : 'No'),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _metadataRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 80,
+            child: Text(
+              label,
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                color: Colors.grey,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(value),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _downloadDocument(BuildContext context) async {
+    try {
+      if (document.filePath == null) {
+        throw Exception('No file available for download');
+      }
+
+      // Show download progress dialog
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) => const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+
+      // Get the token from provider
+      final provider = Provider.of<DocumentProvider>(context, listen: false);
+      final token = provider.token;
+
+      // Construct download URL
+      final downloadUrl = '${ApiConfig.documentsUrl}${document.id}/download';
+
+      // Make the download request
+      final response = await http.get(
+        Uri.parse(downloadUrl),
+        headers: ApiConfig.authHeaders(token),
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception('Failed to download file');
+      }
+
+      // Get the downloads directory
+      final tempDir = await getTemporaryDirectory();
+      final fileName = document.filePath!.split('/').last;
+      final file = File('${tempDir.path}/$fileName');
+
+      // Write the file
+      await file.writeAsBytes(response.bodyBytes);
+
+      if (context.mounted) {
+        // Close progress dialog
+        Navigator.pop(context);
+
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('File downloaded: ${file.path}'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        // Close progress dialog if open
+        Navigator.pop(context);
+        _showErrorSnackBar(context, 'Error downloading document: $e');
+      }
     }
   }
 
@@ -88,9 +193,7 @@ Created: ${formatDate(document.createdAt)}
             child: const Text('Cancel'),
           ),
           TextButton(
-            style: TextButton.styleFrom(
-              foregroundColor: Colors.red,
-            ),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
             onPressed: () => Navigator.of(context).pop(true),
             child: const Text('Delete'),
           ),
@@ -109,6 +212,7 @@ Created: ${formatDate(document.createdAt)}
           ),
         );
 
+        // Call the API through the provider
         await provider.removeDocument(document.id);
 
         if (context.mounted) {
@@ -127,15 +231,7 @@ Created: ${formatDate(document.createdAt)}
         if (context.mounted) {
           // Dismiss loading indicator
           Navigator.of(context).pop();
-
-          // Show error message
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Error deleting document: $e'),
-              backgroundColor: Colors.red,
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
+          _showErrorSnackBar(context, 'Error deleting document: $e');
         }
       }
     }
@@ -170,8 +266,11 @@ Created: ${formatDate(document.createdAt)}
         final isSelectionMode = provider.isSelectionMode;
 
         return Card(
-          elevation: 2,
-          margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 0),
+          margin: const EdgeInsets.symmetric(horizontal: 16),
+          elevation: 1,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
           child: ListTile(
             contentPadding: const EdgeInsets.all(16),
             leading: Container(
@@ -201,33 +300,68 @@ Created: ${formatDate(document.createdAt)}
             subtitle: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  document.description,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 8),
-                Row(
+                if (document.description.isNotEmpty) ...[
+                  Text(
+                    document.description,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 8),
+                ],
+                // File metadata row
+                Wrap(
+                  spacing: 16,
                   children: [
-                    Icon(Icons.access_time, size: 14, color: Colors.grey[400]),
-                    const SizedBox(width: 4),
-                    Text(
-                      formatDate(document.createdAt),
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey[600],
-                      ),
+                    // Date
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.calendar_today,
+                            size: 14, color: Colors.grey[400]),
+                        const SizedBox(width: 4),
+                        Text(
+                          formatDate(document.createdAt),
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 16),
-                    Icon(Icons.straighten, size: 14, color: Colors.grey[400]),
-                    const SizedBox(width: 4),
-                    Text(
-                      formatFileSize(document.fileSize),
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey[600],
+                    // File size
+                    if (document.fileSize != null)
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.straighten,
+                              size: 14, color: Colors.grey[400]),
+                          const SizedBox(width: 4),
+                          Text(
+                            formatFileSize(document.fileSize),
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
+                    // File format
+                    if (document.fileType != null)
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.description,
+                              size: 14, color: Colors.grey[400]),
+                          const SizedBox(width: 4),
+                          Text(
+                            document.fileType!.split('/').last.toUpperCase(),
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        ],
+                      ),
                   ],
                 ),
               ],
@@ -239,6 +373,17 @@ Created: ${formatDate(document.createdAt)}
                         Icon(Icons.more_vert, color: theme.colorScheme.primary),
                     onSelected: (action) => _handleMenuAction(context, action),
                     itemBuilder: (BuildContext context) => [
+                      PopupMenuItem<String>(
+                        value: 'info',
+                        child: Row(
+                          children: [
+                            Icon(Icons.info_outline,
+                                size: 20, color: theme.colorScheme.primary),
+                            const SizedBox(width: 8),
+                            const Text('Info'),
+                          ],
+                        ),
+                      ),
                       PopupMenuItem<String>(
                         value: 'share',
                         child: Row(

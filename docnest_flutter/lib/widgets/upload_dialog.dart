@@ -21,10 +21,10 @@ class _UploadDocumentDialogState extends State<UploadDocumentDialog> {
   bool _isUploading = false;
 
   final List<String> _categories = [
-    'government',
-    'medical',
-    'educational',
-    'other'
+    'Government',
+    'Medical',
+    'Educational',
+    'Other'
   ];
 
   Future<void> _pickFile() async {

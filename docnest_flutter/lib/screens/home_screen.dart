@@ -25,10 +25,10 @@ class _HomeScreenState extends State<HomeScreen> {
   late DocumentService _documentService;
 
   final List<String> _categories = [
-    'government',
-    'medical',
-    'educational',
-    'other'
+    'Government',
+    'Medical',
+    'Educational',
+    'Other'
   ];
 
   @override
@@ -81,7 +81,7 @@ class _HomeScreenState extends State<HomeScreen> {
           child: RefreshIndicator(
             onRefresh: _loadDocuments,
             child: ListView.builder(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.symmetric(vertical: 8),
               itemCount: _categories.length,
               itemBuilder: (context, index) {
                 final category = _categories[index];
