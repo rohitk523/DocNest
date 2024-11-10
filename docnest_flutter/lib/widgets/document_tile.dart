@@ -7,7 +7,6 @@ import '../providers/document_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
-import 'package:http/http.dart' as http;
 
 class DocumentTile extends StatelessWidget {
   final Document document;

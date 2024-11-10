@@ -2,7 +2,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/document_provider.dart';
-import '../models/document.dart';
 import '../utils/formatters.dart';
 
 class SearchDialog extends StatefulWidget {

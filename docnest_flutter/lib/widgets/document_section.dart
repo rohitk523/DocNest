@@ -1,9 +1,6 @@
 // lib/widgets/document_section.dart
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../providers/document_provider.dart';
 import '../models/document.dart';
-import '../utils/formatters.dart';
 import './document_tile.dart'; // Make sure this import is correct
 
 class DocumentSection extends StatelessWidget {
