@@ -43,7 +43,7 @@ def upgrade():
         sa.Column('file_path', sa.String(), nullable=True),
         sa.Column('file_size', sa.Integer(), nullable=True),
         sa.Column('file_type', sa.String(), nullable=True),
-        sa.Column('category', postgresql.ENUM('GOVERNMENT', 'MEDICAL', 'EDUCATIONAL', 'OTHER', name='documenttype'), nullable=False),
+        sa.Column('category', postgresql.ENUM('government', 'medical', 'educational', 'other', name='documenttype'), nullable=False),
         sa.Column('version', sa.Integer(), nullable=False),
         sa.Column('is_shared', sa.Boolean(), nullable=False),
         sa.Column('owner_id', sa.String(), nullable=False),

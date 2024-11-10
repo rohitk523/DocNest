@@ -12,8 +12,8 @@ class DocumentService {
 
     return Platform.isAndroid &&
             !Platform.environment.containsKey('FLUTTER_TEST')
-        ? "http://$physicalDeviceIP:8000/api/v1/auth"
-        : "http://$deviceIP:8000/api/v1/auth";
+        ? "http://$physicalDeviceIP:8000/api/v1/documents"
+        : "http://$deviceIP:8000/api/v1/documents";
   }
 
   final String token;
@@ -28,6 +28,7 @@ class DocumentService {
           'Authorization': 'Bearer $token',
         },
       );
+      print(response.statusCode);
 
       if (response.statusCode == 200) {
         List<dynamic> data = json.decode(response.body);
@@ -35,6 +36,7 @@ class DocumentService {
             .map((doc) => Document.fromJson(doc as Map<String, dynamic>))
             .toList();
       } else {
+        print('Status code: ${response.statusCode}');
         throw Exception('Failed to load documents');
       }
     } catch (e) {

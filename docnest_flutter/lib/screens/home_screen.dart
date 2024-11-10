@@ -25,10 +25,10 @@ class _HomeScreenState extends State<HomeScreen> {
   late DocumentService _documentService;
 
   final List<String> _categories = [
-    'Government',
-    'Medical',
-    'Educational',
-    'Other'
+    'government',
+    'medical',
+    'educational',
+    'other'
   ];
 
   @override

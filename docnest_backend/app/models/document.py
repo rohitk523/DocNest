@@ -7,10 +7,10 @@ from uuid import uuid4
 from ..db.base import Base
 
 class DocumentType(str, enum.Enum):
-    GOVERNMENT = "government"
-    MEDICAL = "medical"
-    EDUCATIONAL = "educational"
-    OTHER = "other"
+    government = "government"
+    medical = "medical"
+    educational = "educational"
+    other = "other"
 
 class Document(Base):
     __tablename__ = "documents"
