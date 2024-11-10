@@ -13,7 +13,7 @@ class ApiConfig {
     return 'http://$deviceIP:8000/api/v1';
   }
 
-  static String get authUrl => '$baseUrl/auth/';
+  static String get authUrl => '$baseUrl/auth';
   static String get documentsUrl => '$baseUrl/documents/';
 
   // Common headers
