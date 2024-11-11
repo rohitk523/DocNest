@@ -16,15 +16,16 @@ class _UploadDocumentDialogState extends State<UploadDocumentDialog> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _descriptionController = TextEditingController();
-  String _selectedCategory = 'other';
+  String? _selectedCategory;
   File? _selectedFile;
   bool _isUploading = false;
 
-  final List<String> _categories = [
-    'Government',
-    'Medical',
-    'Educational',
-    'Other'
+  // Define categories as objects to ensure unique values
+  final List<Map<String, String>> _categories = [
+    {'value': 'government', 'label': 'Government'},
+    {'value': 'medical', 'label': 'Medical'},
+    {'value': 'educational', 'label': 'Educational'},
+    {'value': 'other', 'label': 'Other'},
   ];
 
   Future<void> _pickFile() async {
@@ -75,7 +76,9 @@ class _UploadDocumentDialogState extends State<UploadDocumentDialog> {
   }
 
   void _handleUpload() async {
-    if (!_formKey.currentState!.validate() || _selectedFile == null) {
+    if (!_formKey.currentState!.validate() ||
+        _selectedFile == null ||
+        _selectedCategory == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Please fill all required fields and select a file'),
@@ -203,14 +206,13 @@ class _UploadDocumentDialogState extends State<UploadDocumentDialog> {
                 style: TextStyle(color: theme.colorScheme.onSurface),
                 items: _categories.map((category) {
                   return DropdownMenuItem(
-                    value: category,
-                    child: Text(
-                      category[0].toUpperCase() + category.substring(1),
-                    ),
+                    value: category['value'],
+                    child: Text(category['label']!),
                   );
                 }).toList(),
-                onChanged: (value) =>
-                    setState(() => _selectedCategory = value!),
+                validator: (value) =>
+                    value == null ? 'Please select a category' : null,
+                onChanged: (value) => setState(() => _selectedCategory = value),
               ),
               const SizedBox(height: 24),
               ElevatedButton.icon(

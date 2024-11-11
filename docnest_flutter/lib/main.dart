@@ -12,14 +12,14 @@ void main() async {
 
   // Get token from secure storage
   const storage = FlutterSecureStorage();
-  final token = await storage.read(key: 'auth_token');
+  final token = await storage.read(key: 'auth_token') ?? '';
 
   runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
         ChangeNotifierProvider(
-          create: (_) => DocumentProvider(token: token ?? ''),
+          create: (_) => DocumentProvider(token: token),
         ),
       ],
       child: const MyApp(),
@@ -46,20 +46,18 @@ class MyApp extends StatelessWidget {
             );
           }
 
-          if (!snapshot.hasData || snapshot.data == null) {
+          final token = snapshot.data;
+
+          if (token == null || token.isEmpty) {
             return const LoginScreen();
           }
 
-          return Consumer<DocumentProvider>(
-            builder: (context, provider, child) {
-              if (provider.token != snapshot.data) {
-                Future.microtask(() {
-                  provider.updateToken(snapshot.data!);
-                });
-              }
-              return HomeScreen(token: snapshot.data!);
-            },
-          );
+          // Update DocumentProvider with token
+          Future.microtask(() {
+            context.read<DocumentProvider>().updateToken(token);
+          });
+
+          return HomeScreen(token: token);
         },
       ),
     );

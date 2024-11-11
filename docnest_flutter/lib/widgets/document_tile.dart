@@ -9,6 +9,8 @@ import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:http/http.dart' as http;
 import '../services/api_config.dart';
+import '../services/document_service.dart';
+import './edit_document_dialog.dart';
 
 class DocumentTile extends StatelessWidget {
   final Document document;
@@ -17,6 +19,80 @@ class DocumentTile extends StatelessWidget {
     Key? key,
     required this.document,
   }) : super(key: key);
+
+  Future<void> _handleEdit(
+      BuildContext context, DocumentProvider provider) async {
+    if (!provider.hasValidToken) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please log in to edit documents'),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    try {
+      final result = await showDialog<Map<String, dynamic>>(
+        context: context,
+        builder: (context) => EditDocumentDialog(document: document),
+      );
+
+      if (result != null && context.mounted) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (BuildContext context) => const AlertDialog(
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 16),
+                Text('Updating document...'),
+              ],
+            ),
+          ),
+        );
+
+        final documentService = DocumentService(token: provider.token);
+        final updatedDoc = await documentService.updateDocument(
+          documentId: document.id,
+          name: result['name'],
+          description: result['description'],
+          category: result['category'],
+        );
+
+        provider.updateDocument(updatedDoc);
+
+        if (context.mounted) {
+          Navigator.of(context).pop(); // Dismiss loading dialog
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Document updated successfully'),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
+        Navigator.of(context).pop(); // Dismiss loading dialog if showing
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error updating document: $e'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+            action: SnackBarAction(
+              label: 'Retry',
+              textColor: Colors.white,
+              onPressed: () => _handleEdit(context, provider),
+            ),
+          ),
+        );
+      }
+    }
+  }
 
   void _handleMenuAction(BuildContext context, String action) async {
     final provider = Provider.of<DocumentProvider>(context, listen: false);
@@ -193,7 +269,9 @@ Created: ${formatDate(document.createdAt)}
             child: const Text('Cancel'),
           ),
           TextButton(
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.red,
+            ),
             onPressed: () => Navigator.of(context).pop(true),
             child: const Text('Delete'),
           ),
@@ -207,12 +285,21 @@ Created: ${formatDate(document.createdAt)}
         showDialog(
           context: context,
           barrierDismissible: false,
-          builder: (BuildContext context) => const Center(
-            child: CircularProgressIndicator(),
+          builder: (BuildContext context) => WillPopScope(
+            onWillPop: () async => false, // Prevent dismissing with back button
+            child: const AlertDialog(
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(height: 16),
+                  Text('Deleting document...'),
+                ],
+              ),
+            ),
           ),
         );
 
-        // Call the API through the provider
         await provider.removeDocument(document.id);
 
         if (context.mounted) {
@@ -231,7 +318,20 @@ Created: ${formatDate(document.createdAt)}
         if (context.mounted) {
           // Dismiss loading indicator
           Navigator.of(context).pop();
-          _showErrorSnackBar(context, 'Error deleting document: $e');
+
+          // Show error message
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error deleting document: ${e.toString()}'),
+              backgroundColor: Colors.red,
+              behavior: SnackBarBehavior.floating,
+              action: SnackBarAction(
+                label: 'Retry',
+                textColor: Colors.white,
+                onPressed: () => _deleteDocument(context, provider),
+              ),
+            ),
+          );
         }
       }
     }
@@ -294,7 +394,7 @@ Created: ${formatDate(document.createdAt)}
               document.name,
               style: const TextStyle(
                 fontWeight: FontWeight.bold,
-                fontSize: 16,
+                fontSize: 18,
               ),
             ),
             subtitle: Column(
@@ -310,7 +410,7 @@ Created: ${formatDate(document.createdAt)}
                 ],
                 // File metadata row
                 Wrap(
-                  spacing: 16,
+                  spacing: 12,
                   children: [
                     // Date
                     Row(
@@ -368,64 +468,78 @@ Created: ${formatDate(document.createdAt)}
             ),
             trailing: isSelectionMode
                 ? null
-                : PopupMenuButton<String>(
-                    icon:
-                        Icon(Icons.more_vert, color: theme.colorScheme.primary),
-                    onSelected: (action) => _handleMenuAction(context, action),
-                    itemBuilder: (BuildContext context) => [
-                      PopupMenuItem<String>(
-                        value: 'info',
-                        child: Row(
-                          children: [
-                            Icon(Icons.info_outline,
-                                size: 20, color: theme.colorScheme.primary),
-                            const SizedBox(width: 8),
-                            const Text('Info'),
-                          ],
+                : Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        icon: Icon(
+                          Icons.edit,
+                          color: theme.colorScheme.primary,
                         ),
+                        onPressed: () => _handleEdit(context, provider),
                       ),
-                      PopupMenuItem<String>(
-                        value: 'share',
-                        child: Row(
-                          children: [
-                            Icon(Icons.share,
-                                size: 20, color: theme.colorScheme.primary),
-                            const SizedBox(width: 8),
-                            const Text('Share'),
-                          ],
-                        ),
-                      ),
-                      PopupMenuItem<String>(
-                        value: 'download',
-                        child: Row(
-                          children: [
-                            Icon(Icons.download,
-                                size: 20, color: theme.colorScheme.primary),
-                            const SizedBox(width: 8),
-                            const Text('Download'),
-                          ],
-                        ),
-                      ),
-                      PopupMenuItem<String>(
-                        value: 'print',
-                        child: Row(
-                          children: [
-                            Icon(Icons.print,
-                                size: 20, color: theme.colorScheme.primary),
-                            const SizedBox(width: 8),
-                            const Text('Print'),
-                          ],
-                        ),
-                      ),
-                      const PopupMenuItem<String>(
-                        value: 'delete',
-                        child: Row(
-                          children: [
-                            Icon(Icons.delete, color: Colors.red, size: 20),
-                            SizedBox(width: 8),
-                            Text('Delete', style: TextStyle(color: Colors.red)),
-                          ],
-                        ),
+                      PopupMenuButton<String>(
+                        icon: Icon(Icons.more_vert,
+                            color: theme.colorScheme.primary),
+                        onSelected: (action) =>
+                            _handleMenuAction(context, action),
+                        itemBuilder: (BuildContext context) => [
+                          PopupMenuItem<String>(
+                            value: 'info',
+                            child: Row(
+                              children: [
+                                Icon(Icons.info,
+                                    size: 20, color: theme.colorScheme.primary),
+                                const SizedBox(width: 8),
+                                const Text('info'),
+                              ],
+                            ),
+                          ),
+                          PopupMenuItem<String>(
+                            value: 'share',
+                            child: Row(
+                              children: [
+                                Icon(Icons.share,
+                                    size: 20, color: theme.colorScheme.primary),
+                                const SizedBox(width: 8),
+                                const Text('Share'),
+                              ],
+                            ),
+                          ),
+                          PopupMenuItem<String>(
+                            value: 'download',
+                            child: Row(
+                              children: [
+                                Icon(Icons.download,
+                                    size: 20, color: theme.colorScheme.primary),
+                                const SizedBox(width: 8),
+                                const Text('Download'),
+                              ],
+                            ),
+                          ),
+                          PopupMenuItem<String>(
+                            value: 'print',
+                            child: Row(
+                              children: [
+                                Icon(Icons.print,
+                                    size: 20, color: theme.colorScheme.primary),
+                                const SizedBox(width: 8),
+                                const Text('Print'),
+                              ],
+                            ),
+                          ),
+                          const PopupMenuItem<String>(
+                            value: 'delete',
+                            child: Row(
+                              children: [
+                                Icon(Icons.delete, color: Colors.red, size: 20),
+                                SizedBox(width: 8),
+                                Text('Delete',
+                                    style: TextStyle(color: Colors.red)),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),

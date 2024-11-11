@@ -29,10 +29,16 @@ class DocumentProvider with ChangeNotifier {
 
   // Token Management
   void updateToken(String newToken) {
+    print('Updating token from: $_token');
+    print('Updating token to: $newToken');
     _token = newToken;
-    refreshDocuments();
+    if (_token.isNotEmpty) {
+      refreshDocuments();
+    }
     notifyListeners();
   }
+
+  bool get hasValidToken => _token.isNotEmpty;
 
   Future<void> refreshDocuments() async {
     try {

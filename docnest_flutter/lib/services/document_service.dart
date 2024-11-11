@@ -1,4 +1,5 @@
 // lib/services/document_service.dart
+import 'dart:async';
 import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
@@ -9,35 +10,55 @@ import 'api_config.dart';
 
 class DocumentService {
   final String token;
+  static const int maxRetries = 3;
+  static const int timeoutSeconds = 30;
 
   DocumentService({required this.token});
 
+  // Helper method to handle API responses
+  T _handleResponse<T>(
+      http.Response response, T Function(Map<String, dynamic>) fromJson) {
+    print('Response Status: ${response.statusCode}');
+    print('Response Body: ${response.body}');
+
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      if (response.body.isEmpty) {
+        throw Exception('Server returned empty response');
+      }
+      try {
+        return fromJson(json.decode(response.body));
+      } catch (e) {
+        print('Error parsing response: $e');
+        throw Exception('Failed to parse server response');
+      }
+    } else {
+      String errorMessage;
+      try {
+        final errorBody = json.decode(response.body);
+        errorMessage = errorBody['detail'] ?? 'Operation failed';
+      } catch (_) {
+        errorMessage = 'Operation failed with status ${response.statusCode}';
+      }
+      throw Exception(errorMessage);
+    }
+  }
+
   Future<List<Document>> getDocuments() async {
     try {
+      print('Fetching documents from: ${ApiConfig.documentsUrl}');
       final response = await http.get(
         Uri.parse(ApiConfig.documentsUrl),
         headers: ApiConfig.authHeaders(token),
       );
-
-      print('GetDocuments Response Status: ${response.statusCode}');
-      print('GetDocuments Response Body: ${response.body}');
 
       if (response.statusCode == 200) {
         List<dynamic> data = json.decode(response.body);
         return data
             .map((doc) => Document.fromJson(doc as Map<String, dynamic>))
             .toList();
-      } else {
-        String errorMessage;
-        try {
-          final errorBody = json.decode(response.body);
-          errorMessage = errorBody['detail'] ?? 'Failed to load documents';
-        } catch (_) {
-          errorMessage =
-              'Failed to load documents. Status: ${response.statusCode}';
-        }
-        throw Exception(errorMessage);
       }
+
+      return _handleResponse(response, (json) => []);
     } catch (e) {
       print('Error in getDocuments: $e');
       if (e.toString().contains('Connection refused')) {
@@ -58,27 +79,18 @@ class DocumentService {
       // Validate file size
       final fileSize = await file.length();
       if (fileSize > 10 * 1024 * 1024) {
-        // 10MB limit
         throw Exception('File size exceeds 10MB limit');
       }
 
-      // Create multipart request
-      final uri = Uri.parse(ApiConfig.documentsUrl);
-      final request = http.MultipartRequest('POST', uri);
-
-      // Add headers
-      request.headers.addAll(ApiConfig.authHeaders(token));
-
-      // Add form fields
-      request.fields['name'] = name.trim();
-      request.fields['description'] = description.trim();
-      request.fields['category'] = category.toLowerCase();
+      final request =
+          http.MultipartRequest('POST', Uri.parse(ApiConfig.documentsUrl))
+            ..headers.addAll(ApiConfig.authHeaders(token))
+            ..fields['name'] = name.trim()
+            ..fields['description'] = description.trim()
+            ..fields['category'] = category.toLowerCase();
 
       // Add file
       final fileName = path.basename(file.path);
-      final fileExtension = path.extension(fileName).toLowerCase();
-      final mimeType = _getContentType(fileExtension);
-
       final stream = http.ByteStream(file.openRead());
       final length = await file.length();
 
@@ -87,42 +99,18 @@ class DocumentService {
         stream,
         length,
         filename: fileName,
-        contentType: MediaType.parse(mimeType),
+        contentType: MediaType.parse(_getContentType(path.extension(fileName))),
       );
 
       request.files.add(multipartFile);
 
-      // Send request and get response
-      print('Sending upload request to: ${request.url}');
+      print('Uploading document to: ${request.url}');
+      print('Upload fields: ${request.fields}');
+
       final streamedResponse = await request.send();
-      print('Upload response status: ${streamedResponse.statusCode}');
-
-      // Get response body
       final response = await http.Response.fromStream(streamedResponse);
-      print('Upload response body: ${response.body}');
 
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        if (response.body.isEmpty) {
-          throw Exception('Server returned empty response');
-        }
-        try {
-          return Document.fromJson(json.decode(response.body));
-        } catch (e) {
-          print('Error parsing upload response: $e');
-          throw Exception('Failed to parse server response');
-        }
-      } else {
-        String errorMessage;
-        try {
-          final errorBody = json.decode(response.body);
-          errorMessage = errorBody['detail'] ?? 'Upload failed';
-        } catch (_) {
-          errorMessage = response.body.isNotEmpty
-              ? response.body
-              : 'Upload failed with status ${response.statusCode}';
-        }
-        throw Exception(errorMessage);
-      }
+      return _handleResponse(response, (json) => Document.fromJson(json));
     } catch (e) {
       print('Error in uploadDocument: $e');
       throw Exception('Error uploading document: $e');
@@ -137,19 +125,31 @@ class DocumentService {
     File? file,
   }) async {
     try {
-      final request = http.MultipartRequest(
-        'PUT',
-        Uri.parse('${ApiConfig.documentsUrl}/$documentId'),
-      );
+      // Construct URL
+      final url = Uri.parse('${ApiConfig.baseUrl}/documents/$documentId');
+      print('Updating document at: $url');
 
-      // Add headers
-      request.headers.addAll(ApiConfig.authHeaders(token));
+      // Create multipart request
+      final request = http.MultipartRequest('PUT', url);
 
-      // Add non-null fields
+      // Add proper authorization header - FIXED FORMAT
+      request.headers.addAll({
+        'Authorization': 'Bearer $token',
+        'Accept': 'application/json',
+      });
+
+      // Log token for debugging (remember to remove in production)
+      print('Using token: $token');
+
+      // Add fields if they have values
       if (name != null) request.fields['name'] = name.trim();
       if (description != null)
         request.fields['description'] = description.trim();
       if (category != null) request.fields['category'] = category.toLowerCase();
+
+      // Log the request details
+      print('Update request headers: ${request.headers}');
+      print('Update request fields: ${request.fields}');
 
       // Add file if provided
       if (file != null) {
@@ -159,13 +159,11 @@ class DocumentService {
         }
 
         final fileName = path.basename(file.path);
-        final stream = http.ByteStream(file.openRead());
-        final length = await file.length();
+        final bytes = await file.readAsBytes();
 
-        final multipartFile = http.MultipartFile(
+        final multipartFile = http.MultipartFile.fromBytes(
           'file',
-          stream,
-          length,
+          bytes,
           filename: fileName,
           contentType:
               MediaType.parse(_getContentType(path.extension(fileName))),
@@ -174,8 +172,14 @@ class DocumentService {
         request.files.add(multipartFile);
       }
 
-      // Send request
-      final streamedResponse = await request.send();
+      // Send request with timeout
+      final streamedResponse = await request.send().timeout(
+        const Duration(seconds: 30),
+        onTimeout: () {
+          throw TimeoutException('Request timed out');
+        },
+      );
+
       final response = await http.Response.fromStream(streamedResponse);
 
       print('Update response status: ${response.statusCode}');
@@ -195,21 +199,49 @@ class DocumentService {
       }
     } catch (e) {
       print('Error in updateDocument: $e');
-      throw Exception('Error updating document: $e');
+      rethrow;
     }
   }
 
   Future<void> deleteDocument(String documentId) async {
-    try {
-      final response = await http.delete(
-        Uri.parse('${ApiConfig.documentsUrl}/$documentId'),
-        headers: ApiConfig.authHeaders(token),
-      );
+    int attempts = 0;
+    while (attempts < maxRetries) {
+      try {
+        attempts++;
+        final url = Uri.parse('${ApiConfig.documentsUrl}/$documentId');
 
-      print('Delete response status: ${response.statusCode}');
-      print('Delete response body: ${response.body}');
+        print('Deleting document at: $url (Attempt $attempts of $maxRetries)');
 
-      if (response.statusCode != 204) {
+        final response = await http
+            .delete(
+          url,
+          headers: ApiConfig.authHeaders(token),
+        )
+            .timeout(
+          Duration(seconds: timeoutSeconds),
+          onTimeout: () {
+            throw TimeoutException('Request timed out');
+          },
+        );
+
+        print('Delete response status: ${response.statusCode}');
+        print('Delete response body: ${response.body}');
+
+        if (response.statusCode == 204 || response.statusCode == 200) {
+          return; // Success
+        }
+
+        // If we get a 404, no need to retry
+        if (response.statusCode == 404) {
+          throw Exception('Document not found');
+        }
+
+        // If we get a 401/403, no need to retry
+        if (response.statusCode == 401 || response.statusCode == 403) {
+          throw Exception('Authentication failed');
+        }
+
+        // For other status codes, try to parse error message
         String errorMessage;
         try {
           final errorBody = json.decode(response.body);
@@ -217,11 +249,41 @@ class DocumentService {
         } catch (_) {
           errorMessage = 'Delete failed with status ${response.statusCode}';
         }
-        throw Exception(errorMessage);
+
+        // On last attempt, throw the error
+        if (attempts == maxRetries) {
+          throw Exception(errorMessage);
+        }
+
+        // Wait before retrying
+        await Future.delayed(Duration(seconds: attempts));
+        continue;
+      } on SocketException catch (e) {
+        if (attempts == maxRetries) {
+          throw Exception(
+              'Network error: Please check your internet connection');
+        }
+        await Future.delayed(Duration(seconds: attempts));
+        continue;
+      } on TimeoutException catch (e) {
+        if (attempts == maxRetries) {
+          throw Exception('Request timed out. Please try again');
+        }
+        await Future.delayed(Duration(seconds: attempts));
+        continue;
+      } catch (e) {
+        // For other errors, if they're not retryable, throw immediately
+        if (e.toString().contains('Authentication failed') ||
+            e.toString().contains('Document not found')) {
+          throw Exception(e.toString());
+        }
+
+        if (attempts == maxRetries) {
+          throw Exception('Error deleting document: $e');
+        }
+        await Future.delayed(Duration(seconds: attempts));
+        continue;
       }
-    } catch (e) {
-      print('Error in deleteDocument: $e');
-      throw Exception('Error deleting document: $e');
     }
   }
 
@@ -240,35 +302,6 @@ class DocumentService {
         return 'image/png';
       default:
         return 'application/octet-stream';
-    }
-  }
-
-  Future<Document> getDocumentById(String documentId) async {
-    try {
-      final response = await http.get(
-        Uri.parse('${ApiConfig.documentsUrl}/$documentId'),
-        headers: ApiConfig.authHeaders(token),
-      );
-
-      print('GetDocumentById Response Status: ${response.statusCode}');
-      print('GetDocumentById Response Body: ${response.body}');
-
-      if (response.statusCode == 200) {
-        return Document.fromJson(json.decode(response.body));
-      } else {
-        String errorMessage;
-        try {
-          final errorBody = json.decode(response.body);
-          errorMessage = errorBody['detail'] ?? 'Failed to load document';
-        } catch (_) {
-          errorMessage =
-              'Failed to load document. Status: ${response.statusCode}';
-        }
-        throw Exception(errorMessage);
-      }
-    } catch (e) {
-      print('Error in getDocumentById: $e');
-      throw Exception('Error loading document: $e');
     }
   }
 }
