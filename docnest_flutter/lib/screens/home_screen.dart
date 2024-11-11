@@ -1,4 +1,5 @@
 // lib/screens/home_screen.dart
+import 'package:docnest_flutter/screens/category_documents_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../widgets/profile_tab.dart';
@@ -11,6 +12,7 @@ import '../models/document.dart';
 import '../providers/document_provider.dart';
 import '../screens/login_screen.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import '../utils/formatters.dart';
 
 class HomeScreen extends StatefulWidget {
   final String token;
@@ -22,6 +24,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  bool _isGridView = false;
   int _currentIndex = 1;
   bool _isLoading = true;
   bool _isError = false;
@@ -198,28 +201,119 @@ class _HomeScreenState extends State<HomeScreen> {
       children: [
         const QuickActionsBar(),
         Expanded(
-          child: RefreshIndicator(
-            onRefresh: _loadDocuments,
-            child: ListView.builder(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              itemCount: _categories.length,
-              itemBuilder: (context, index) {
-                final category = _categories[index];
-                final categoryDocuments = _getDocumentsByCategory(category);
-
-                if (categoryDocuments.isEmpty) {
-                  return Container();
-                }
-
-                return DocumentSection(
-                  title: category,
-                  documents: categoryDocuments,
-                );
-              },
-            ),
-          ),
+          child: _isGridView
+              ? _buildCategoryGrid()
+              : _buildCategoryList(documents),
         ),
       ],
+    );
+  }
+
+  Widget _buildCategoryGrid() {
+    final provider = context.watch<DocumentProvider>();
+    final categories = ['government', 'medical', 'educational', 'other'];
+
+    return GridView.count(
+      crossAxisCount: 2,
+      padding: const EdgeInsets.all(16),
+      mainAxisSpacing: 16,
+      crossAxisSpacing: 16,
+      children: categories.map((category) {
+        final docs = provider.documents
+            .where((doc) => doc.category.toLowerCase() == category)
+            .toList();
+
+        return InkWell(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => CategoryDocumentsScreen(
+                  category: category,
+                  documents: docs,
+                ),
+              ),
+            );
+          },
+          child: Card(
+            elevation: 4,
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: getCategoryColor(category).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(
+                      getCategoryIcon(category),
+                      color: getCategoryColor(category),
+                      size: 32,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    category[0].toUpperCase() + category.substring(1),
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '${docs.length} document${docs.length != 1 ? 's' : ''}',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Colors.grey[600],
+                        ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  Widget _buildCategoryList(List<Document> documents) {
+    return RefreshIndicator(
+      onRefresh: _loadDocuments,
+      child: ListView.separated(
+        // Changed from ListView.builder to ListView.separated
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        itemCount: _categories.length,
+        // Add separator builder
+        separatorBuilder: (context, index) {
+          final category = _categories[index];
+          final categoryDocuments = _getDocumentsByCategory(category);
+          // Only show divider if the current category has documents
+          if (categoryDocuments.isEmpty) {
+            return const SizedBox.shrink();
+          }
+          return const Divider(
+            height: 10, // Total height of the divider
+            thickness: 1, // Thickness of the divider line
+            indent: 16, // Starting space from left
+            endIndent: 16, // Ending space from right
+            color: Colors.grey, // Color of the divider
+          );
+        },
+        itemBuilder: (context, index) {
+          final category = _categories[index];
+          final categoryDocuments = _getDocumentsByCategory(category);
+
+          if (categoryDocuments.isEmpty) {
+            return Container();
+          }
+
+          return DocumentSection(
+            title: category,
+            documents: categoryDocuments,
+          );
+        },
+      ),
     );
   }
 
@@ -300,6 +394,20 @@ class _HomeScreenState extends State<HomeScreen> {
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
+        actions: [
+          IconButton(
+            icon: Icon(
+              _isGridView ? Icons.view_list : Icons.grid_view,
+              color: Theme.of(context).primaryColor,
+            ),
+            onPressed: () {
+              setState(() {
+                _isGridView = !_isGridView;
+              });
+            },
+          ),
+          const SizedBox(width: 8),
+        ],
       ),
       body: IndexedStack(
         index: _currentIndex,

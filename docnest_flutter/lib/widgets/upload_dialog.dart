@@ -6,7 +6,12 @@ import '../models/document.dart';
 import '../utils/formatters.dart';
 
 class UploadDocumentDialog extends StatefulWidget {
-  const UploadDocumentDialog({super.key});
+  final String? preSelectedCategory;
+
+  const UploadDocumentDialog({
+    super.key,
+    this.preSelectedCategory,
+  });
 
   @override
   _UploadDocumentDialogState createState() => _UploadDocumentDialogState();
@@ -16,7 +21,7 @@ class _UploadDocumentDialogState extends State<UploadDocumentDialog> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _descriptionController = TextEditingController();
-  String? _selectedCategory;
+  late String _selectedCategory;
   File? _selectedFile;
   bool _isUploading = false;
 
@@ -27,6 +32,12 @@ class _UploadDocumentDialogState extends State<UploadDocumentDialog> {
     {'value': 'educational', 'label': 'Educational'},
     {'value': 'other', 'label': 'Other'},
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedCategory = widget.preSelectedCategory?.toLowerCase() ?? 'other';
+  }
 
   Future<void> _pickFile() async {
     try {
@@ -75,10 +86,8 @@ class _UploadDocumentDialogState extends State<UploadDocumentDialog> {
     }
   }
 
-  void _handleUpload() async {
-    if (!_formKey.currentState!.validate() ||
-        _selectedFile == null ||
-        _selectedCategory == null) {
+  void _handleUpload() {
+    if (!_formKey.currentState!.validate() || _selectedFile == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Please fill all required fields and select a file'),
@@ -92,10 +101,13 @@ class _UploadDocumentDialogState extends State<UploadDocumentDialog> {
     setState(() => _isUploading = true);
 
     try {
+      final category =
+          widget.preSelectedCategory?.toLowerCase() ?? _selectedCategory;
+
       final result = {
         'name': _nameController.text.trim(),
         'description': _descriptionController.text.trim(),
-        'category': _selectedCategory,
+        'category': category,
         'file': _selectedFile,
       };
 
@@ -124,7 +136,9 @@ class _UploadDocumentDialogState extends State<UploadDocumentDialog> {
 
     return AlertDialog(
       title: Text(
-        'Upload Document',
+        widget.preSelectedCategory != null
+            ? 'Upload ${widget.preSelectedCategory!.capitalize()} Document'
+            : 'Upload Document',
         style: TextStyle(color: theme.colorScheme.onSurface),
       ),
       backgroundColor: theme.dialogBackgroundColor,
@@ -186,34 +200,38 @@ class _UploadDocumentDialogState extends State<UploadDocumentDialog> {
                 style: TextStyle(color: theme.colorScheme.onSurface),
                 maxLines: 3,
               ),
-              const SizedBox(height: 16),
-              DropdownButtonFormField<String>(
-                value: _selectedCategory,
-                decoration: InputDecoration(
-                  labelText: 'Category',
-                  labelStyle: TextStyle(color: theme.colorScheme.onSurface),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(
-                      color: theme.colorScheme.outline,
+              if (widget.preSelectedCategory == null) ...[
+                const SizedBox(height: 16),
+                DropdownButtonFormField<String>(
+                  value: _selectedCategory,
+                  decoration: InputDecoration(
+                    labelText: 'Category',
+                    labelStyle: TextStyle(color: theme.colorScheme.onSurface),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide(
+                        color: theme.colorScheme.outline,
+                      ),
                     ),
                   ),
+                  dropdownColor: theme.dialogBackgroundColor,
+                  style: TextStyle(color: theme.colorScheme.onSurface),
+                  items: _categories.map((category) {
+                    return DropdownMenuItem(
+                      value: category['value'],
+                      child: Text(category['label']!),
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    if (value != null) {
+                      setState(() => _selectedCategory = value);
+                    }
+                  },
                 ),
-                dropdownColor: theme.dialogBackgroundColor,
-                style: TextStyle(color: theme.colorScheme.onSurface),
-                items: _categories.map((category) {
-                  return DropdownMenuItem(
-                    value: category['value'],
-                    child: Text(category['label']!),
-                  );
-                }).toList(),
-                validator: (value) =>
-                    value == null ? 'Please select a category' : null,
-                onChanged: (value) => setState(() => _selectedCategory = value),
-              ),
+              ],
               const SizedBox(height: 24),
               ElevatedButton.icon(
                 icon: Icon(
@@ -303,5 +321,11 @@ class _UploadDocumentDialogState extends State<UploadDocumentDialog> {
     _nameController.dispose();
     _descriptionController.dispose();
     super.dispose();
+  }
+}
+
+extension StringExtension on String {
+  String capitalize() {
+    return "${this[0].toUpperCase()}${substring(1).toLowerCase()}";
   }
 }

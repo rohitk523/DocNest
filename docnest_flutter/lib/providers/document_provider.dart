@@ -15,41 +15,124 @@ class DocumentProvider with ChangeNotifier {
   List<String> _searchHistory = [];
   static const int maxHistoryItems = 10;
   String _token;
+  DocumentService? _documentService;
+  bool _isDragging = false;
+  User? _currentUser;
+  bool _isLoadingProfile = false;
 
   DocumentProvider({required String token}) : _token = token {
     if (_token.isNotEmpty) {
+      _documentService = DocumentService(token: _token);
       refreshDocuments();
     }
   }
 
-  // Getters
+  // All getters explicitly defined
   List<Document> get documents => _documents;
-  List<Document> get selectedDocuments =>
-      _documents.where((doc) => _selectedDocuments.contains(doc.id)).toList();
+  String get token => _token;
   bool get isSelectionMode => _isSelectionMode;
   int get selectedCount => _selectedDocuments.length;
   List<String> get searchHistory => _searchHistory;
-  String get token => _token;
-  // Add this to your DocumentProvider class
-  bool _isDragging = false;
   bool get isDragging => _isDragging;
+  User? get currentUser => _currentUser;
+  bool get isLoadingProfile => _isLoadingProfile;
+  bool get hasValidToken => _token.isNotEmpty;
 
-  void startDragging() {
-    _isDragging = true;
+  List<Document> get selectedDocuments =>
+      _documents.where((doc) => _selectedDocuments.contains(doc.id)).toList();
+
+  DocumentService get documentService {
+    if (_documentService == null) {
+      _documentService = DocumentService(token: _token);
+    }
+    return _documentService!;
+  }
+
+  bool isSelected(String documentId) => _selectedDocuments.contains(documentId);
+
+  // Methods for token and service management
+  void updateToken(String newToken) {
+    _token = newToken;
+    if (_token.isNotEmpty) {
+      _documentService = DocumentService(token: _token);
+      refreshDocuments();
+    } else {
+      _documentService = null;
+    }
     notifyListeners();
   }
 
-  void endDragging() {
-    _isDragging = false;
+  // Document operations
+  void setDocuments(List<Document> documents) {
+    _documents = documents;
     notifyListeners();
   }
 
+  void addDocument(Document document) {
+    _documents.add(document);
+    notifyListeners();
+  }
+
+  void updateDocument(Document updatedDoc) {
+    final index = _documents.indexWhere((doc) => doc.id == updatedDoc.id);
+    if (index != -1) {
+      _documents[index] = updatedDoc;
+      notifyListeners();
+    }
+  }
+
+  Future<void> removeDocument(String id) async {
+    try {
+      if (_token.isEmpty) throw Exception('No authentication token available');
+      await documentService.deleteDocument(id);
+      _documents.removeWhere((doc) => doc.id == id);
+      _selectedDocuments.remove(id);
+      if (_selectedDocuments.isEmpty) _isSelectionMode = false;
+      notifyListeners();
+    } catch (e) {
+      throw Exception('Failed to delete document: $e');
+    }
+  }
+
+  void reorderDocuments(String category, int oldIndex, int newIndex) {
+    final categoryDocs = _documents
+        .where((doc) => doc.category.toLowerCase() == category.toLowerCase())
+        .toList();
+
+    if (oldIndex < categoryDocs.length && newIndex < categoryDocs.length) {
+      final doc = categoryDocs.removeAt(oldIndex);
+      categoryDocs.insert(newIndex, doc);
+
+      _documents = _documents.map((d) {
+        if (d.category.toLowerCase() != category.toLowerCase()) return d;
+        return categoryDocs[categoryDocs.indexOf(d)];
+      }).toList();
+
+      notifyListeners();
+    }
+  }
+
+  Future<void> removeSelectedDocuments() async {
+    try {
+      if (_token.isEmpty) throw Exception('No authentication token available');
+      for (final documentId in _selectedDocuments) {
+        await documentService.deleteDocument(documentId);
+      }
+      _documents.removeWhere((doc) => _selectedDocuments.contains(doc.id));
+      _selectedDocuments.clear();
+      _isSelectionMode = false;
+      notifyListeners();
+    } catch (e) {
+      throw Exception('Failed to delete documents: $e');
+    }
+  }
+
+  // Selection methods
   void startSelection() {
     _isSelectionMode = true;
     notifyListeners();
   }
 
-  // Just to make sure all related methods are properly defined
   void clearSelection() {
     _selectedDocuments.clear();
     _isSelectionMode = false;
@@ -69,10 +152,84 @@ class DocumentProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  // Update your getShareableContent method if not already present
+  void selectAll() {
+    _selectedDocuments = _documents.map((doc) => doc.id).toSet();
+    _isSelectionMode = true;
+    notifyListeners();
+  }
+
+  // Drag and drop methods
+  void startDragging() {
+    _isDragging = true;
+    notifyListeners();
+  }
+
+  void endDragging() {
+    _isDragging = false;
+    notifyListeners();
+  }
+
+  // Category operations
+  Future<void> updateDocumentCategory(
+      String documentId, String newCategory) async {
+    try {
+      if (_token.isEmpty) throw Exception('No authentication token available');
+      final updatedDoc = await documentService.updateDocument(
+        documentId: documentId,
+        category: newCategory,
+      );
+      updateDocument(updatedDoc);
+    } catch (e) {
+      throw Exception('Failed to update document category: $e');
+    }
+  }
+
+  // Search methods
+  void addToSearchHistory(String query) {
+    if (query.trim().isEmpty) return;
+    _searchHistory.remove(query);
+    _searchHistory.insert(0, query);
+    if (_searchHistory.length > maxHistoryItems) {
+      _searchHistory = _searchHistory.take(maxHistoryItems).toList();
+    }
+    notifyListeners();
+  }
+
+  void removeFromSearchHistory(String query) {
+    _searchHistory.remove(query);
+    notifyListeners();
+  }
+
+  void clearSearchHistory() {
+    _searchHistory.clear();
+    notifyListeners();
+  }
+
+  List<Document> searchDocuments(String query) {
+    if (query.isEmpty) return [];
+    final lowercaseQuery = query.toLowerCase();
+    return _documents.where((doc) {
+      return doc.name.toLowerCase().contains(lowercaseQuery) ||
+          doc.description.toLowerCase().contains(lowercaseQuery) ||
+          doc.category.toLowerCase().contains(lowercaseQuery);
+    }).toList();
+  }
+
+  // Document refresh
+  Future<void> refreshDocuments() async {
+    try {
+      if (_token.isEmpty) return;
+      final docs = await documentService.getDocuments();
+      setDocuments(docs);
+    } catch (e) {
+      print('Error refreshing documents: $e');
+      rethrow;
+    }
+  }
+
+  // Sharing methods
   String getShareableContent() {
     if (_selectedDocuments.isEmpty) return '';
-
     return _documents
         .where((doc) => _selectedDocuments.contains(doc.id))
         .map((doc) => '''
@@ -84,218 +241,6 @@ Created: ${doc.createdAt}
         .join('\n---\n');
   }
 
-  User? _currentUser;
-  User? get currentUser => _currentUser;
-
-  Future<void> fetchUserProfile() async {
-    if (_token.isEmpty) {
-      print('No token available for fetching profile');
-      return;
-    }
-    if (_isLoadingProfile) {
-      print('Already loading profile');
-      return;
-    }
-
-    try {
-      print('Fetching user profile...');
-      _isLoadingProfile = true;
-      notifyListeners();
-
-      final url = '${ApiConfig.authUrl}/me';
-      print('Request URL: $url');
-      print('Request headers: ${ApiConfig.authHeaders(_token)}');
-
-      final response = await http.get(
-        Uri.parse(url),
-        headers: ApiConfig.authHeaders(_token),
-      );
-
-      print('Response status: ${response.statusCode}');
-      print('Response body: ${response.body}');
-
-      if (response.statusCode == 200) {
-        final userData = json.decode(response.body);
-        _currentUser = User.fromJson(userData);
-        print('Successfully loaded user profile: ${_currentUser?.email}');
-      } else {
-        print('Failed to load profile: ${response.statusCode}');
-        print('Response body: ${response.body}');
-        throw Exception('Failed to load user profile');
-      }
-    } catch (e) {
-      print('Error fetching user profile: $e');
-      rethrow;
-    } finally {
-      _isLoadingProfile = false;
-      notifyListeners();
-    }
-  }
-
-// Update the updateToken method to also fetch user profile
-  void updateTokenProfile(String newToken) {
-    _token = newToken;
-    if (_token.isNotEmpty) {
-      fetchUserProfile();
-    }
-    notifyListeners();
-  }
-
-  // Token Management
-  void updateToken(String newToken) {
-    print('Updating token from: $_token');
-    print('Updating token to: $newToken');
-    _token = newToken;
-    if (_token.isNotEmpty) {
-      refreshDocuments();
-    }
-    notifyListeners();
-  }
-
-  bool get hasValidToken => _token.isNotEmpty;
-
-  Future<void> refreshDocuments() async {
-    try {
-      if (_token.isEmpty) return;
-      final documentService = DocumentService(token: _token);
-      final docs = await documentService.getDocuments();
-      setDocuments(docs);
-    } catch (e) {
-      print('Error refreshing documents: $e');
-    }
-  }
-
-  // Search History Methods
-  void addToSearchHistory(String query) {
-    if (query.trim().isEmpty) return;
-
-    _searchHistory.remove(query);
-    _searchHistory.insert(0, query);
-
-    if (_searchHistory.length > maxHistoryItems) {
-      _searchHistory = _searchHistory.take(maxHistoryItems).toList();
-    }
-
-    notifyListeners();
-  }
-
-  void clearSearchHistory() {
-    _searchHistory.clear();
-    notifyListeners();
-  }
-
-  void removeFromSearchHistory(String query) {
-    _searchHistory.remove(query);
-    notifyListeners();
-  }
-
-  // Document Search
-  List<Document> searchDocuments(String query) {
-    if (query.isEmpty) return [];
-
-    final lowercaseQuery = query.toLowerCase();
-    return _documents.where((doc) {
-      return doc.name.toLowerCase().contains(lowercaseQuery) ||
-          doc.description.toLowerCase().contains(lowercaseQuery) ||
-          doc.category.toLowerCase().contains(lowercaseQuery);
-    }).toList();
-  }
-
-  void selectAll() {
-    _selectedDocuments = _documents.map((doc) => doc.id).toSet();
-    _isSelectionMode = true;
-    notifyListeners();
-  }
-
-  bool isSelected(String documentId) => _selectedDocuments.contains(documentId);
-
-  // Document Operations
-  void setDocuments(List<Document> documents) {
-    _documents = documents;
-    notifyListeners();
-  }
-
-  void addDocument(Document document) {
-    _documents.add(document);
-    notifyListeners();
-  }
-
-  void reorderDocuments(String category, int oldIndex, int newIndex) {
-    final categoryDocs = _documents
-        .where((doc) => doc.category.toLowerCase() == category.toLowerCase())
-        .toList();
-
-    if (oldIndex < categoryDocs.length && newIndex < categoryDocs.length) {
-      final doc = categoryDocs.removeAt(oldIndex);
-      categoryDocs.insert(newIndex, doc);
-
-      // Update the main documents list to match the new order
-      _documents = _documents.map((d) {
-        if (d.category.toLowerCase() != category.toLowerCase()) return d;
-        return categoryDocs[categoryDocs.indexOf(d)];
-      }).toList();
-
-      notifyListeners();
-    }
-  }
-
-  Future<void> removeSelectedDocuments() async {
-    try {
-      if (_token.isEmpty) throw Exception('No authentication token available');
-      final documentService = DocumentService(token: _token);
-
-      for (final documentId in _selectedDocuments) {
-        await documentService.deleteDocument(documentId);
-      }
-
-      _documents.removeWhere((doc) => _selectedDocuments.contains(doc.id));
-      _selectedDocuments.clear();
-      _isSelectionMode = false;
-      notifyListeners();
-    } catch (e) {
-      throw Exception('Failed to delete documents: $e');
-    }
-  }
-
-  Future<void> removeDocument(String id) async {
-    try {
-      if (_token.isEmpty) throw Exception('No authentication token available');
-      final documentService = DocumentService(token: _token);
-
-      await documentService.deleteDocument(id);
-
-      _documents.removeWhere((doc) => doc.id == id);
-      _selectedDocuments.remove(id);
-      if (_selectedDocuments.isEmpty) _isSelectionMode = false;
-      notifyListeners();
-    } catch (e) {
-      throw Exception('Failed to delete document: $e');
-    }
-  }
-
-  void updateDocument(Document updatedDoc) {
-    final index = _documents.indexWhere((doc) => doc.id == updatedDoc.id);
-    if (index != -1) {
-      _documents[index] = updatedDoc;
-      notifyListeners();
-    }
-  }
-
-  Future<void> updateDocumentCategory(
-      String documentId, String newCategory) async {
-    try {
-      final documentService = DocumentService(token: token);
-      final updatedDoc = await documentService.updateDocument(
-        documentId: documentId,
-        category: newCategory,
-      );
-      updateDocument(updatedDoc);
-    } catch (e) {
-      throw Exception('Failed to update document category: $e');
-    }
-  }
-
-  // Sharing Functionality
   void markAsShared(List<String> documentIds) {
     for (final id in documentIds) {
       final index = _documents.indexWhere((doc) => doc.id == id);
@@ -307,8 +252,41 @@ Created: ${doc.createdAt}
     notifyListeners();
   }
 
-  bool _isLoadingProfile = false;
-  bool get isLoadingProfile => _isLoadingProfile;
+  // Profile methods
+  Future<void> fetchUserProfile() async {
+    if (_token.isEmpty) {
+      print('No token available for fetching profile');
+      return;
+    }
+    if (_isLoadingProfile) {
+      print('Already loading profile');
+      return;
+    }
+
+    try {
+      _isLoadingProfile = true;
+      notifyListeners();
+
+      final url = '${ApiConfig.authUrl}/me';
+      final response = await http.get(
+        Uri.parse(url),
+        headers: ApiConfig.authHeaders(_token),
+      );
+
+      if (response.statusCode == 200) {
+        final userData = json.decode(response.body);
+        _currentUser = User.fromJson(userData);
+      } else {
+        throw Exception('Failed to load user profile');
+      }
+    } catch (e) {
+      print('Error fetching user profile: $e');
+      rethrow;
+    } finally {
+      _isLoadingProfile = false;
+      notifyListeners();
+    }
+  }
 
   @override
   void dispose() {
