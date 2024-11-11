@@ -525,22 +525,6 @@ Created: ${formatDate(document.createdAt)}
                           ),
                         ],
                       ),
-                      if (document.fileSize != null)
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.straighten,
-                                size: 14, color: Colors.grey[400]),
-                            const SizedBox(width: 4),
-                            Text(
-                              formatFileSize(document.fileSize),
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey[600],
-                              ),
-                            ),
-                          ],
-                        ),
                       if (document.fileType != null)
                         Row(
                           mainAxisSize: MainAxisSize.min,

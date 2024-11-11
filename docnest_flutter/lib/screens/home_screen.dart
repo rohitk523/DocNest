@@ -333,10 +333,9 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
       floatingActionButton: _currentIndex == 1
-          ? FloatingActionButton.extended(
+          ? FloatingActionButton(
+              child: Icon(Icons.add),
               onPressed: _handleUpload,
-              icon: const Icon(Icons.add),
-              label: const Text('Upload'),
             )
           : null,
     );
