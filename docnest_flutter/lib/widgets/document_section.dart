@@ -25,11 +25,13 @@ class _DocumentSectionState extends State<DocumentSection> {
 
   Future<void> _updateDocumentCategory(
       Document document, String newCategory) async {
-    final provider = context.read<DocumentProvider>();
+    if (_isMoving) return;
+
     setState(() => _isMoving = true);
+    final provider = context.read<DocumentProvider>();
 
     try {
-      // Show moving dialog
+      // Show loading overlay
       if (context.mounted) {
         showDialog(
           context: context,
@@ -50,7 +52,10 @@ class _DocumentSectionState extends State<DocumentSection> {
       await provider.updateDocumentCategory(document.id, newCategory);
 
       if (mounted) {
-        Navigator.of(context).pop(); // Dismiss loading dialog
+        // Dismiss loading overlay
+        Navigator.of(context).pop();
+
+        // Show success message
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Moved to ${newCategory.toLowerCase()}'),
@@ -60,17 +65,27 @@ class _DocumentSectionState extends State<DocumentSection> {
       }
     } catch (e) {
       if (mounted) {
-        Navigator.of(context).pop(); // Dismiss loading dialog
+        // Dismiss loading overlay
+        Navigator.of(context).pop();
+
+        // Show error message
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Failed to move document: ${e.toString()}'),
             backgroundColor: Colors.red,
             behavior: SnackBarBehavior.floating,
+            action: SnackBarAction(
+              label: 'Retry',
+              textColor: Colors.white,
+              onPressed: () => _updateDocumentCategory(document, newCategory),
+            ),
           ),
         );
       }
     } finally {
-      setState(() => _isMoving = false);
+      if (mounted) {
+        setState(() => _isMoving = false);
+      }
     }
   }
 

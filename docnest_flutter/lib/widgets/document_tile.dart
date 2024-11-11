@@ -3,6 +3,13 @@ import '../models/document.dart';
 import '../utils/formatters.dart';
 import 'package:provider/provider.dart';
 import '../providers/document_provider.dart';
+import '../widgets/edit_document_dialog.dart';
+import '../services/document_service.dart';
+import 'package:share_plus/share_plus.dart';
+import 'dart:io';
+import 'package:path_provider/path_provider.dart';
+import 'package:http/http.dart' as http;
+import '../services/api_config.dart';
 
 class DocumentTile extends StatelessWidget {
   final Document document;
@@ -14,44 +21,152 @@ class DocumentTile extends StatelessWidget {
     this.isDragging = false,
   }) : super(key: key);
 
-  void _handleMenuAction(BuildContext context, String action) {
-    // Implement menu actions
+  Future<void> _handleEdit(
+      BuildContext context, DocumentProvider provider) async {
+    if (!provider.hasValidToken) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please log in to edit documents'),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    try {
+      final result = await showDialog<Map<String, dynamic>>(
+        context: context,
+        builder: (context) => EditDocumentDialog(document: document),
+      );
+
+      if (result != null && context.mounted) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (BuildContext context) => const AlertDialog(
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 16),
+                Text('Updating document...'),
+              ],
+            ),
+          ),
+        );
+
+        final documentService = DocumentService(token: provider.token);
+        final updatedDoc = await documentService.updateDocument(
+          documentId: document.id,
+          name: result['name'],
+          description: result['description'],
+          category: result['category'],
+        );
+
+        provider.updateDocument(updatedDoc);
+
+        if (context.mounted) {
+          Navigator.of(context).pop(); // Dismiss loading dialog
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Document updated successfully'),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
+        Navigator.of(context).pop(); // Dismiss loading dialog if showing
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error updating document: $e'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+            action: SnackBarAction(
+              label: 'Retry',
+              textColor: Colors.white,
+              onPressed: () => _handleEdit(context, provider),
+            ),
+          ),
+        );
+      }
+    }
+  }
+
+  void _handleMenuAction(BuildContext context, String action) async {
+    final provider = Provider.of<DocumentProvider>(context, listen: false);
+
     switch (action) {
       case 'info':
-        _showInfo(context);
+        await _showMetadata(context);
         break;
-      case 'edit':
-        _handleEdit(context);
+      case 'share':
+        await _shareDocument(context);
         break;
       case 'download':
-        _handleDownload(context);
+        await _downloadDocument(context);
+        break;
+      case 'print':
+        await _printDocument(context);
         break;
       case 'delete':
-        _handleDelete(context);
+        await _deleteDocument(context, provider);
+      case 'edit':
+        await _handleEdit(context, provider);
         break;
     }
   }
 
-  void _showInfo(BuildContext context) {
+  Future<void> _shareDocument(BuildContext context) async {
+    try {
+      final text = '''
+Document: ${document.name}
+Category: ${document.category}
+Description: ${document.description}
+Created: ${formatDate(document.createdAt)}
+''';
+      await Share.share(text, subject: document.name);
+    } catch (e) {
+      _showErrorSnackBar(context, 'Error sharing document: $e');
+    }
+  }
+
+  Future<void> _printDocument(BuildContext context) async {
+    try {
+      // Implement print logic here
+      _showSnackBar(context, 'Print feature coming soon');
+    } catch (e) {
+      _showErrorSnackBar(context, 'Error printing document: $e');
+    }
+  }
+
+  Future<void> _showMetadata(BuildContext context) async {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (BuildContext context) => AlertDialog(
         title: const Text('Document Information'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _infoRow('Name', document.name),
-            _infoRow('Category', document.category),
-            _infoRow('Created', formatDate(document.createdAt)),
-            _infoRow('Modified', formatDate(document.modifiedAt)),
-            _infoRow('File Type', document.fileType ?? 'N/A'),
-            _infoRow('Size', formatFileSize(document.fileSize)),
-          ],
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _metadataRow('Name', document.name),
+              _metadataRow('Category', document.category),
+              _metadataRow('Description', document.description),
+              _metadataRow('File Size', formatFileSize(document.fileSize)),
+              _metadataRow('File Type', document.fileType ?? 'N/A'),
+              _metadataRow('Created', formatDateDetailed(document.createdAt)),
+              _metadataRow('Modified', formatDateDetailed(document.modifiedAt)),
+              _metadataRow('Version', document.version.toString()),
+              _metadataRow('Shared', document.isShared ? 'Yes' : 'No'),
+            ],
+          ),
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.of(context).pop(),
             child: const Text('Close'),
           ),
         ],
@@ -59,7 +174,7 @@ class DocumentTile extends StatelessWidget {
     );
   }
 
-  Widget _infoRow(String label, String value) {
+  Widget _metadataRow(String label, String value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
@@ -69,7 +184,10 @@ class DocumentTile extends StatelessWidget {
             width: 80,
             child: Text(
               label,
-              style: const TextStyle(fontWeight: FontWeight.bold),
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                color: Colors.grey,
+              ),
             ),
           ),
           Expanded(
@@ -80,17 +198,165 @@ class DocumentTile extends StatelessWidget {
     );
   }
 
-  // Implement other handlers
-  void _handleEdit(BuildContext context) {
-    // Add edit implementation
+  Future<void> _downloadDocument(BuildContext context) async {
+    try {
+      if (document.filePath == null) {
+        throw Exception('No file available for download');
+      }
+
+      // Show download progress dialog
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) => const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+
+      // Get the token from provider
+      final provider = Provider.of<DocumentProvider>(context, listen: false);
+      final token = provider.token;
+
+      // Construct download URL
+      final downloadUrl = '${ApiConfig.documentsUrl}${document.id}/download';
+
+      // Make the download request
+      final response = await http.get(
+        Uri.parse(downloadUrl),
+        headers: ApiConfig.authHeaders(token),
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception('Failed to download file');
+      }
+
+      // Get the downloads directory
+      final tempDir = await getTemporaryDirectory();
+      final fileName = document.filePath!.split('/').last;
+      final file = File('${tempDir.path}/$fileName');
+
+      // Write the file
+      await file.writeAsBytes(response.bodyBytes);
+
+      if (context.mounted) {
+        // Close progress dialog
+        Navigator.pop(context);
+
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('File downloaded: ${file.path}'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        // Close progress dialog if open
+        Navigator.pop(context);
+        _showErrorSnackBar(context, 'Error downloading document: $e');
+      }
+    }
   }
 
-  void _handleDownload(BuildContext context) {
-    // Add download implementation
+  Future<void> _deleteDocument(
+      BuildContext context, DocumentProvider provider) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) => AlertDialog(
+        title: const Text('Delete Document'),
+        content: Text('Are you sure you want to delete "${document.name}"?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.red,
+            ),
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && context.mounted) {
+      try {
+        // Show loading indicator
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (BuildContext context) => const PopScope(
+            canPop: false,
+            child: AlertDialog(
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(height: 16),
+                  Text('Deleting document...'),
+                ],
+              ),
+            ),
+          ),
+        );
+
+        await provider.removeDocument(document.id);
+
+        if (context.mounted) {
+          // Dismiss loading indicator
+          Navigator.of(context).pop();
+
+          // Show success message
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Document deleted successfully'),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      } catch (e) {
+        if (context.mounted) {
+          // Dismiss loading indicator
+          Navigator.of(context).pop();
+
+          // Show error message
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error deleting document: ${e.toString()}'),
+              backgroundColor: Colors.red,
+              behavior: SnackBarBehavior.floating,
+              action: SnackBarAction(
+                label: 'Retry',
+                textColor: Colors.white,
+                onPressed: () => _deleteDocument(context, provider),
+              ),
+            ),
+          );
+        }
+      }
+    }
   }
 
-  void _handleDelete(BuildContext context) {
-    // Add delete implementation
+  void _showSnackBar(BuildContext context, String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  void _showErrorSnackBar(BuildContext context, String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
   }
 
   @override
