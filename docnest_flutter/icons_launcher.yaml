@@ -1,0 +1,14 @@
+# 1. Create icons_launcher.yaml in your project root:
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/icon/icon.png"
+  adaptive_icon_background: "#FFFFFF" # White background
+  adaptive_icon_foreground: "assets/icon/icon_foreground.png"
+  # Minimum size for icon.png should be 1024x1024 pixels
+  # Adaptive icon foreground should be 108x108dp (432x432 pixels)
+  
+  android_12:
+    image_path: "assets/icon/icon.png"
+    icon_background_color: "#FFFFFF"
+    foreground_image_path: "assets/icon/icon_foreground.png"
