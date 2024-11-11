@@ -285,9 +285,9 @@ Created: ${formatDate(document.createdAt)}
         showDialog(
           context: context,
           barrierDismissible: false,
-          builder: (BuildContext context) => WillPopScope(
-            onWillPop: () async => false, // Prevent dismissing with back button
-            child: const AlertDialog(
+          builder: (BuildContext context) => const PopScope(
+            canPop: false,
+            child: AlertDialog(
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -365,196 +365,297 @@ Created: ${formatDate(document.createdAt)}
         final isSelected = provider.isSelected(document.id);
         final isSelectionMode = provider.isSelectionMode;
 
-        return Card(
-          margin: const EdgeInsets.symmetric(horizontal: 16),
-          elevation: 1,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: ListTile(
-            contentPadding: const EdgeInsets.all(16),
-            leading: Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: getCategoryColor(document.category).withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: isSelectionMode
-                  ? Checkbox(
-                      value: isSelected,
-                      onChanged: (_) => provider.toggleSelection(document.id),
-                    )
-                  : Icon(
-                      getCategoryIcon(document.category),
-                      color: getCategoryColor(document.category),
-                    ),
-            ),
-            title: Text(
-              document.name,
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 18,
-              ),
-            ),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (document.description.isNotEmpty) ...[
-                  Text(
-                    document.description,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
+        return Dismissible(
+          key: Key(document.id),
+          direction: DismissDirection.endToStart,
+          confirmDismiss: (_) async {
+            final result = await showDialog<bool>(
+              context: context,
+              builder: (BuildContext context) => AlertDialog(
+                title: const Text('Delete Document'),
+                content:
+                    Text('Are you sure you want to delete "${document.name}"?'),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(false),
+                    child: const Text('Cancel'),
                   ),
-                  const SizedBox(height: 8),
+                  TextButton(
+                    style: TextButton.styleFrom(
+                      foregroundColor: Colors.red,
+                    ),
+                    onPressed: () => Navigator.of(context).pop(true),
+                    child: const Text('Delete'),
+                  ),
                 ],
-                // File metadata row
-                Wrap(
-                  spacing: 12,
-                  children: [
-                    // Date
-                    Row(
+              ),
+            );
+            return result ?? false;
+          },
+          onDismissed: (_) async {
+            try {
+              showDialog(
+                context: context,
+                barrierDismissible: false,
+                builder: (BuildContext context) => const PopScope(
+                  // Changed from WillPopScope
+                  canPop: false, // Changed from onWillPop
+                  child: AlertDialog(
+                    content: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.calendar_today,
-                            size: 14, color: Colors.grey[400]),
-                        const SizedBox(width: 4),
-                        Text(
-                          formatDate(document.createdAt),
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey[600],
-                          ),
-                        ),
+                        CircularProgressIndicator(),
+                        SizedBox(height: 16),
+                        Text('Deleting document...'),
                       ],
                     ),
-                    // File size
-                    if (document.fileSize != null)
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.straighten,
-                              size: 14, color: Colors.grey[400]),
-                          const SizedBox(width: 4),
-                          Text(
-                            formatFileSize(document.fileSize),
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey[600],
-                            ),
-                          ),
-                        ],
-                      ),
-                    // File format
-                    if (document.fileType != null)
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.description,
-                              size: 14, color: Colors.grey[400]),
-                          const SizedBox(width: 4),
-                          Text(
-                            document.fileType!.split('/').last.toUpperCase(),
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey[600],
-                            ),
-                          ),
-                        ],
-                      ),
-                  ],
+                  ),
+                ),
+              );
+
+              await provider.removeDocument(document.id);
+
+              if (context.mounted) {
+                Navigator.of(context).pop(); // Dismiss loading dialog
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Document deleted successfully'),
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+              }
+            } catch (e) {
+              if (context.mounted) {
+                Navigator.of(context).pop(); // Dismiss loading dialog
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Error deleting document: ${e.toString()}'),
+                    backgroundColor: Colors.red,
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+              }
+            }
+          },
+          background: Container(
+            decoration: BoxDecoration(
+              color: Colors.red,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            margin: const EdgeInsets.symmetric(horizontal: 16),
+            alignment: Alignment.centerRight,
+            padding: const EdgeInsets.only(right: 24),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(
+                  Icons.delete,
+                  color: Colors.white,
+                  size: 24,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Delete',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ],
             ),
-            trailing: isSelectionMode
-                ? null
-                : Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        icon: Icon(
-                          Icons.edit,
-                          color: theme.colorScheme.primary,
-                        ),
-                        onPressed: () => _handleEdit(context, provider),
+          ),
+          child: Card(
+            margin: const EdgeInsets.symmetric(horizontal: 16),
+            elevation: 1,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: ListTile(
+              contentPadding: const EdgeInsets.all(16),
+              leading: Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: getCategoryColor(document.category).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: isSelectionMode
+                    ? Checkbox(
+                        value: isSelected,
+                        onChanged: (_) => provider.toggleSelection(document.id),
+                      )
+                    : Icon(
+                        getCategoryIcon(document.category),
+                        color: getCategoryColor(document.category),
                       ),
-                      PopupMenuButton<String>(
-                        icon: Icon(Icons.more_vert,
-                            color: theme.colorScheme.primary),
-                        onSelected: (action) =>
-                            _handleMenuAction(context, action),
-                        itemBuilder: (BuildContext context) => [
-                          PopupMenuItem<String>(
-                            value: 'info',
-                            child: Row(
-                              children: [
-                                Icon(Icons.info,
-                                    size: 20, color: theme.colorScheme.primary),
-                                const SizedBox(width: 8),
-                                const Text('info'),
-                              ],
-                            ),
-                          ),
-                          PopupMenuItem<String>(
-                            value: 'share',
-                            child: Row(
-                              children: [
-                                Icon(Icons.share,
-                                    size: 20, color: theme.colorScheme.primary),
-                                const SizedBox(width: 8),
-                                const Text('Share'),
-                              ],
-                            ),
-                          ),
-                          PopupMenuItem<String>(
-                            value: 'download',
-                            child: Row(
-                              children: [
-                                Icon(Icons.download,
-                                    size: 20, color: theme.colorScheme.primary),
-                                const SizedBox(width: 8),
-                                const Text('Download'),
-                              ],
-                            ),
-                          ),
-                          PopupMenuItem<String>(
-                            value: 'print',
-                            child: Row(
-                              children: [
-                                Icon(Icons.print,
-                                    size: 20, color: theme.colorScheme.primary),
-                                const SizedBox(width: 8),
-                                const Text('Print'),
-                              ],
-                            ),
-                          ),
-                          const PopupMenuItem<String>(
-                            value: 'delete',
-                            child: Row(
-                              children: [
-                                Icon(Icons.delete, color: Colors.red, size: 20),
-                                SizedBox(width: 8),
-                                Text('Delete',
-                                    style: TextStyle(color: Colors.red)),
-                              ],
+              ),
+              title: Text(
+                document.name,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                ),
+              ),
+              subtitle: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (document.description.isNotEmpty) ...[
+                    Text(
+                      document.description,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 8),
+                  ],
+                  Wrap(
+                    spacing: 12,
+                    children: [
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.calendar_today,
+                              size: 14, color: Colors.grey[400]),
+                          const SizedBox(width: 4),
+                          Text(
+                            formatDate(document.createdAt),
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[600],
                             ),
                           ),
                         ],
                       ),
+                      if (document.fileSize != null)
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.straighten,
+                                size: 14, color: Colors.grey[400]),
+                            const SizedBox(width: 4),
+                            Text(
+                              formatFileSize(document.fileSize),
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                          ],
+                        ),
+                      if (document.fileType != null)
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.description,
+                                size: 14, color: Colors.grey[400]),
+                            const SizedBox(width: 4),
+                            Text(
+                              document.fileType!.split('/').last.toUpperCase(),
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                          ],
+                        ),
                     ],
                   ),
-            selected: isSelected,
-            selectedTileColor: theme.colorScheme.primary.withOpacity(0.1),
-            onTap: () {
-              if (isSelectionMode) {
-                provider.toggleSelection(document.id);
-              }
-            },
-            onLongPress: () {
-              if (!isSelectionMode) {
-                provider.toggleSelection(document.id);
-              }
-            },
+                ],
+              ),
+              trailing: isSelectionMode
+                  ? null
+                  : Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon: Icon(
+                            Icons.edit,
+                            color: theme.colorScheme.primary,
+                          ),
+                          onPressed: () => _handleEdit(context, provider),
+                        ),
+                        PopupMenuButton<String>(
+                          icon: Icon(Icons.more_vert,
+                              color: theme.colorScheme.primary),
+                          onSelected: (action) =>
+                              _handleMenuAction(context, action),
+                          itemBuilder: (BuildContext context) => [
+                            PopupMenuItem<String>(
+                              value: 'info',
+                              child: Row(
+                                children: [
+                                  Icon(Icons.info,
+                                      size: 20,
+                                      color: theme.colorScheme.primary),
+                                  const SizedBox(width: 8),
+                                  const Text('Info'),
+                                ],
+                              ),
+                            ),
+                            PopupMenuItem<String>(
+                              value: 'share',
+                              child: Row(
+                                children: [
+                                  Icon(Icons.share,
+                                      size: 20,
+                                      color: theme.colorScheme.primary),
+                                  const SizedBox(width: 8),
+                                  const Text('Share'),
+                                ],
+                              ),
+                            ),
+                            PopupMenuItem<String>(
+                              value: 'download',
+                              child: Row(
+                                children: [
+                                  Icon(Icons.download,
+                                      size: 20,
+                                      color: theme.colorScheme.primary),
+                                  const SizedBox(width: 8),
+                                  const Text('Download'),
+                                ],
+                              ),
+                            ),
+                            PopupMenuItem<String>(
+                              value: 'print',
+                              child: Row(
+                                children: [
+                                  Icon(Icons.print,
+                                      size: 20,
+                                      color: theme.colorScheme.primary),
+                                  const SizedBox(width: 8),
+                                  const Text('Print'),
+                                ],
+                              ),
+                            ),
+                            const PopupMenuItem<String>(
+                              value: 'delete',
+                              child: Row(
+                                children: [
+                                  Icon(Icons.delete,
+                                      color: Colors.red, size: 20),
+                                  SizedBox(width: 8),
+                                  Text('Delete',
+                                      style: TextStyle(color: Colors.red)),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+              selected: isSelected,
+              selectedTileColor: theme.colorScheme.primary.withOpacity(0.1),
+              onTap: () {
+                if (isSelectionMode) {
+                  provider.toggleSelection(document.id);
+                }
+              },
+              onLongPress: () {
+                if (!isSelectionMode) {
+                  provider.toggleSelection(document.id);
+                }
+              },
+            ),
           ),
         );
       },
