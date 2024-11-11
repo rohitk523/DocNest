@@ -14,7 +14,7 @@ class ApiConfig {
   }
 
   static String get authUrl => '$baseUrl/auth';
-  static String get documentsUrl => '$baseUrl/documents';
+  static String get documentsUrl => '$baseUrl/documents/';
 
   // Common headers
   static Map<String, String> get jsonHeaders => {

@@ -208,7 +208,7 @@ class DocumentService {
     while (attempts < maxRetries) {
       try {
         attempts++;
-        final url = Uri.parse('${ApiConfig.documentsUrl}/$documentId');
+        final url = Uri.parse('${ApiConfig.documentsUrl}$documentId');
 
         print('Deleting document at: $url (Attempt $attempts of $maxRetries)');
 
