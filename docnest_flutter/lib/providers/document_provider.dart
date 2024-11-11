@@ -40,17 +40,44 @@ class DocumentProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  void toggleSelection(String documentId) {
-    if (_isDragging) return; // Don't toggle selection while dragging
+  void startSelection() {
+    _isSelectionMode = true;
+    notifyListeners();
+  }
 
+  // Just to make sure all related methods are properly defined
+  void clearSelection() {
+    _selectedDocuments.clear();
+    _isSelectionMode = false;
+    notifyListeners();
+  }
+
+  void toggleSelection(String documentId) {
     if (_selectedDocuments.contains(documentId)) {
       _selectedDocuments.remove(documentId);
-      if (_selectedDocuments.isEmpty) _isSelectionMode = false;
+      if (_selectedDocuments.isEmpty) {
+        _isSelectionMode = false;
+      }
     } else {
-      _isSelectionMode = true;
       _selectedDocuments.add(documentId);
+      _isSelectionMode = true;
     }
     notifyListeners();
+  }
+
+  // Update your getShareableContent method if not already present
+  String getShareableContent() {
+    if (_selectedDocuments.isEmpty) return '';
+
+    return _documents
+        .where((doc) => _selectedDocuments.contains(doc.id))
+        .map((doc) => '''
+Document: ${doc.name}
+Category: ${doc.category}
+Description: ${doc.description}
+Created: ${doc.createdAt}
+''')
+        .join('\n---\n');
   }
 
   // Token Management
@@ -116,12 +143,6 @@ class DocumentProvider with ChangeNotifier {
   void selectAll() {
     _selectedDocuments = _documents.map((doc) => doc.id).toSet();
     _isSelectionMode = true;
-    notifyListeners();
-  }
-
-  void clearSelection() {
-    _selectedDocuments.clear();
-    _isSelectionMode = false;
     notifyListeners();
   }
 
@@ -223,20 +244,6 @@ class DocumentProvider with ChangeNotifier {
       }
     }
     notifyListeners();
-  }
-
-  String getShareableContent() {
-    if (selectedDocuments.isEmpty) return '';
-
-    return selectedDocuments.map((doc) {
-      return '''
-Document: ${doc.name}
-Category: ${doc.category}
-Description: ${doc.description}
-Created: ${doc.createdAt}
-Modified: ${doc.modifiedAt}
-''';
-    }).join('\n---\n');
   }
 
   @override

@@ -21,13 +21,36 @@ class DocumentSection extends StatefulWidget {
 
 class _DocumentSectionState extends State<DocumentSection> {
   bool _isDropTarget = false;
+  bool _isMoving = false;
 
   Future<void> _updateDocumentCategory(
       Document document, String newCategory) async {
     final provider = context.read<DocumentProvider>();
+    setState(() => _isMoving = true);
+
     try {
+      // Show moving dialog
+      if (context.mounted) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => const AlertDialog(
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 16),
+                Text('Moving document...'),
+              ],
+            ),
+          ),
+        );
+      }
+
       await provider.updateDocumentCategory(document.id, newCategory);
+
       if (mounted) {
+        Navigator.of(context).pop(); // Dismiss loading dialog
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Moved to ${newCategory.toLowerCase()}'),
@@ -37,6 +60,7 @@ class _DocumentSectionState extends State<DocumentSection> {
       }
     } catch (e) {
       if (mounted) {
+        Navigator.of(context).pop(); // Dismiss loading dialog
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Failed to move document: ${e.toString()}'),
@@ -45,6 +69,8 @@ class _DocumentSectionState extends State<DocumentSection> {
           ),
         );
       }
+    } finally {
+      setState(() => _isMoving = false);
     }
   }
 
@@ -62,8 +88,9 @@ class _DocumentSectionState extends State<DocumentSection> {
 
         return DragTarget<Document>(
           onWillAccept: (document) {
-            if (document?.category.toLowerCase() ==
-                widget.title.toLowerCase()) {
+            if (_isMoving ||
+                document?.category.toLowerCase() ==
+                    widget.title.toLowerCase()) {
               return false;
             }
             setState(() => _isDropTarget = true);
