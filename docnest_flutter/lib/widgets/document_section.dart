@@ -21,38 +21,36 @@ class DocumentSection extends StatefulWidget {
 
 class _DocumentSectionState extends State<DocumentSection> {
   bool _isDropTarget = false;
-  bool _isMoving = false;
 
   Future<void> _updateDocumentCategory(
       Document document, String newCategory) async {
-    if (_isMoving) return;
-
-    setState(() => _isMoving = true);
     final provider = context.read<DocumentProvider>();
 
     try {
-      // Show loading overlay
+      // Show loading dialog
       if (context.mounted) {
         showDialog(
           context: context,
           barrierDismissible: false,
-          builder: (context) => const AlertDialog(
+          builder: (context) => AlertDialog(
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                CircularProgressIndicator(),
-                SizedBox(height: 16),
-                Text('Moving document...'),
+                const CircularProgressIndicator(),
+                const SizedBox(height: 16),
+                Text(
+                    'Moving ${document.name} to ${newCategory.toLowerCase()}...'),
               ],
             ),
           ),
         );
       }
 
+      // Update document category
       await provider.updateDocumentCategory(document.id, newCategory);
 
       if (mounted) {
-        // Dismiss loading overlay
+        // Dismiss loading dialog
         Navigator.of(context).pop();
 
         // Show success message
@@ -65,7 +63,7 @@ class _DocumentSectionState extends State<DocumentSection> {
       }
     } catch (e) {
       if (mounted) {
-        // Dismiss loading overlay
+        // Dismiss loading dialog
         Navigator.of(context).pop();
 
         // Show error message
@@ -81,10 +79,6 @@ class _DocumentSectionState extends State<DocumentSection> {
             ),
           ),
         );
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isMoving = false);
       }
     }
   }
@@ -103,26 +97,24 @@ class _DocumentSectionState extends State<DocumentSection> {
 
         return DragTarget<Document>(
           onWillAccept: (document) {
-            if (_isMoving ||
-                document?.category.toLowerCase() ==
-                    widget.title.toLowerCase()) {
+            if (document?.category.toLowerCase() ==
+                widget.title.toLowerCase()) {
               return false;
             }
             setState(() => _isDropTarget = true);
             return true;
           },
-          onAccept: (document) {
+          onAccept: (document) async {
             setState(() => _isDropTarget = false);
             provider.endDragging();
-            _updateDocumentCategory(document, widget.title);
+            await _updateDocumentCategory(document, widget.title);
           },
           onLeave: (_) {
             setState(() => _isDropTarget = false);
             provider.endDragging();
           },
           builder: (context, candidateData, rejectedData) {
-            return AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
+            return Container(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(8),
                 border: _isDropTarget
@@ -184,53 +176,38 @@ class _DocumentSectionState extends State<DocumentSection> {
                       ],
                     ),
                   ),
-                  if (!isSelectionMode)
-                    ReorderableListView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: widget.documents.length,
-                      onReorder: (oldIndex, newIndex) {
-                        if (newIndex > oldIndex) newIndex--;
-                        provider.reorderDocuments(
-                            widget.title, oldIndex, newIndex);
-                      },
-                      itemBuilder: (context, index) {
-                        final document = widget.documents[index];
-                        return Draggable<Document>(
-                          key: ValueKey(document.id),
-                          data: document,
-                          feedback: Material(
-                            elevation: 4,
-                            borderRadius: BorderRadius.circular(12),
-                            child: SizedBox(
-                              width: MediaQuery.of(context).size.width * 0.9,
-                              child: DocumentTile(
-                                document: document,
-                                isDragging: true,
-                              ),
+                  if (!isSelectionMode) ...[
+                    for (var document in widget.documents)
+                      LongPressDraggable<Document>(
+                        data: document,
+                        feedback: Material(
+                          elevation: 4,
+                          borderRadius: BorderRadius.circular(12),
+                          child: SizedBox(
+                            width: MediaQuery.of(context).size.width * 0.9,
+                            child: DocumentTile(
+                              document: document,
+                              isDragging: true,
                             ),
                           ),
-                          childWhenDragging: Container(
-                            height: 100,
-                            margin: const EdgeInsets.symmetric(vertical: 4),
-                            decoration: BoxDecoration(
-                              color: theme.colorScheme.surface.withOpacity(0.5),
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(
-                                color:
-                                    theme.colorScheme.outline.withOpacity(0.5),
-                              ),
+                        ),
+                        childWhenDragging: Container(
+                          height: 100,
+                          margin: const EdgeInsets.symmetric(vertical: 4),
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.surface.withOpacity(0.5),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: theme.colorScheme.outline.withOpacity(0.5),
                             ),
                           ),
-                          onDragStarted: provider.startDragging,
-                          onDragEnd: (_) => provider.endDragging(),
-                          onDraggableCanceled: (_, __) =>
-                              provider.endDragging(),
-                          child: DocumentTile(document: document),
-                        );
-                      },
-                    )
-                  else
+                        ),
+                        onDragStarted: provider.startDragging,
+                        onDragEnd: (_) => provider.endDragging(),
+                        onDraggableCanceled: (_, __) => provider.endDragging(),
+                        child: DocumentTile(document: document),
+                      ),
+                  ] else
                     ListView.builder(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
