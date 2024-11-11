@@ -13,6 +13,18 @@ import 'upload_dialog.dart';
 class QuickActionsBar extends StatelessWidget {
   const QuickActionsBar({super.key});
 
+  void _toggleSelectionMode(BuildContext context) {
+    final provider = context.read<DocumentProvider>();
+    if (provider.isSelectionMode) {
+      provider.clearSelection();
+    } else {
+      // Start selection mode with the first document selected
+      if (provider.documents.isNotEmpty) {
+        provider.toggleSelection(provider.documents.first.id);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer<DocumentProvider>(
@@ -66,16 +78,8 @@ class QuickActionsBar extends StatelessWidget {
                     context,
                     isSelectionMode ? Icons.close : Icons.checklist,
                     isSelectionMode ? 'Cancel' : 'Select',
-                    () {
-                      if (isSelectionMode) {
-                        provider.clearSelection();
-                      } else {
-                        final documents = provider.documents;
-                        if (documents.isNotEmpty) {
-                          provider.toggleSelection(documents.first.id);
-                        }
-                      }
-                    },
+                    () => _toggleSelectionMode(
+                        context), // Use the new method here
                   ),
                 ],
               ),

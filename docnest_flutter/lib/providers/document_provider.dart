@@ -26,6 +26,32 @@ class DocumentProvider with ChangeNotifier {
   int get selectedCount => _selectedDocuments.length;
   List<String> get searchHistory => _searchHistory;
   String get token => _token;
+  // Add this to your DocumentProvider class
+  bool _isDragging = false;
+  bool get isDragging => _isDragging;
+
+  void startDragging() {
+    _isDragging = true;
+    notifyListeners();
+  }
+
+  void endDragging() {
+    _isDragging = false;
+    notifyListeners();
+  }
+
+  void toggleSelection(String documentId) {
+    if (_isDragging) return; // Don't toggle selection while dragging
+
+    if (_selectedDocuments.contains(documentId)) {
+      _selectedDocuments.remove(documentId);
+      if (_selectedDocuments.isEmpty) _isSelectionMode = false;
+    } else {
+      _isSelectionMode = true;
+      _selectedDocuments.add(documentId);
+    }
+    notifyListeners();
+  }
 
   // Token Management
   void updateToken(String newToken) {
@@ -87,18 +113,6 @@ class DocumentProvider with ChangeNotifier {
     }).toList();
   }
 
-  // Selection Methods
-  void toggleSelection(String documentId) {
-    if (_selectedDocuments.contains(documentId)) {
-      _selectedDocuments.remove(documentId);
-      if (_selectedDocuments.isEmpty) _isSelectionMode = false;
-    } else {
-      _isSelectionMode = true;
-      _selectedDocuments.add(documentId);
-    }
-    notifyListeners();
-  }
-
   void selectAll() {
     _selectedDocuments = _documents.map((doc) => doc.id).toSet();
     _isSelectionMode = true;
@@ -122,6 +136,25 @@ class DocumentProvider with ChangeNotifier {
   void addDocument(Document document) {
     _documents.add(document);
     notifyListeners();
+  }
+
+  void reorderDocuments(String category, int oldIndex, int newIndex) {
+    final categoryDocs = _documents
+        .where((doc) => doc.category.toLowerCase() == category.toLowerCase())
+        .toList();
+
+    if (oldIndex < categoryDocs.length && newIndex < categoryDocs.length) {
+      final doc = categoryDocs.removeAt(oldIndex);
+      categoryDocs.insert(newIndex, doc);
+
+      // Update the main documents list to match the new order
+      _documents = _documents.map((d) {
+        if (d.category.toLowerCase() != category.toLowerCase()) return d;
+        return categoryDocs[categoryDocs.indexOf(d)];
+      }).toList();
+
+      notifyListeners();
+    }
   }
 
   Future<void> removeSelectedDocuments() async {
@@ -163,6 +196,20 @@ class DocumentProvider with ChangeNotifier {
     if (index != -1) {
       _documents[index] = updatedDoc;
       notifyListeners();
+    }
+  }
+
+  Future<void> updateDocumentCategory(
+      String documentId, String newCategory) async {
+    try {
+      final documentService = DocumentService(token: token);
+      final updatedDoc = await documentService.updateDocument(
+        documentId: documentId,
+        category: newCategory,
+      );
+      updateDocument(updatedDoc);
+    } catch (e) {
+      throw Exception('Failed to update document category: $e');
     }
   }
 
