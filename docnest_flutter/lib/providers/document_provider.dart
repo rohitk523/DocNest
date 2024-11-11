@@ -2,6 +2,10 @@
 import 'package:flutter/foundation.dart';
 import '../models/document.dart';
 import '../services/document_service.dart';
+import '../models/user.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import '../services/api_config.dart';
 
 class DocumentProvider with ChangeNotifier {
   List<Document> _documents = [];
@@ -78,6 +82,63 @@ Description: ${doc.description}
 Created: ${doc.createdAt}
 ''')
         .join('\n---\n');
+  }
+
+  User? _currentUser;
+  User? get currentUser => _currentUser;
+
+  Future<void> fetchUserProfile() async {
+    if (_token.isEmpty) {
+      print('No token available for fetching profile');
+      return;
+    }
+    if (_isLoadingProfile) {
+      print('Already loading profile');
+      return;
+    }
+
+    try {
+      print('Fetching user profile...');
+      _isLoadingProfile = true;
+      notifyListeners();
+
+      final url = '${ApiConfig.authUrl}/me';
+      print('Request URL: $url');
+      print('Request headers: ${ApiConfig.authHeaders(_token)}');
+
+      final response = await http.get(
+        Uri.parse(url),
+        headers: ApiConfig.authHeaders(_token),
+      );
+
+      print('Response status: ${response.statusCode}');
+      print('Response body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final userData = json.decode(response.body);
+        _currentUser = User.fromJson(userData);
+        print('Successfully loaded user profile: ${_currentUser?.email}');
+      } else {
+        print('Failed to load profile: ${response.statusCode}');
+        print('Response body: ${response.body}');
+        throw Exception('Failed to load user profile');
+      }
+    } catch (e) {
+      print('Error fetching user profile: $e');
+      rethrow;
+    } finally {
+      _isLoadingProfile = false;
+      notifyListeners();
+    }
+  }
+
+// Update the updateToken method to also fetch user profile
+  void updateTokenProfile(String newToken) {
+    _token = newToken;
+    if (_token.isNotEmpty) {
+      fetchUserProfile();
+    }
+    notifyListeners();
   }
 
   // Token Management
@@ -245,6 +306,9 @@ Created: ${doc.createdAt}
     }
     notifyListeners();
   }
+
+  bool _isLoadingProfile = false;
+  bool get isLoadingProfile => _isLoadingProfile;
 
   @override
   void dispose() {
