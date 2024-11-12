@@ -1,20 +1,33 @@
-name: Build
+name: SonarCloud Analysis
+
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
   pull_request:
-    types: [opened, synchronize, reopened]
+    branches: [ main ]
+  workflow_dispatch:
+
 jobs:
   sonarcloud:
-    name: SonarQube Cloud
+    name: SonarCloud
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v3
         with:
-          fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
-      - name: SonarQube Cloud Scan
+          fetch-depth: 0
+
+      - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@master
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: >
+            -Dsonar.projectKey=rohitk523_DocNest
+            -Dsonar.organization=rohitk523
+            -Dsonar.sources=.
+            -Dsonar.c.file.suffixes=-
+            -Dsonar.cpp.file.suffixes=-
+            -Dsonar.objc.file.suffixes=-
+            -Dsonar.python.version=3.11
+            -Dsonar.exclusions=**/*.pyc,**/*.dart.js,**/*.g.dart,**/*.freezed.dart,**/test/**,**/.dart_tool/**,**/build/**,**/.idea/**,**/.vscode/**,**/*.pbxproj,**/*.plist
