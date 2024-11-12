@@ -67,7 +67,6 @@ async def create_document(
             detail=str(e)
         )
 
-# The rest of your router endpoints remain the same...
 
 @api_router.get("/documents/", response_model=List[DocumentResponse])
 async def list_documents(
