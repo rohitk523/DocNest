@@ -4,11 +4,18 @@ services:
     environment:
       - SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true
     ports:
-      - "9001:9000"
+      - "9000:9000"  # Exposing SonarQube on port 9001 of the host
     volumes:
       - sonarqube_data:/opt/sonarqube/data
       - sonarqube_extensions:/opt/sonarqube/extensions
       - sonarqube_logs:/opt/sonarqube/logs
+    networks:
+      - sonar-network  # Specify the custom network here
+
+networks:
+  sonar-network:  # Define the custom network
+    driver: bridge  # Default network driver
+
 volumes:
   sonarqube_data:
   sonarqube_extensions:
