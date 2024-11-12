@@ -19,21 +19,21 @@ jobs:
       - name: Set up JDK
         uses: actions/setup-java@v3
         with:
-          java-version: '11'  # Java version for SonarQube projects, if applicable
-          distribution: 'temurin'  # Specify Java distribution
+          java-version: '11'  # Specify Java version if using SonarQube for a Java project
+          distribution: 'temurin'
 
       - name: SonarQube Scan
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
-          # Download and install SonarScanner
+          # Install SonarScanner
           curl -sSLo sonarscanner.zip https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-4.6.2.2472-linux.zip
           unzip sonarscanner.zip -d $HOME/sonarscanner
           export PATH="$HOME/sonarscanner/sonar-scanner-4.6.2.2472-linux/bin:$PATH"
           
-          # Run SonarScanner with parameters
+          # Run SonarScanner
           sonar-scanner \
-            -Dsonar.projectKey=your_project_key \
+            -Dsonar.projectKey=DocNest \
             -Dsonar.sources=. \
             -Dsonar.host.url=http://localhost:9000 \
             -Dsonar.login=$SONAR_TOKEN
