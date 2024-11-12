@@ -10,6 +10,7 @@ Tasks Remaining:
 
 
 .
+cheking quality gate
 
 
 
