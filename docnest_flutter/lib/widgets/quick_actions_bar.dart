@@ -1,10 +1,10 @@
-import 'package:docnest_flutter/widgets/search_bar_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/document_provider.dart';
 import './document_search.dart';
 import './upload_dialog.dart';
 import 'package:share_plus/share_plus.dart';
+import '../widgets/search_widget.dart';
 
 class QuickActionsBar extends StatelessWidget {
   const QuickActionsBar({super.key});
@@ -19,23 +19,8 @@ class QuickActionsBar extends StatelessWidget {
     }
   }
 
-  Future<void> _handleSearch(BuildContext context) async {
-    final provider = context.read<DocumentProvider>();
-    if (provider.isSelectionMode) {
-      provider.clearSelection();
-    }
-
-    // Show the search bar directly in a dialog
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        contentPadding: const EdgeInsets.all(16),
-        content: const SizedBox(
-          width: double.maxFinite,
-          child: SearchBarWidget(),
-        ),
-      ),
-    );
+  void _handleSearch(BuildContext context) {
+    showDocumentSearch(context);
   }
 
   Future<void> _handleShare(BuildContext context) async {

@@ -451,6 +451,16 @@ Created: ${formatDate(document.createdAt)}
                         ),
                       ),
                       const PopupMenuItem(
+                        value: 'share',
+                        child: Row(
+                          children: [
+                            Icon(Icons.share),
+                            SizedBox(width: 8),
+                            Text('share'),
+                          ],
+                        ),
+                      ),
+                      const PopupMenuItem(
                         value: 'download',
                         child: Row(
                           children: [
