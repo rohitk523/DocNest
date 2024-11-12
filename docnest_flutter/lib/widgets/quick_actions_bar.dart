@@ -1,3 +1,4 @@
+import 'package:docnest_flutter/widgets/search_bar_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/document_provider.dart';
@@ -24,14 +25,17 @@ class QuickActionsBar extends StatelessWidget {
       provider.clearSelection();
     }
 
-    final result = await showDialog(
+    // Show the search bar directly in a dialog
+    showDialog(
       context: context,
-      builder: (context) => const SearchDialog(),
+      builder: (context) => AlertDialog(
+        contentPadding: const EdgeInsets.all(16),
+        content: const SizedBox(
+          width: double.maxFinite,
+          child: SearchBarWidget(),
+        ),
+      ),
     );
-
-    if (result != null) {
-      // Handle search result
-    }
   }
 
   Future<void> _handleShare(BuildContext context) async {
