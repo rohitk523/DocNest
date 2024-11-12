@@ -3,3 +3,11 @@ docnest_fastapi/env
 .env
 **/.DS_Store
 docnest_backend/venv
+# Firebase
+google-services.json
+**/ios/Runner/GoogleService-Info.plist
+docnest_flutter/android/app/google-services.json
+
+# Keys and Secrets
+*.jks
+key.properties
