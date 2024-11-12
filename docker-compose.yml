@@ -8,8 +8,11 @@ services:
       SONAR_JDBC_URL: jdbc:postgresql://db:5432/sonarqube
       SONAR_JDBC_USERNAME: sonarqube
       SONAR_JDBC_PASSWORD: sonarqube
+      SONAR_ES_BOOTSTRAP_CHECKS_DISABLE: "true"  # Disable ES bootstrap checks for development
     depends_on:
       - db
+    networks:
+      - sonarnet
 
   db:
     image: postgres:latest
@@ -20,6 +23,27 @@ services:
       POSTGRES_DB: sonarqube
     volumes:
       - sonarqube_db_data:/var/lib/postgresql/data  # Persistent storage for database data
+    networks:
+      - sonarnet
+
+  sonar-scanner:
+    image: sonarsource/sonar-scanner-cli
+    depends_on:
+      - sonarqube
+    environment:
+      SONAR_HOST_URL: http://sonarqube:9000
+      SONAR_LOGIN: ${SONAR_TOKEN}
+    networks:
+      - sonarnet
+    command: >
+      sonar-scanner
+      -Dsonar.projectKey=DocNest
+      -Dsonar.sources=.
+      -Dsonar.host.url=http://sonarqube:9000
+      -Dsonar.login=${SONAR_TOKEN}
 
 volumes:
   sonarqube_db_data:
+
+networks:
+  sonarnet:
