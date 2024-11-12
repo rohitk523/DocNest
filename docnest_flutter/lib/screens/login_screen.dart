@@ -291,8 +291,8 @@ class _LoginScreenState extends State<LoginScreen> {
                           _isLogin
                               ? 'Create an account'
                               : 'Already have an account? Login',
-                          style: TextStyle(
-                            color: Theme.of(context).primaryColor,
+                          style: const TextStyle(
+                            color: Color(0xFF1A73E8),
                           ),
                         ),
                       ),

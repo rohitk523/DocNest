@@ -200,6 +200,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return Column(
       children: [
         const QuickActionsBar(),
+        const SizedBox(height: 16),
         Expanded(
           child: _isGridView
               ? _buildCategoryGrid()
@@ -293,7 +294,7 @@ class _HomeScreenState extends State<HomeScreen> {
             return const SizedBox.shrink();
           }
           return const Divider(
-            height: 20, // Total height of the divider
+            height: 40, // Total height of the divider
             thickness: 0.5, // Thickness of the divider line
             indent: 16, // Starting space from left
             endIndent: 16, // Ending space from right
@@ -398,7 +399,7 @@ class _HomeScreenState extends State<HomeScreen> {
           IconButton(
             icon: Icon(
               _isGridView ? Icons.view_list : Icons.grid_view,
-              color: Theme.of(context).primaryColor,
+              color: Theme.of(context).colorScheme.primary,
             ),
             onPressed: () {
               setState(() {
