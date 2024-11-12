@@ -293,8 +293,8 @@ class _HomeScreenState extends State<HomeScreen> {
             return const SizedBox.shrink();
           }
           return const Divider(
-            height: 10, // Total height of the divider
-            thickness: 1, // Thickness of the divider line
+            height: 20, // Total height of the divider
+            thickness: 0.5, // Thickness of the divider line
             indent: 16, // Starting space from left
             endIndent: 16, // Ending space from right
             color: Colors.grey, // Color of the divider
