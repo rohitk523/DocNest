@@ -13,3 +13,5 @@ python-magic==0.4.27
 pydantic-settings
 google-auth
 requests
+boto3==1.26.137
+botocore==1.29.137

@@ -38,6 +38,32 @@ class Settings(BaseSettings):
     # CORS settings
     ALLOWED_ORIGINS: List[str] = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000,http://localhost:8000").split(",")
 
+    # AWS Settings
+    AWS_ACCESS_KEY_ID: str = os.getenv("AWS_ACCESS_KEY_ID")
+    AWS_SECRET_ACCESS_KEY: str = os.getenv("AWS_SECRET_ACCESS_KEY")
+    AWS_REGION: str = os.getenv("AWS_REGION", "us-east-1")
+    AWS_BUCKET_NAME: str = os.getenv("AWS_BUCKET_NAME")
+    # Add to your settings
+    DEBUG_S3_OPERATIONS: bool = True  # Set to True in development
+
+
+    def validate_settings(self):
+        """Validate that all required settings are provided."""
+        required_settings = {
+            "POSTGRES_PASSWORD": self.POSTGRES_PASSWORD,
+            "JWT_SECRET_KEY": self.JWT_SECRET_KEY,
+            "GOOGLE_CLIENT_ID": self.GOOGLE_CLIENT_ID,
+            "GOOGLE_CLIENT_SECRET": self.GOOGLE_CLIENT_SECRET,
+            "AWS_ACCESS_KEY_ID": self.AWS_ACCESS_KEY_ID,
+            "AWS_SECRET_ACCESS_KEY": self.AWS_SECRET_ACCESS_KEY,
+            "AWS_BUCKET_NAME": self.AWS_BUCKET_NAME
+        }
+
+        missing_settings = [k for k, v in required_settings.items() if not v]
+        if missing_settings and self.ENVIRONMENT != "development":
+            raise ValueError(f"Missing required settings: {', '.join(missing_settings)}")
+
+
     model_config = {
         "case_sensitive": True,
         "env_file": ".env",
@@ -58,18 +84,5 @@ class Settings(BaseSettings):
         
         # Validate required settings
         self.validate_settings()
-
-    def validate_settings(self):
-        """Validate that all required settings are provided."""
-        required_settings = {
-            "POSTGRES_PASSWORD": self.POSTGRES_PASSWORD,
-            "JWT_SECRET_KEY": self.JWT_SECRET_KEY,
-            "GOOGLE_CLIENT_ID": self.GOOGLE_CLIENT_ID,
-            "GOOGLE_CLIENT_SECRET": self.GOOGLE_CLIENT_SECRET
-        }
-
-        missing_settings = [k for k, v in required_settings.items() if not v]
-        if missing_settings and self.ENVIRONMENT != "development":
-            raise ValueError(f"Missing required settings: {', '.join(missing_settings)}")
 
 settings = Settings()
