@@ -9,9 +9,8 @@ python-multipart==0.0.6
 pydantic[email]==2.5.3
 python-dotenv==1.0.0
 boto3==1.34.14
+botocore==1.34.14
 python-magic==0.4.27
 pydantic-settings
 google-auth
 requests
-boto3==1.26.137
-botocore==1.29.137
