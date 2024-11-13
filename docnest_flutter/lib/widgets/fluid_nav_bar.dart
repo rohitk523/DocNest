@@ -1,4 +1,3 @@
-// lib/widgets/fluid_nav_bar.dart
 import 'package:flutter/material.dart';
 
 class FluidNavBar extends StatefulWidget {
@@ -88,7 +87,7 @@ class _FluidNavBarState extends State<FluidNavBar>
       padding: const EdgeInsets.all(16.0),
       child: Container(
         decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF2D2D2D) : Colors.black87,
+          color: isDark ? const Color(0xFF2D2D2D) : Colors.white,
           borderRadius: BorderRadius.circular(32),
           boxShadow: [
             BoxShadow(
@@ -113,7 +112,7 @@ class _FluidNavBarState extends State<FluidNavBar>
                       child: Container(
                         decoration: BoxDecoration(
                           color: widget.currentIndex == index
-                              ? (isDark ? Colors.grey[800] : Colors.grey[800])
+                              ? (isDark ? Colors.grey[800] : Colors.grey[300])
                               : Colors.transparent,
                           borderRadius: BorderRadius.circular(16),
                         ),
@@ -131,8 +130,10 @@ class _FluidNavBarState extends State<FluidNavBar>
                               color: widget.currentIndex == index
                                   ? (isDark
                                       ? theme.colorScheme.primary
-                                      : Colors.white)
-                                  : Colors.grey[400],
+                                      : Colors.black)
+                                  : isDark
+                                      ? Colors.grey[400]
+                                      : Colors.grey[600],
                             ),
                             const SizedBox(height: 4),
                             Text(
@@ -141,8 +142,10 @@ class _FluidNavBarState extends State<FluidNavBar>
                                 color: widget.currentIndex == index
                                     ? (isDark
                                         ? theme.colorScheme.primary
-                                        : Colors.white)
-                                    : Colors.grey[400],
+                                        : Colors.black)
+                                    : isDark
+                                        ? Colors.grey[400]
+                                        : Colors.grey[600],
                                 fontSize: 12,
                               ),
                             ),

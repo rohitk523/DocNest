@@ -425,12 +425,12 @@ class _HomeScreenState extends State<HomeScreen> {
           setState(() => _currentIndex = index);
         },
       ),
-      floatingActionButton: _currentIndex == 1
-          ? FloatingActionButton(
-              child: Icon(Icons.add),
-              onPressed: _handleUpload,
-            )
-          : null,
+      // floatingActionButton: _currentIndex == 1
+      //     ? FloatingActionButton(
+      //         child: Icon(Icons.add),
+      //         onPressed: _handleUpload,
+      //       )
+      //     : null,
     );
   }
 }
