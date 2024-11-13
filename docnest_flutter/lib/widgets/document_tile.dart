@@ -126,7 +126,7 @@ class DocumentTile extends StatelessWidget {
     try {
       final provider = Provider.of<DocumentProvider>(context, listen: false);
 
-      // Show loading indicator
+      // Show loading dialog
       showDialog(
         context: context,
         barrierDismissible: false,
@@ -142,44 +142,67 @@ class DocumentTile extends StatelessWidget {
         ),
       );
 
-      // Get share information
+      // Download the file first
       final response = await http.get(
-        Uri.parse('${ApiConfig.documentsUrl}${document.id}/share'),
+        Uri.parse('${ApiConfig.documentsUrl}${document.id}/download'),
         headers: ApiConfig.authHeaders(provider.token),
       );
 
       if (response.statusCode != 200) {
-        throw Exception('Failed to get share information');
+        throw Exception('Failed to download document for sharing');
       }
 
-      final shareInfo = json.decode(response.body);
+      // Get filename from Content-Disposition header or document name
+      final contentDisposition = response.headers['content-disposition'];
+      String filename = '';
+      if (contentDisposition != null &&
+          contentDisposition.contains('filename=')) {
+        filename = contentDisposition.split('filename=')[1].replaceAll('"', '');
+      } else {
+        filename = document.name;
+        if (!filename.contains('.') && document.fileType != null) {
+          filename = '$filename.${document.fileType!.split('/').last}';
+        }
+      }
+
+      // Create temporary file
+      final tempDir = await getTemporaryDirectory();
+      final tempFile = File('${tempDir.path}/$filename');
+      await tempFile.writeAsBytes(response.bodyBytes);
 
       if (context.mounted) {
         // Dismiss loading dialog
         Navigator.pop(context);
 
-        // Create share text with metadata and download link
-        final shareText = '''
-Document: ${shareInfo['name']}
-Category: ${shareInfo['category']}
-Description: ${shareInfo['description']}
-Type: ${shareInfo['file_type'] ?? 'N/A'}
-Size: ${formatFileSize(shareInfo['file_size'])}
-Created: ${shareInfo['created_at']}
-By: ${shareInfo['metadata']['owner']}
-
-${shareInfo['download_url'] != null ? 'Download link (expires in 1 hour):\n${shareInfo['download_url']}' : ''}
+        // Share the file
+        final files = [tempFile.path];
+        final text = '''
+Document: ${document.name}
+Category: ${document.category}
+Description: ${document.description ?? 'No description'}
+Size: ${formatFileSize(document.fileSize)}
 ''';
 
-        // Share the document information
-        await Share.share(
-          shareText.trim(),
-          subject: shareInfo['name'],
+        await Share.shareXFiles(
+          files.map((path) => XFile(path)).toList(),
+          text: text,
+          subject: document.name,
         );
+
+        // Clean up temp file after a delay
+        Future.delayed(const Duration(minutes: 1), () {
+          try {
+            if (tempFile.existsSync()) {
+              tempFile.deleteSync();
+            }
+          } catch (e) {
+            print('Error cleaning up temp file: $e');
+          }
+        });
       }
     } catch (e) {
       if (context.mounted) {
-        // Dismiss loading dialog if showing
+        // Dismiss loading dialog
         Navigator.pop(context);
 
         // Show error message
@@ -266,145 +289,151 @@ ${shareInfo['download_url'] != null ? 'Download link (expires in 1 hour):\n${sha
 
   Future<void> _downloadDocument(BuildContext context) async {
     try {
-      // Request storage permission on Android
+      // Request necessary permissions
       if (Platform.isAndroid) {
-        final status = await Permission.storage.request();
-        if (!status.isGranted) {
+        if (await Permission.storage.request().isGranted) {
+          // Permission granted
+        } else {
           throw Exception('Storage permission is required to download files');
         }
       }
-      try {
-        final provider = Provider.of<DocumentProvider>(context, listen: false);
 
-        // Show download progress dialog
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (context) => const AlertDialog(
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                CircularProgressIndicator(),
-                SizedBox(height: 16),
-                Text('Downloading document...'),
-              ],
-            ),
+      // Show download progress dialog
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const AlertDialog(
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(height: 16),
+              Text('Downloading document...'),
+            ],
           ),
-        );
+        ),
+      );
 
-        // Get the downloads directory
-        Directory? downloadDir;
-        if (Platform.isAndroid) {
-          // For Android, use external storage directory
-          final directories = await getExternalStorageDirectories();
-          if (directories != null && directories.isNotEmpty) {
-            downloadDir = directories.first;
-          }
-        } else {
-          // For iOS, use documents directory
-          downloadDir = await getApplicationDocumentsDirectory();
-        }
+      final provider = Provider.of<DocumentProvider>(context, listen: false);
 
-        if (downloadDir == null) {
-          throw Exception('Could not access download directory');
-        }
+      // Make download request
+      final response = await http.get(
+        Uri.parse('${ApiConfig.documentsUrl}${document.id}/download'),
+        headers: ApiConfig.authHeaders(provider.token),
+      );
 
-        // Create a dedicated downloads folder
-        final downloadsFolder = Directory('${downloadDir.path}/Downloads');
-        if (!await downloadsFolder.exists()) {
-          await downloadsFolder.create(recursive: true);
-        }
+      if (response.statusCode != 200) {
+        throw Exception('Failed to download document');
+      }
 
-        // Make download request
-        final response = await http.get(
-          Uri.parse('${ApiConfig.documentsUrl}${document.id}/download'),
-          headers: ApiConfig.authHeaders(provider.token),
-        );
-
-        if (response.statusCode != 200) {
-          throw Exception('Failed to download document');
-        }
-
-        // Get the filename from the document name
-        String filename = document.name;
+      // Get filename from Content-Disposition header
+      final contentDisposition = response.headers['content-disposition'];
+      String filename = '';
+      if (contentDisposition != null &&
+          contentDisposition.contains('filename=')) {
+        filename = contentDisposition.split('filename=')[1].replaceAll('"', '');
+      } else {
+        filename = document.name;
+        // Add extension if not present
         if (!filename.contains('.') && document.fileType != null) {
           filename = '$filename.${document.fileType!.split('/').last}';
         }
-
-        // Ensure filename is safe for file system
-        filename = filename.replaceAll(RegExp(r'[<>:"/\\|?*]'), '_');
-
-        // Create the full file path
-        final filePath = '${downloadsFolder.path}/$filename';
-
-        // Write the file
-        final file = File(filePath);
-        await file.writeAsBytes(response.bodyBytes);
-
-        if (context.mounted) {
-          // Dismiss loading dialog
-          Navigator.pop(context);
-
-          // Show success message with file location
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Document downloaded: $filename'),
-                  Text(
-                    'Location: ${downloadsFolder.path}',
-                    style: const TextStyle(fontSize: 12),
-                  ),
-                ],
-              ),
-              duration: const Duration(seconds: 5),
-              action: SnackBarAction(
-                label: 'Open Folder',
-                onPressed: () async {
-                  // Add open_file package to pubspec.yaml first:
-                  // open_file: ^3.3.2
-                  try {
-                    await OpenFile.open(downloadsFolder.path);
-                  } catch (e) {
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Could not open folder: $e'),
-                          backgroundColor: Colors.red,
-                        ),
-                      );
-                    }
-                  }
-                },
-              ),
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
-        }
-      } catch (e) {
-        if (context.mounted) {
-          // Dismiss loading dialog if showing
-          Navigator.pop(context);
-
-          // Show error message
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Error downloading document: ${e.toString()}'),
-              backgroundColor: Colors.red,
-              behavior: SnackBarBehavior.floating,
-              action: SnackBarAction(
-                label: 'Retry',
-                textColor: Colors.white,
-                onPressed: () => _downloadDocument(context),
-              ),
-            ),
-          );
-        }
       }
 
-      // Rest of the download code...
+      // THIS IS WHERE THE NEW CODE GOES
+      String? downloadsPath;
+      if (Platform.isAndroid) {
+        // Try primary path first
+        downloadsPath = '/storage/emulated/0/Download';
+        if (!Directory(downloadsPath).existsSync()) {
+          // Try alternative path
+          downloadsPath = '/storage/emulated/0/Downloads';
+          if (!Directory(downloadsPath).existsSync()) {
+            // Final fallback - get external storage and append Download
+            final extDir = await getExternalStorageDirectory();
+            if (extDir != null) {
+              downloadsPath = '${extDir.path}/Download';
+              // Create directory if it doesn't exist
+              await Directory(downloadsPath).create(recursive: true);
+            } else {
+              throw Exception('Could not find Downloads directory');
+            }
+          }
+        }
+      } else {
+        // For iOS, use documents directory
+        final directory = await getApplicationDocumentsDirectory();
+        downloadsPath = directory.path;
+      }
+
+      if (downloadsPath == null) {
+        throw Exception('Could not access Downloads directory');
+      }
+
+      // Create the full file path
+      final filePath = '$downloadsPath/$filename';
+      final file = File(filePath);
+      // END OF NEW CODE
+
+      // Write the file
+      await file.writeAsBytes(response.bodyBytes);
+
+      if (context.mounted) {
+        // Dismiss loading dialog
+        Navigator.pop(context);
+
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Document downloaded: $filename'),
+                const SizedBox(height: 4),
+                Text(
+                  'Saved to Downloads folder',
+                  style: const TextStyle(fontSize: 12),
+                ),
+              ],
+            ),
+            duration: const Duration(seconds: 6),
+            action: SnackBarAction(
+              label: 'Open',
+              onPressed: () async {
+                try {
+                  final result = await OpenFile.open(filePath);
+                  if (result.type != ResultType.done && context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Error opening file: ${result.message}'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
+                } catch (e) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Could not open file: $e'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
+                }
+              },
+            ),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+
+        // Try to open the file automatically
+        try {
+          await OpenFile.open(filePath);
+        } catch (e) {
+          print('Error auto-opening file: $e');
+        }
+      }
     } catch (e) {
       if (context.mounted) {
         // Dismiss loading dialog if showing
@@ -413,7 +442,7 @@ ${shareInfo['download_url'] != null ? 'Download link (expires in 1 hour):\n${sha
         // Show error message
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error in permission: ${e.toString()}'),
+            content: Text('Error downloading document: ${e.toString()}'),
             backgroundColor: Colors.red,
             behavior: SnackBarBehavior.floating,
             action: SnackBarAction(
