@@ -132,38 +132,30 @@ class _DocumentSectionState extends State<DocumentSection> {
                         const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     child: Row(
                       children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color:
-                                getCategoryColor(widget.title).withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Icon(
-                            getCategoryIcon(widget.title),
-                            color: getCategoryColor(widget.title),
-                            size: 20,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
-                                widget.title[0].toUpperCase() +
-                                    widget.title.substring(1),
-                                style: theme.textTheme.titleLarge?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              Text(
-                                '${widget.documents.length} document${widget.documents.length != 1 ? 's' : ''}',
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: theme.colorScheme.onSurface
-                                      .withOpacity(0.6),
-                                ),
-                              ),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    getCategoryIcon(widget.title),
+                                    color: getCategoryColor(widget.title),
+                                    size: 20,
+                                  ),
+                                  const SizedBox(
+                                    width: 5,
+                                  ),
+                                  Text(
+                                    widget.title[0].toUpperCase() +
+                                        widget.title.substring(1),
+                                    style: theme.textTheme.titleLarge?.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              )
                             ],
                           ),
                         ),

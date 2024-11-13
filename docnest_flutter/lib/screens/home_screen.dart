@@ -217,9 +217,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return GridView.count(
       crossAxisCount: 2,
-      padding: const EdgeInsets.all(16),
-      mainAxisSpacing: 16,
-      crossAxisSpacing: 16,
+      padding: const EdgeInsets.all(20),
+      mainAxisSpacing: 10,
+      crossAxisSpacing: 5,
       children: categories.map((category) {
         final docs = provider.documents
             .where((doc) => doc.category.toLowerCase() == category)
@@ -238,7 +238,7 @@ class _HomeScreenState extends State<HomeScreen> {
             );
           },
           child: Card(
-            elevation: 4,
+            elevation: 3,
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
