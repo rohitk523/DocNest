@@ -643,7 +643,7 @@ Size: ${formatFileSize(document.fileSize)}
                       if (!isSelectionMode)
                         PopupMenuButton<String>(
                           icon: Icon(
-                            Icons.more_horiz,
+                            Icons.more_vert,
                             color: theme.colorScheme.onSurfaceVariant,
                           ),
                           elevation: 3,
@@ -662,7 +662,38 @@ Size: ${formatFileSize(document.fileSize)}
                                 theme.colorScheme.onSurface,
                               ),
                             ),
-                            // ... (existing menu items)
+                            PopupMenuItem(
+                              value: 'edit',
+                              child: _buildMenuItem(
+                                Icons.edit_outlined,
+                                'Edit',
+                                theme.colorScheme.onSurface,
+                              ),
+                            ),
+                            PopupMenuItem(
+                              value: 'share',
+                              child: _buildMenuItem(
+                                Icons.share_outlined,
+                                'Share',
+                                theme.colorScheme.onSurface,
+                              ),
+                            ),
+                            PopupMenuItem(
+                              value: 'download',
+                              child: _buildMenuItem(
+                                Icons.download_outlined,
+                                'Download',
+                                theme.colorScheme.onSurface,
+                              ),
+                            ),
+                            PopupMenuItem(
+                              value: 'delete',
+                              child: _buildMenuItem(
+                                Icons.delete_outline,
+                                'Delete',
+                                Colors.red,
+                              ),
+                            ),
                           ],
                         ),
                     ],
