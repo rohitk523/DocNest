@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:open_file/open_file.dart';
+import 'package:permission_handler/permission_handler.dart';
 import '../models/document.dart';
 import '../utils/formatters.dart';
 import 'package:provider/provider.dart';
@@ -10,6 +12,7 @@ import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:http/http.dart' as http;
 import '../services/api_config.dart';
+import 'dart:convert';
 
 class DocumentTile extends StatelessWidget {
   final Document document;
@@ -121,15 +124,78 @@ class DocumentTile extends StatelessWidget {
 
   Future<void> _shareDocument(BuildContext context) async {
     try {
-      final text = '''
-Document: ${document.name}
-Category: ${document.category}
-Description: ${document.description}
-Created: ${formatDate(document.createdAt)}
+      final provider = Provider.of<DocumentProvider>(context, listen: false);
+
+      // Show loading indicator
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const AlertDialog(
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(height: 16),
+              Text('Preparing document for sharing...'),
+            ],
+          ),
+        ),
+      );
+
+      // Get share information
+      final response = await http.get(
+        Uri.parse('${ApiConfig.documentsUrl}${document.id}/share'),
+        headers: ApiConfig.authHeaders(provider.token),
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception('Failed to get share information');
+      }
+
+      final shareInfo = json.decode(response.body);
+
+      if (context.mounted) {
+        // Dismiss loading dialog
+        Navigator.pop(context);
+
+        // Create share text with metadata and download link
+        final shareText = '''
+Document: ${shareInfo['name']}
+Category: ${shareInfo['category']}
+Description: ${shareInfo['description']}
+Type: ${shareInfo['file_type'] ?? 'N/A'}
+Size: ${formatFileSize(shareInfo['file_size'])}
+Created: ${shareInfo['created_at']}
+By: ${shareInfo['metadata']['owner']}
+
+${shareInfo['download_url'] != null ? 'Download link (expires in 1 hour):\n${shareInfo['download_url']}' : ''}
 ''';
-      await Share.share(text, subject: document.name);
+
+        // Share the document information
+        await Share.share(
+          shareText.trim(),
+          subject: shareInfo['name'],
+        );
+      }
     } catch (e) {
-      _showErrorSnackBar(context, 'Error sharing document: $e');
+      if (context.mounted) {
+        // Dismiss loading dialog if showing
+        Navigator.pop(context);
+
+        // Show error message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error sharing document: ${e.toString()}'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+            action: SnackBarAction(
+              label: 'Retry',
+              textColor: Colors.white,
+              onPressed: () => _shareDocument(context),
+            ),
+          ),
+        );
+      }
     }
   }
 
@@ -200,61 +266,163 @@ Created: ${formatDate(document.createdAt)}
 
   Future<void> _downloadDocument(BuildContext context) async {
     try {
-      if (document.filePath == null) {
-        throw Exception('No file available for download');
+      // Request storage permission on Android
+      if (Platform.isAndroid) {
+        final status = await Permission.storage.request();
+        if (!status.isGranted) {
+          throw Exception('Storage permission is required to download files');
+        }
       }
+      try {
+        final provider = Provider.of<DocumentProvider>(context, listen: false);
 
-      // Show download progress dialog
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (BuildContext context) => const Center(
-          child: CircularProgressIndicator(),
-        ),
-      );
-
-      // Get the token from provider
-      final provider = Provider.of<DocumentProvider>(context, listen: false);
-      final token = provider.token;
-
-      // Construct download URL
-      final downloadUrl = '${ApiConfig.documentsUrl}${document.id}/download';
-
-      // Make the download request
-      final response = await http.get(
-        Uri.parse(downloadUrl),
-        headers: ApiConfig.authHeaders(token),
-      );
-
-      if (response.statusCode != 200) {
-        throw Exception('Failed to download file');
-      }
-
-      // Get the downloads directory
-      final tempDir = await getTemporaryDirectory();
-      final fileName = document.filePath!.split('/').last;
-      final file = File('${tempDir.path}/$fileName');
-
-      // Write the file
-      await file.writeAsBytes(response.bodyBytes);
-
-      if (context.mounted) {
-        // Close progress dialog
-        Navigator.pop(context);
-
-        // Show success message
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('File downloaded: ${file.path}'),
-            behavior: SnackBarBehavior.floating,
+        // Show download progress dialog
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => const AlertDialog(
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 16),
+                Text('Downloading document...'),
+              ],
+            ),
           ),
         );
+
+        // Get the downloads directory
+        Directory? downloadDir;
+        if (Platform.isAndroid) {
+          // For Android, use external storage directory
+          final directories = await getExternalStorageDirectories();
+          if (directories != null && directories.isNotEmpty) {
+            downloadDir = directories.first;
+          }
+        } else {
+          // For iOS, use documents directory
+          downloadDir = await getApplicationDocumentsDirectory();
+        }
+
+        if (downloadDir == null) {
+          throw Exception('Could not access download directory');
+        }
+
+        // Create a dedicated downloads folder
+        final downloadsFolder = Directory('${downloadDir.path}/Downloads');
+        if (!await downloadsFolder.exists()) {
+          await downloadsFolder.create(recursive: true);
+        }
+
+        // Make download request
+        final response = await http.get(
+          Uri.parse('${ApiConfig.documentsUrl}${document.id}/download'),
+          headers: ApiConfig.authHeaders(provider.token),
+        );
+
+        if (response.statusCode != 200) {
+          throw Exception('Failed to download document');
+        }
+
+        // Get the filename from the document name
+        String filename = document.name;
+        if (!filename.contains('.') && document.fileType != null) {
+          filename = '$filename.${document.fileType!.split('/').last}';
+        }
+
+        // Ensure filename is safe for file system
+        filename = filename.replaceAll(RegExp(r'[<>:"/\\|?*]'), '_');
+
+        // Create the full file path
+        final filePath = '${downloadsFolder.path}/$filename';
+
+        // Write the file
+        final file = File(filePath);
+        await file.writeAsBytes(response.bodyBytes);
+
+        if (context.mounted) {
+          // Dismiss loading dialog
+          Navigator.pop(context);
+
+          // Show success message with file location
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Document downloaded: $filename'),
+                  Text(
+                    'Location: ${downloadsFolder.path}',
+                    style: const TextStyle(fontSize: 12),
+                  ),
+                ],
+              ),
+              duration: const Duration(seconds: 5),
+              action: SnackBarAction(
+                label: 'Open Folder',
+                onPressed: () async {
+                  // Add open_file package to pubspec.yaml first:
+                  // open_file: ^3.3.2
+                  try {
+                    await OpenFile.open(downloadsFolder.path);
+                  } catch (e) {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Could not open folder: $e'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                    }
+                  }
+                },
+              ),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      } catch (e) {
+        if (context.mounted) {
+          // Dismiss loading dialog if showing
+          Navigator.pop(context);
+
+          // Show error message
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error downloading document: ${e.toString()}'),
+              backgroundColor: Colors.red,
+              behavior: SnackBarBehavior.floating,
+              action: SnackBarAction(
+                label: 'Retry',
+                textColor: Colors.white,
+                onPressed: () => _downloadDocument(context),
+              ),
+            ),
+          );
+        }
       }
+
+      // Rest of the download code...
     } catch (e) {
       if (context.mounted) {
-        // Close progress dialog if open
+        // Dismiss loading dialog if showing
         Navigator.pop(context);
-        _showErrorSnackBar(context, 'Error downloading document: $e');
+
+        // Show error message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error in permission: ${e.toString()}'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+            action: SnackBarAction(
+              label: 'Retry',
+              textColor: Colors.white,
+              onPressed: () => _downloadDocument(context),
+            ),
+          ),
+        );
       }
     }
   }
