@@ -1,4 +1,5 @@
 // lib/providers/document_provider.dart
+import 'package:docnest_flutter/utils/formatters.dart';
 import 'package:flutter/foundation.dart';
 import '../models/document.dart';
 import '../services/document_service.dart';
@@ -230,13 +231,14 @@ class DocumentProvider with ChangeNotifier {
   // Sharing methods
   String getShareableContent() {
     if (_selectedDocuments.isEmpty) return '';
+
     return _documents
         .where((doc) => _selectedDocuments.contains(doc.id))
         .map((doc) => '''
 Document: ${doc.name}
 Category: ${doc.category}
-Description: ${doc.description}
-Created: ${doc.createdAt}
+Description: ${doc.description ?? 'No description'}
+Created: ${formatDate(doc.createdAt)}
 ''')
         .join('\n---\n');
   }

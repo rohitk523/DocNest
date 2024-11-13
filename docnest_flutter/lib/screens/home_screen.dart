@@ -1,5 +1,6 @@
 // lib/screens/home_screen.dart
 import 'package:docnest_flutter/screens/category_documents_screen.dart';
+import 'package:docnest_flutter/widgets/fluid_nav_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../widgets/profile_tab.dart';
@@ -418,28 +419,11 @@ class _HomeScreenState extends State<HomeScreen> {
           SettingsTab(),
         ],
       ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _currentIndex,
-        onDestinationSelected: (index) {
+      bottomNavigationBar: FluidNavBar(
+        currentIndex: _currentIndex,
+        onTap: (index) {
           setState(() => _currentIndex = index);
         },
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.person_outline),
-            selectedIcon: Icon(Icons.person),
-            label: 'Profile',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.settings_outlined),
-            selectedIcon: Icon(Icons.settings),
-            label: 'Settings',
-          ),
-        ],
       ),
       floatingActionButton: _currentIndex == 1
           ? FloatingActionButton(
