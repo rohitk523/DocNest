@@ -137,25 +137,41 @@ class _DocumentSectionState extends State<DocumentSection> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Icon(
-                                    getCategoryIcon(widget.title),
-                                    color: getCategoryColor(widget.title),
-                                    size: 20,
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.start,
+                                    children: [
+                                      Icon(
+                                        getCategoryIcon(widget.title),
+                                        color: getCategoryColor(widget.title),
+                                        size: 20,
+                                      ),
+                                      const SizedBox(
+                                        width: 5,
+                                      ),
+                                      Text(
+                                        widget.title[0].toUpperCase() +
+                                            widget.title.substring(1),
+                                        style: theme.textTheme.titleLarge
+                                            ?.copyWith(
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                  const SizedBox(
-                                    width: 5,
-                                  ),
-                                  Text(
-                                    widget.title[0].toUpperCase() +
-                                        widget.title.substring(1),
-                                    style: theme.textTheme.titleLarge?.copyWith(
-                                      fontWeight: FontWeight.bold,
+                                  Padding(
+                                    padding: const EdgeInsets.only(
+                                        right: 15.0), // Add this line
+                                    child: Icon(
+                                      Icons.add,
+                                      color: theme.primaryColor,
+                                      size: 25,
                                     ),
                                   ),
                                 ],
-                              )
+                              ),
                             ],
                           ),
                         ),

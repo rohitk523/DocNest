@@ -22,7 +22,7 @@ class DocumentTileClipper extends CustomClipper<Path> {
     // Adjustable values
     const double wedgeWidth = 120.0; // Total width of the wedge
     const double flatBottomWidth = 40.0; // Width of the flat bottom
-    const double wedgeHeight = 20.0; // Height of the wedge
+    const double wedgeHeight = 13.0; // Height of the wedge
     const double cornerRadius = 20.0; // Corner radius of the main container
 
     // Calculate center positionr
@@ -699,7 +699,7 @@ Size: ${formatFileSize(document.fileSize)}
                                       document.name,
                                       style: AppTextStyles.subtitle1.copyWith(
                                         color: theme.colorScheme.onSurface,
-                                        fontWeight: FontWeight.w600,
+                                        fontWeight: FontWeight.w800,
                                       ),
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
@@ -720,7 +720,7 @@ Size: ${formatFileSize(document.fileSize)}
                                     Row(
                                       children: [
                                         Icon(
-                                          Icons.calendar_today,
+                                          Icons.calendar_month_rounded,
                                           size: 12,
                                           color: theme
                                               .colorScheme.onSurfaceVariant,
@@ -735,24 +735,24 @@ Size: ${formatFileSize(document.fileSize)}
                                         ),
                                         if (document.fileType != null) ...[
                                           const SizedBox(width: 12),
-                                          Icon(
-                                            Icons.description,
-                                            size: 12,
-                                            color: theme
-                                                .colorScheme.onSurfaceVariant,
-                                          ),
-                                          const SizedBox(width: 4),
-                                          Text(
-                                            document.fileType!
-                                                .split('/')
-                                                .last
-                                                .toUpperCase(),
-                                            style:
-                                                AppTextStyles.caption.copyWith(
-                                              color: theme
-                                                  .colorScheme.onSurfaceVariant,
-                                            ),
-                                          ),
+                                          // Icon(
+                                          //   Icons.description,
+                                          //   size: 12,
+                                          //   color: theme
+                                          //       .colorScheme.onSurfaceVariant,
+                                          // ),
+                                          // const SizedBox(width: 4),
+                                          // Text(
+                                          //   document.fileType!
+                                          //       .split('/')
+                                          //       .last
+                                          //       .toUpperCase(),
+                                          //   style:
+                                          //       AppTextStyles.caption.copyWith(
+                                          //     color: theme
+                                          //         .colorScheme.onSurfaceVariant,
+                                          //   ),
+                                          // ),
                                         ],
                                       ],
                                     ),
