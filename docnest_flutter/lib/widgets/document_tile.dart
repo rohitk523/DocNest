@@ -1,6 +1,5 @@
 import 'package:docnest_flutter/theme/app_theme.dart';
 import 'package:flutter/material.dart';
-import 'package:open_file/open_file.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
@@ -8,6 +7,7 @@ import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:http/http.dart' as http;
 import 'package:open_filex/open_filex.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 
 import '../models/document.dart';
 import '../utils/formatters.dart';
@@ -495,7 +495,7 @@ Size: ${formatFileSize(document.fileSize)}
 
         // Try to open the file automatically
         try {
-          await OpenFile.open(filePath);
+          await OpenFilex.open(filePath);
         } catch (e) {
           print('Error auto-opening file: $e');
         }
@@ -544,12 +544,31 @@ Size: ${formatFileSize(document.fileSize)}
         ),
       );
 
-      // Fetch the document file
-      print('Fetching document file...');
-      final response = await http.get(
-        Uri.parse('${ApiConfig.documentsUrl}${document.id}/download'),
-        headers: ApiConfig.authHeaders(provider.token),
-      );
+      // Check if the file is already cached
+      final cacheKey = 'document_${document.id}';
+      final fileInfo = await DefaultCacheManager().getFileFromCache(cacheKey);
+
+      if (fileInfo != null) {
+        // File is cached, use the cached file
+        tempFile = fileInfo.file;
+      } else {
+        // File is not cached, fetch it from the server
+        print('Fetching document file...');
+        final response = await http.get(
+          Uri.parse('${ApiConfig.documentsUrl}${document.id}/download'),
+          headers: ApiConfig.authHeaders(provider.token),
+        );
+
+        if (response.statusCode != 200) {
+          print(
+              'Failed to fetch document file, status code: ${response.statusCode}');
+          throw Exception('Failed to fetch document file');
+        }
+
+        // Cache the downloaded file
+        tempFile =
+            await DefaultCacheManager().putFile(cacheKey, response.bodyBytes);
+      }
 
       if (context.mounted) {
         // Dismiss the loading indicator
@@ -557,21 +576,9 @@ Size: ${formatFileSize(document.fileSize)}
         Navigator.of(context).pop();
       }
 
-      if (response.statusCode != 200) {
-        print(
-            'Failed to fetch document file, status code: ${response.statusCode}');
-        throw Exception('Failed to fetch document file');
-      }
-
-      // Get the file type
-      print('Getting file type...');
-      final tempDir = await getTemporaryDirectory();
-      tempFile = File('${tempDir.path}/${document.name}');
-      await tempFile.writeAsBytes(response.bodyBytes);
-
       try {
         print('Opening PDF file...');
-        await OpenFilex.open(tempFile.path, type: 'application/pdf');
+        await OpenFilex.open(tempFile!.path, type: 'application/pdf');
       } catch (e) {
         print('Error opening PDF file: $e');
         _showErrorSnackBar(
@@ -587,16 +594,6 @@ Size: ${formatFileSize(document.fileSize)}
         print('Showing error message: $e');
         _showErrorSnackBar(context, 'Error opening document: ${e.toString()}');
       }
-    } finally {
-      // Clean up the temporary file when the app is no longer in the foreground
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        Future.delayed(const Duration(seconds: 5), () {
-          if (tempFile != null && tempFile.existsSync()) {
-            print('Deleting temporary file...');
-            tempFile.delete();
-          }
-        });
-      });
     }
   }
 
