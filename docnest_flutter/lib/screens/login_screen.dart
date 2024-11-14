@@ -104,22 +104,20 @@ class _LoginScreenState extends State<LoginScreen> {
                 const Spacer(),
                 // Google Sign In Button
                 Padding(
-                  padding: const EdgeInsets.only(
-                    left: 32,
-                    right: 32,
-                    bottom: 48,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 32),
                   child: Container(
                     width: double.infinity,
+                    height: 48, // Fixed height like Claude's button
                     decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius:
+                          BorderRadius.circular(24), // More rounded corners
                       color: Colors.white,
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.2),
-                          spreadRadius: 1,
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
+                          color: Colors.black.withOpacity(0.1),
+                          spreadRadius: 0,
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
                         ),
                       ],
                     ),
@@ -127,32 +125,30 @@ class _LoginScreenState extends State<LoginScreen> {
                       color: Colors.transparent,
                       child: InkWell(
                         onTap: _isLoading ? null : _loginWithGoogle,
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(24),
                         child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                            vertical: 16,
-                            horizontal: 24,
-                          ),
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              // Google "G" Icon
-                              Icon(
-                                Icons.g_mobiledata,
-                                size: 32,
-                                color: Theme.of(context).colorScheme.primary,
+                              // Google Logo
+                              Image.network(
+                                'https://raw.githubusercontent.com/rohitk523/DocNest/main/Icons/icons8-google-36.png',
+                                height: 20,
+                                width: 20,
                               ),
                               const SizedBox(width: 12),
-                              // Sign in text
+                              // Button Text
                               Text(
                                 'Sign in with Google',
                                 style: Theme.of(context)
                                     .textTheme
-                                    .titleMedium
+                                    .bodyLarge
                                     ?.copyWith(
                                       color: Colors.black87,
+                                      fontSize: 16,
                                       fontWeight: FontWeight.w500,
-                                      letterSpacing: 0.2,
+                                      letterSpacing: 0.1,
                                     ),
                               ),
                             ],
@@ -162,6 +158,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                 ),
+                const SizedBox(height: 48), // Bottom spacing
                 // Loading Indicator
                 if (_isLoading)
                   const Padding(
