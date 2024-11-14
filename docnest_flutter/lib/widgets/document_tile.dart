@@ -700,6 +700,7 @@ Size: ${formatFileSize(document.fileSize)}
                                       filePath: document.filePath ?? '',
                                       token: provider.token,
                                       category: document.category,
+                                      document: document,
                                     ),
                               const SizedBox(width: 16),
                               // Document Info

@@ -20,6 +20,7 @@ class ApiConfig {
   static Map<String, String> get jsonHeaders => {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
+        'Cache-Control': 'no-cache',
       };
 
   static Map<String, String> authHeaders(String token) => {
