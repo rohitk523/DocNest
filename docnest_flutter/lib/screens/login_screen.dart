@@ -16,10 +16,7 @@ class _LoginScreenState extends State<LoginScreen> {
   void _showErrorSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(
-          message,
-          style: const TextStyle(color: Colors.white),
-        ),
+        content: Text(message, style: const TextStyle(color: Colors.white)),
         backgroundColor: Colors.red,
         behavior: SnackBarBehavior.floating,
         margin: const EdgeInsets.all(16),
@@ -27,9 +24,7 @@ class _LoginScreenState extends State<LoginScreen> {
         action: SnackBarAction(
           label: 'Dismiss',
           textColor: Colors.white,
-          onPressed: () {
-            ScaffoldMessenger.of(context).hideCurrentSnackBar();
-          },
+          onPressed: () => ScaffoldMessenger.of(context).hideCurrentSnackBar(),
         ),
       ),
     );
@@ -64,7 +59,7 @@ class _LoginScreenState extends State<LoginScreen> {
         decoration: BoxDecoration(
           image: DecorationImage(
             image: const NetworkImage(
-              'https://raw.githubusercontent.com/your-repo/your-image.jpg', // Replace with your image URL
+              'https://raw.githubusercontent.com/rohitk523/DocNest/main/DocNest.png',
             ),
             fit: BoxFit.cover,
             colorFilter: ColorFilter.mode(
@@ -87,94 +82,94 @@ class _LoginScreenState extends State<LoginScreen> {
           child: SafeArea(
             child: Column(
               children: [
-                const Expanded(
-                  flex: 2,
-                  child: Center(
-                    child: Text(
-                      'DocNest',
-                      style: TextStyle(
-                        fontSize: 48,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                        shadows: [
-                          Shadow(
-                            offset: Offset(0, 2),
-                            blurRadius: 4,
-                            color: Colors.black38,
-                          ),
-                        ],
+                // Top spacing
+                const SizedBox(height: 80),
+                // App Title
+                const Text(
+                  'DocNest',
+                  style: TextStyle(
+                    fontSize: 48,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                    shadows: [
+                      Shadow(
+                        offset: Offset(0, 2),
+                        blurRadius: 4,
+                        color: Colors.black38,
                       ),
-                    ),
+                    ],
                   ),
                 ),
+                // Flexible space
+                const Spacer(),
+                // Google Sign In Button
                 Padding(
                   padding: const EdgeInsets.only(
                     left: 32,
                     right: 32,
                     bottom: 48,
                   ),
-                  child: Column(
-                    children: [
-                      Container(
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.2),
-                              spreadRadius: 1,
-                              blurRadius: 10,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
+                  child: Container(
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      color: Colors.white,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.2),
+                          spreadRadius: 1,
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
                         ),
-                        child: ElevatedButton.icon(
-                          icon: const Icon(
-                            Icons.g_mobiledata,
-                            size: 32,
+                      ],
+                    ),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: _isLoading ? null : _loginWithGoogle,
+                        borderRadius: BorderRadius.circular(12),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 16,
+                            horizontal: 24,
                           ),
-                          label: Text(
-                            'Sign in with Google',
-                            style: Theme.of(context)
-                                .textTheme
-                                .titleLarge
-                                ?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  color: Theme.of(context).colorScheme.primary,
-                                ),
-                          ),
-                          onPressed: _isLoading ? null : _loginWithGoogle,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(
-                              vertical: 20,
-                              horizontal: 32,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ).copyWith(
-                            elevation:
-                                MaterialStateProperty.resolveWith<double>(
-                              (Set<MaterialState> states) {
-                                if (states.contains(MaterialState.pressed)) {
-                                  return 0;
-                                }
-                                return 8;
-                              },
-                            ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              // Google "G" Icon
+                              Icon(
+                                Icons.g_mobiledata,
+                                size: 32,
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
+                              const SizedBox(width: 12),
+                              // Sign in text
+                              Text(
+                                'Sign in with Google',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .titleMedium
+                                    ?.copyWith(
+                                      color: Colors.black87,
+                                      fontWeight: FontWeight.w500,
+                                      letterSpacing: 0.2,
+                                    ),
+                              ),
+                            ],
                           ),
                         ),
                       ),
-                      if (_isLoading) ...[
-                        const SizedBox(height: 24),
-                        const CircularProgressIndicator(
-                          valueColor:
-                              AlwaysStoppedAnimation<Color>(Colors.white),
-                        ),
-                      ],
-                    ],
+                    ),
                   ),
                 ),
+                // Loading Indicator
+                if (_isLoading)
+                  const Padding(
+                    padding: EdgeInsets.only(bottom: 32),
+                    child: CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
+                  ),
               ],
             ),
           ),
