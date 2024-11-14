@@ -43,6 +43,7 @@ dependencies:
   open_file: ^3.3.2
   permission_handler: ^10.2.0
   printing: ^5.9.3
+  http_interceptor: ^2.0.0
 
 
 dev_dependencies:
