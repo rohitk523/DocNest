@@ -1,7 +1,11 @@
 // lib/widgets/quick_actions_bar.dart
 
 import 'dart:io';
+import 'package:docnest_flutter/screens/login_screen.dart';
+import 'package:docnest_flutter/services/document_service.dart';
+import 'package:docnest_flutter/widgets/document_section.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:path_provider/path_provider.dart';
@@ -180,24 +184,80 @@ class QuickActionsBar extends StatelessWidget {
       );
 
       if (result != null && context.mounted) {
-        // Handle upload result
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Document uploaded successfully'),
-            behavior: SnackBarBehavior.floating,
+        // Show loading indicator
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => const AlertDialog(
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 16),
+                Text('Uploading document...'),
+              ],
+            ),
           ),
         );
+
+        final documentService =
+            DocumentService(token: context.read<DocumentProvider>().token);
+        final uploadedDoc = await documentService.uploadDocument(
+          name: result['name'],
+          description: result['description'],
+          category: result['category'],
+          file: result['file'],
+        );
+
+        if (context.mounted) {
+          // Dismiss loading dialog
+          Navigator.pop(context);
+
+          context.read<DocumentProvider>().addDocument(uploadedDoc);
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Document uploaded successfully'),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
       }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error uploading document: $e'),
-            backgroundColor: Colors.red,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        // Dismiss loading dialog if showing
+        Navigator.popUntil(context, (route) => route.isFirst);
+
+        if (e.toString().contains('Could not validate credentials')) {
+          _handleAuthError(context);
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error uploading document: $e'),
+              behavior: SnackBarBehavior.floating,
+              action: SnackBarAction(
+                label: 'Retry',
+                onPressed: () => _handleUpload(context),
+              ),
+            ),
+          );
+        }
       }
+    }
+  }
+
+  Future<void> _handleAuthError(BuildContext context) async {
+    await const FlutterSecureStorage().delete(key: 'auth_token');
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Session expired. Please log in again.'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (context) => const LoginScreen()),
+      );
     }
   }
 
