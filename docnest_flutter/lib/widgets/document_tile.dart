@@ -523,23 +523,44 @@ Size: ${formatFileSize(document.fileSize)}
       BuildContext context, DocumentProvider provider) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (BuildContext context) => AlertDialog(
-        title: const Text('Delete Document'),
-        content: Text('Are you sure you want to delete "${document.name}"?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            style: TextButton.styleFrom(
-              foregroundColor: Colors.red,
+      builder: (BuildContext context) {
+        final theme = Theme.of(context);
+        return AlertDialog(
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Text(
+            'Delete Document',
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: theme.colorScheme.primary,
             ),
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Delete'),
           ),
-        ],
-      ),
+          content: Text(
+            'Are you sure you want to delete "${document.name}"?',
+            style: theme.textTheme.bodyLarge?.copyWith(
+              color: theme.colorScheme.onSurface,
+            ),
+          ),
+          backgroundColor: theme.cardTheme.color,
+          actionsPadding: const EdgeInsets.symmetric(horizontal: 16),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              style: TextButton.styleFrom(
+                foregroundColor: theme.colorScheme.secondary,
+              ),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              style: TextButton.styleFrom(
+                foregroundColor: theme.colorScheme.error,
+              ),
+              child: const Text('Delete'),
+            ),
+          ],
+        );
+      },
     );
 
     if (confirmed == true && context.mounted) {
