@@ -35,6 +35,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'DocNest',
       theme: Provider.of<ThemeProvider>(context).currentTheme,
+      debugShowCheckedModeBanner: false,
       home: FutureBuilder<String?>(
         future: const FlutterSecureStorage().read(key: 'auth_token'),
         builder: (context, snapshot) {
