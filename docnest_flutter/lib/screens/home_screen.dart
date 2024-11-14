@@ -430,89 +430,102 @@ class _HomeScreenState extends State<HomeScreen> {
               opacity: 1,
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 0),
-                child: Card(
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    side: BorderSide(
-                      color: getCategoryColor(category).withOpacity(0.2),
-                      width: 1,
-                    ),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Category Header
-                      Container(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [
-                              getCategoryColor(category).withOpacity(0.1),
-                              getCategoryColor(category).withOpacity(0.05),
-                            ],
-                          ),
-                          borderRadius: const BorderRadius.only(
-                            topLeft: Radius.circular(16),
-                            topRight: Radius.circular(16),
-                          ),
-                        ),
-                        padding: const EdgeInsets.all(16),
-                        child: Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color:
-                                    getCategoryColor(category).withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Icon(
-                                getCategoryIcon(category),
-                                color: getCategoryColor(category),
-                                size: 24,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    getCategoryDisplayName(category),
-                                    style: AppTextStyles.subtitle1.copyWith(
-                                      fontWeight: FontWeight.bold,
-                                      color: theme.colorScheme.onSurface,
-                                    ),
-                                  ),
-                                  Text(
-                                    '${categoryDocuments.length} document${categoryDocuments.length != 1 ? 's' : ''}',
-                                    style: AppTextStyles.caption.copyWith(
-                                      color: theme.colorScheme.onSurface
-                                          .withOpacity(0.6),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Icon(
-                              Icons.keyboard_arrow_right,
-                              color: getCategoryColor(category),
-                            ),
-                          ],
-                        ),
-                      ),
-                      // Documents List
-                      ClipRRect(
-                        borderRadius: const BorderRadius.only(
-                          bottomLeft: Radius.circular(16),
-                          bottomRight: Radius.circular(16),
-                        ),
-                        child: DocumentSection(
-                          title: category,
+                child: InkWell(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => CategoryDocumentsScreen(
+                          category: category,
                           documents: categoryDocuments,
                         ),
                       ),
-                    ],
+                    );
+                  },
+                  child: Card(
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      side: BorderSide(
+                        color: getCategoryColor(category).withOpacity(0.2),
+                        width: 1,
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Category Header
+                        Container(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                getCategoryColor(category).withOpacity(0.1),
+                                getCategoryColor(category).withOpacity(0.05),
+                              ],
+                            ),
+                            borderRadius: const BorderRadius.only(
+                              topLeft: Radius.circular(16),
+                              topRight: Radius.circular(16),
+                            ),
+                          ),
+                          padding: const EdgeInsets.all(16),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: getCategoryColor(category)
+                                      .withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Icon(
+                                  getCategoryIcon(category),
+                                  color: getCategoryColor(category),
+                                  size: 24,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      getCategoryDisplayName(category),
+                                      style: AppTextStyles.subtitle1.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                        color: theme.colorScheme.onSurface,
+                                      ),
+                                    ),
+                                    Text(
+                                      '${categoryDocuments.length} document${categoryDocuments.length != 1 ? 's' : ''}',
+                                      style: AppTextStyles.caption.copyWith(
+                                        color: theme.colorScheme.onSurface
+                                            .withOpacity(0.6),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Icon(
+                                Icons.keyboard_arrow_right,
+                                color: getCategoryColor(category),
+                              ),
+                            ],
+                          ),
+                        ),
+                        // Documents List
+                        ClipRRect(
+                          borderRadius: const BorderRadius.only(
+                            bottomLeft: Radius.circular(16),
+                            bottomRight: Radius.circular(16),
+                          ),
+                          child: DocumentSection(
+                            title: category,
+                            documents: categoryDocuments,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
