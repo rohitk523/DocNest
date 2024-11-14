@@ -2,17 +2,17 @@ import 'package:docnest_flutter/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:open_file/open_file.dart';
 import 'package:permission_handler/permission_handler.dart';
-import '../models/document.dart';
-import '../utils/formatters.dart';
 import 'package:provider/provider.dart';
-import '../models/document.dart';
-import '../providers/document_provider.dart';
-import '../widgets/edit_document_dialog.dart';
-import '../services/document_service.dart';
 import 'package:share_plus/share_plus.dart';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:http/http.dart' as http;
+
+import '../models/document.dart';
+import '../utils/formatters.dart';
+import '../providers/document_provider.dart';
+import '../widgets/edit_document_dialog.dart';
+import '../services/document_service.dart';
 import '../services/api_config.dart';
 import '../widgets/document_preview.dart';
 
