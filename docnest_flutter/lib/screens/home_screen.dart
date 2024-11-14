@@ -14,6 +14,7 @@ import '../providers/document_provider.dart';
 import '../screens/login_screen.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../utils/formatters.dart';
+import '../theme/app_theme.dart';
 
 class HomeScreen extends StatefulWidget {
   final String token;
@@ -214,92 +215,203 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildCategoryGrid() {
     final provider = context.watch<DocumentProvider>();
     final categories = ['government', 'medical', 'educational', 'other'];
+    final theme = Theme.of(context);
 
-    return GridView.count(
-      crossAxisCount: 2,
-      padding: const EdgeInsets.all(20),
-      mainAxisSpacing: 10,
-      crossAxisSpacing: 5,
-      children: categories.map((category) {
+    return GridView.builder(
+      padding: const EdgeInsets.all(12), // Reduced from 16
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        mainAxisSpacing: 8, // Reduced from 16
+        crossAxisSpacing: 8, // Reduced from 16
+        childAspectRatio: 1,
+      ),
+      itemCount: categories.length,
+      itemBuilder: (context, index) {
+        final category = categories[index];
         final docs = provider.documents
             .where((doc) => doc.category.toLowerCase() == category)
             .toList();
 
-        return InkWell(
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => CategoryDocumentsScreen(
-                  category: category,
-                  documents: docs,
-                ),
-              ),
-            );
-          },
-          child: Card(
-            elevation: 3,
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(12),
+        return Hero(
+          tag: 'category_$category',
+          child: Material(
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              child: InkWell(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => CategoryDocumentsScreen(
+                        category: category,
+                        documents: docs,
+                      ),
+                    ),
+                  );
+                },
+                child: Card(
+                  elevation: 8,
+                  shadowColor: getCategoryColor(category).withOpacity(0.3),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Container(
                     decoration: BoxDecoration(
-                      color: getCategoryColor(category).withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(20),
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          getCategoryGradient(category)[0].withOpacity(0.1),
+                          getCategoryGradient(category)[1].withOpacity(0.2),
+                        ],
+                      ),
                     ),
-                    child: Icon(
-                      getCategoryIcon(category),
-                      color: getCategoryColor(category),
-                      size: 32,
+                    child: Stack(
+                      children: [
+                        // Background pattern
+                        Positioned(
+                          right: -20,
+                          top: -20,
+                          child: Icon(
+                            getCategoryIcon(category),
+                            size: 100,
+                            color: getCategoryColor(category).withOpacity(0.1),
+                          ),
+                        ),
+                        // Content
+                        Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Icon and count row
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: getCategoryColor(category)
+                                          .withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(
+                                        color: getCategoryColor(category)
+                                            .withOpacity(0.2),
+                                        width: 2,
+                                      ),
+                                    ),
+                                    child: Icon(
+                                      getCategoryIcon(category),
+                                      color: getCategoryColor(category),
+                                      size: 24,
+                                    ),
+                                  ),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 6,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: getCategoryBadgeColor(category),
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
+                                    child: Text(
+                                      docs.length.toString(),
+                                      style: AppTextStyles.caption.copyWith(
+                                        color: getCategoryColor(category),
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const Spacer(),
+                              // Category name
+                              Text(
+                                getCategoryDisplayName(category),
+                                style: AppTextStyles.subtitle1.copyWith(
+                                  color: theme.colorScheme.onSurface,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              // Document count
+                              Text(
+                                '${docs.length} document${docs.length != 1 ? 's' : ''}',
+                                style: AppTextStyles.caption.copyWith(
+                                  color: theme.colorScheme.onSurface
+                                      .withOpacity(0.6),
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              // Progress indicator
+                              LinearProgressIndicator(
+                                value: docs.length /
+                                    (provider.documents.length > 0
+                                        ? provider.documents.length
+                                        : 1),
+                                backgroundColor:
+                                    theme.colorScheme.primary.withOpacity(0.1),
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  getCategoryColor(category),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 12),
-                  Text(
-                    category[0].toUpperCase() + category.substring(1),
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '${docs.length} document${docs.length != 1 ? 's' : ''}',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Colors.grey[600],
-                        ),
-                  ),
-                ],
+                ),
               ),
             ),
           ),
         );
-      }).toList(),
+      },
     );
   }
 
   Widget _buildCategoryList(List<Document> documents) {
+    final theme = Theme.of(context);
+
     return RefreshIndicator(
       onRefresh: _loadDocuments,
+      color: theme.colorScheme.primary,
+      backgroundColor: theme.colorScheme.surface,
       child: ListView.separated(
-        // Changed from ListView.builder to ListView.separated
-        padding: const EdgeInsets.symmetric(vertical: 8),
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
         itemCount: _categories.length,
-        // Add separator builder
         separatorBuilder: (context, index) {
           final category = _categories[index];
           final categoryDocuments = _getDocumentsByCategory(category);
-          // Only show divider if the current category has documents
+
           if (categoryDocuments.isEmpty) {
             return const SizedBox.shrink();
           }
-          return const Divider(
-            height: 40, // Total height of the divider
-            thickness: 0.5, // Thickness of the divider line
-            indent: 16, // Starting space from left
-            endIndent: 16, // Ending space from right
-            color: Colors.grey, // Color of the divider
+
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                const Divider(
+                  height: 48,
+                  thickness: 1,
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  color: theme.scaffoldBackgroundColor,
+                  child: Text(
+                    '${categoryDocuments.length} items',
+                    style: AppTextStyles.caption.copyWith(
+                      color: theme.colorScheme.onSurface.withOpacity(0.5),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           );
         },
         itemBuilder: (context, index) {
@@ -307,12 +419,104 @@ class _HomeScreenState extends State<HomeScreen> {
           final categoryDocuments = _getDocumentsByCategory(category);
 
           if (categoryDocuments.isEmpty) {
-            return Container();
+            return const SizedBox.shrink();
           }
 
-          return DocumentSection(
-            title: category,
-            documents: categoryDocuments,
+          return AnimatedSlide(
+            duration: Duration(milliseconds: 300 + (index * 100)),
+            offset: const Offset(0, 0),
+            child: AnimatedOpacity(
+              duration: Duration(milliseconds: 300 + (index * 100)),
+              opacity: 1,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 0),
+                child: Card(
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    side: BorderSide(
+                      color: getCategoryColor(category).withOpacity(0.2),
+                      width: 1,
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Category Header
+                      Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              getCategoryColor(category).withOpacity(0.1),
+                              getCategoryColor(category).withOpacity(0.05),
+                            ],
+                          ),
+                          borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(16),
+                            topRight: Radius.circular(16),
+                          ),
+                        ),
+                        padding: const EdgeInsets.all(16),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color:
+                                    getCategoryColor(category).withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Icon(
+                                getCategoryIcon(category),
+                                color: getCategoryColor(category),
+                                size: 24,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    getCategoryDisplayName(category),
+                                    style: AppTextStyles.subtitle1.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                      color: theme.colorScheme.onSurface,
+                                    ),
+                                  ),
+                                  Text(
+                                    '${categoryDocuments.length} document${categoryDocuments.length != 1 ? 's' : ''}',
+                                    style: AppTextStyles.caption.copyWith(
+                                      color: theme.colorScheme.onSurface
+                                          .withOpacity(0.6),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Icon(
+                              Icons.keyboard_arrow_right,
+                              color: getCategoryColor(category),
+                            ),
+                          ],
+                        ),
+                      ),
+                      // Documents List
+                      ClipRRect(
+                        borderRadius: const BorderRadius.only(
+                          bottomLeft: Radius.circular(16),
+                          bottomRight: Radius.circular(16),
+                        ),
+                        child: DocumentSection(
+                          title: category,
+                          documents: categoryDocuments,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
           );
         },
       ),

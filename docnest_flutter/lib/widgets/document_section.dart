@@ -132,49 +132,6 @@ class _DocumentSectionState extends State<DocumentSection> {
                         const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     child: Row(
                       children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.start,
-                                    children: [
-                                      Icon(
-                                        getCategoryIcon(widget.title),
-                                        color: getCategoryColor(widget.title),
-                                        size: 20,
-                                      ),
-                                      const SizedBox(
-                                        width: 5,
-                                      ),
-                                      Text(
-                                        widget.title[0].toUpperCase() +
-                                            widget.title.substring(1),
-                                        style: theme.textTheme.titleLarge
-                                            ?.copyWith(
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  Padding(
-                                    padding: const EdgeInsets.only(
-                                        right: 15.0), // Add this line
-                                    child: Icon(
-                                      Icons.add,
-                                      color: theme.primaryColor,
-                                      size: 25,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
                         if (isSelectionMode)
                           Chip(
                             label: Text(
