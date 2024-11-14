@@ -457,9 +457,9 @@ Size: ${formatFileSize(document.fileSize)}
               children: [
                 Text('Document downloaded: $filename'),
                 const SizedBox(height: 4),
-                Text(
+                const Text(
                   'Saved to Downloads folder',
-                  style: const TextStyle(fontSize: 12),
+                  style: TextStyle(fontSize: 12),
                 ),
               ],
             ),
@@ -492,13 +492,6 @@ Size: ${formatFileSize(document.fileSize)}
             behavior: SnackBarBehavior.floating,
           ),
         );
-
-        // Try to open the file automatically
-        try {
-          await OpenFilex.open(filePath);
-        } catch (e) {
-          print('Error auto-opening file: $e');
-        }
       }
     } catch (e) {
       if (context.mounted) {
@@ -565,9 +558,18 @@ Size: ${formatFileSize(document.fileSize)}
           throw Exception('Failed to fetch document file');
         }
 
-        // Cache the downloaded file
-        tempFile =
-            await DefaultCacheManager().putFile(cacheKey, response.bodyBytes);
+        // Get the original file name
+        final fileName = document.name;
+
+        // Create a new file with the original name in the cache directory
+        final cacheDir = await getTemporaryDirectory();
+        tempFile = File('${cacheDir.path}/$fileName');
+
+        // Write the downloaded data to the file
+        await tempFile.writeAsBytes(response.bodyBytes);
+
+        // Put the file in the cache using the file bytes
+        await DefaultCacheManager().putFile(cacheKey, response.bodyBytes);
       }
 
       if (context.mounted) {
