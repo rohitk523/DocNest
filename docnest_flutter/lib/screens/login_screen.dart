@@ -58,9 +58,7 @@ class _LoginScreenState extends State<LoginScreen> {
       body: DecoratedBox(
         decoration: BoxDecoration(
           image: DecorationImage(
-            image: const NetworkImage(
-              'https://raw.githubusercontent.com/rohitk523/DocNest/main/DocNest.png',
-            ),
+            image: const AssetImage('assets/images/DocNest.png'),
             fit: BoxFit.cover,
             colorFilter: ColorFilter.mode(
               Colors.black.withOpacity(0.2),
@@ -132,10 +130,9 @@ class _LoginScreenState extends State<LoginScreen> {
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               // Google Logo
-                              Image.network(
-                                'https://raw.githubusercontent.com/rohitk523/DocNest/main/Icons/icons8-google-36.png',
-                                height: 20,
-                                width: 20,
+                              const Image(
+                                image: AssetImage(
+                                    'assets/images/icons8-google-36.png'),
                               ),
                               const SizedBox(width: 12),
                               // Button Text

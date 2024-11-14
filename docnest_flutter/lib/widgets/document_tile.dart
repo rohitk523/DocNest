@@ -5,6 +5,7 @@ import 'package:permission_handler/permission_handler.dart';
 import '../models/document.dart';
 import '../utils/formatters.dart';
 import 'package:provider/provider.dart';
+import '../models/document.dart';
 import '../providers/document_provider.dart';
 import '../widgets/edit_document_dialog.dart';
 import '../services/document_service.dart';
@@ -13,6 +14,7 @@ import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:http/http.dart' as http;
 import '../services/api_config.dart';
+import '../widgets/document_preview.dart';
 
 class DocumentTileClipper extends CustomClipper<Path> {
   @override
@@ -652,7 +654,6 @@ Size: ${formatFileSize(document.fileSize)}
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
           child: Stack(
             children: [
-              // Main container with shadow
               Container(
                 decoration: BoxDecoration(
                   boxShadow: [
@@ -683,35 +684,25 @@ Size: ${formatFileSize(document.fileSize)}
                           padding: const EdgeInsets.all(16),
                           child: Row(
                             children: [
-                              // Leading icon
-                              Container(
-                                width: 48,
-                                height: 48,
-                                decoration: BoxDecoration(
-                                  color: getCategoryColor(document.category)
-                                      .withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: isSelectionMode
-                                    ? Checkbox(
-                                        value: isSelected,
-                                        onChanged: (_) => provider
-                                            .toggleSelection(document.id),
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(4),
-                                        ),
-                                        activeColor: theme.colorScheme.primary,
-                                      )
-                                    : Icon(
-                                        getCategoryIcon(document.category),
-                                        color:
-                                            getCategoryColor(document.category),
-                                        size: 24,
+                              // Preview or Checkbox
+                              isSelectionMode
+                                  ? Checkbox(
+                                      value: isSelected,
+                                      onChanged: (_) =>
+                                          provider.toggleSelection(document.id),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(4),
                                       ),
-                              ),
+                                      activeColor: theme.colorScheme.primary,
+                                    )
+                                  : DocumentPreview(
+                                      fileType: document.fileType ?? '',
+                                      filePath: document.filePath ?? '',
+                                      token: provider.token,
+                                      category: document.category,
+                                    ),
                               const SizedBox(width: 16),
-                              // Content
+                              // Document Info
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -725,19 +716,6 @@ Size: ${formatFileSize(document.fileSize)}
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                     ),
-                                    // const SizedBox(height: 4),
-                                    // if (document.description.isNotEmpty) ...[
-                                    //   Text(
-                                    //     document.description,
-                                    //     style: AppTextStyles.caption.copyWith(
-                                    //       color: theme
-                                    //           .colorScheme.onSurfaceVariant,
-                                    //     ),
-                                    //     maxLines: 1,
-                                    //     overflow: TextOverflow.ellipsis,
-                                    //   ),
-                                    //   const SizedBox(height: 4),
-                                    // ],
                                     Row(
                                       children: [
                                         Icon(
@@ -754,33 +732,23 @@ Size: ${formatFileSize(document.fileSize)}
                                                 .colorScheme.onSurfaceVariant,
                                           ),
                                         ),
-                                        if (document.fileType != null) ...[
+                                        if (document.fileSize != null) ...[
                                           const SizedBox(width: 12),
-                                          // Icon(
-                                          //   Icons.description,
-                                          //   size: 12,
-                                          //   color: theme
-                                          //       .colorScheme.onSurfaceVariant,
-                                          // ),
-                                          // const SizedBox(width: 4),
-                                          // Text(
-                                          //   document.fileType!
-                                          //       .split('/')
-                                          //       .last
-                                          //       .toUpperCase(),
-                                          //   style:
-                                          //       AppTextStyles.caption.copyWith(
-                                          //     color: theme
-                                          //         .colorScheme.onSurfaceVariant,
-                                          //   ),
-                                          // ),
+                                          Text(
+                                            formatFileSize(document.fileSize),
+                                            style:
+                                                AppTextStyles.caption.copyWith(
+                                              color: theme
+                                                  .colorScheme.onSurfaceVariant,
+                                            ),
+                                          ),
                                         ],
                                       ],
                                     ),
                                   ],
                                 ),
                               ),
-                              // Menu button
+                              // Menu Button
                               if (!isSelectionMode)
                                 PopupMenuButton<String>(
                                   icon: Icon(
@@ -845,27 +813,6 @@ Size: ${formatFileSize(document.fileSize)}
                   ),
                 ),
               ),
-              // Center top wedge overlay
-              // Positioned(
-              //   top: 0,
-              //   left: 0,
-              //   right: 0,
-              //   child: Center(
-              //     child: Container(
-              //       height: 15,
-              //       width: 100,
-              //       decoration: BoxDecoration(
-              //         color: theme.brightness == Brightness.dark
-              //             ? AppColors.surfaceDark
-              //             : Colors.grey[100],
-              //         borderRadius: const BorderRadius.only(
-              //           bottomLeft: Radius.circular(8),
-              //           bottomRight: Radius.circular(8),
-              //         ),
-              //       ),
-              //     ),
-              //   ),
-              // ),
             ],
           ),
         );
