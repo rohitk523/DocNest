@@ -15,6 +15,7 @@ import '../screens/login_screen.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../utils/formatters.dart';
 import '../theme/app_theme.dart';
+import '../widgets/document_tile.dart';
 
 class HomeScreen extends StatefulWidget {
   final String token;
@@ -33,6 +34,8 @@ class _HomeScreenState extends State<HomeScreen> {
   String _errorMessage = '';
   late DocumentService _documentService;
   final _storage = const FlutterSecureStorage();
+  final ScrollController _scrollController = ScrollController();
+  bool _isDragging = false;
 
   final List<String> _categories = [
     'government',
@@ -45,6 +48,12 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _initializeScreen();
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 
   Future<void> _initializeScreen() async {
@@ -218,11 +227,11 @@ class _HomeScreenState extends State<HomeScreen> {
     final theme = Theme.of(context);
 
     return GridView.builder(
-      padding: const EdgeInsets.all(12), // Reduced from 16
+      padding: const EdgeInsets.all(12),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
-        mainAxisSpacing: 8, // Reduced from 16
-        crossAxisSpacing: 8, // Reduced from 16
+        mainAxisSpacing: 8,
+        crossAxisSpacing: 8,
         childAspectRatio: 1,
       ),
       itemCount: categories.length,
@@ -373,165 +382,196 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  void _handleDragUpdate(DragUpdateDetails details) {
+    if (_isDragging) {
+      double scrollSpeed = 0.0;
+      const double scrollThreshold = 100.0;
+      const double scrollAcceleration = 5.0;
+
+      if (details.globalPosition.dy < scrollThreshold) {
+        scrollSpeed =
+            (scrollThreshold - details.globalPosition.dy) * scrollAcceleration;
+      } else if (details.globalPosition.dy >
+          MediaQuery.of(context).size.height - scrollThreshold) {
+        scrollSpeed = (details.globalPosition.dy -
+                (MediaQuery.of(context).size.height - scrollThreshold)) *
+            scrollAcceleration;
+      }
+
+      if (scrollSpeed != 0) {
+        _scrollController.animateTo(
+          _scrollController.offset + scrollSpeed,
+          duration: const Duration(milliseconds: 16),
+          curve: Curves.linear,
+        );
+      }
+    }
+  }
+
   Widget _buildCategoryList(List<Document> documents) {
     final theme = Theme.of(context);
 
-    return RefreshIndicator(
-      onRefresh: _loadDocuments,
-      color: theme.colorScheme.primary,
-      backgroundColor: theme.colorScheme.surface,
-      child: ListView.separated(
-        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
-        itemCount: _categories.length,
-        separatorBuilder: (context, index) {
-          final category = _categories[index];
-          final categoryDocuments = _getDocumentsByCategory(category);
+    return GestureDetector(
+      onVerticalDragUpdate: _handleDragUpdate,
+      child: RefreshIndicator(
+        onRefresh: _loadDocuments,
+        color: theme.colorScheme.primary,
+        backgroundColor: theme.colorScheme.surface,
+        child: ListView.separated(
+          controller: _scrollController,
+          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+          itemCount: _categories.length,
+          separatorBuilder: (context, index) {
+            final category = _categories[index];
+            final categoryDocuments = _getDocumentsByCategory(category);
 
-          if (categoryDocuments.isEmpty) {
-            return const SizedBox.shrink();
-          }
+            if (categoryDocuments.isEmpty) {
+              return const SizedBox.shrink();
+            }
 
-          return Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8),
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                const Divider(
-                  height: 48,
-                  thickness: 1,
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  color: theme.scaffoldBackgroundColor,
-                  child: Text(
-                    '${categoryDocuments.length} items',
-                    style: AppTextStyles.caption.copyWith(
-                      color: theme.colorScheme.onSurface.withOpacity(0.5),
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  const Divider(
+                    height: 48,
+                    thickness: 1,
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    color: theme.scaffoldBackgroundColor,
+                    child: Text(
+                      '${categoryDocuments.length} items',
+                      style: AppTextStyles.caption.copyWith(
+                        color: theme.colorScheme.onSurface.withOpacity(0.5),
+                      ),
                     ),
                   ),
-                ),
-              ],
-            ),
-          );
-        },
-        itemBuilder: (context, index) {
-          final category = _categories[index];
-          final categoryDocuments = _getDocumentsByCategory(category);
+                ],
+              ),
+            );
+          },
+          itemBuilder: (context, index) {
+            final category = _categories[index];
+            final categoryDocuments = _getDocumentsByCategory(category);
 
-          if (categoryDocuments.isEmpty) {
-            return const SizedBox.shrink();
-          }
+            if (categoryDocuments.isEmpty) {
+              return const SizedBox.shrink();
+            }
 
-          return AnimatedSlide(
-            duration: Duration(milliseconds: 300 + (index * 100)),
-            offset: const Offset(0, 0),
-            child: AnimatedOpacity(
+            return AnimatedSlide(
               duration: Duration(milliseconds: 300 + (index * 100)),
-              opacity: 1,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 0),
-                child: InkWell(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => CategoryDocumentsScreen(
-                          category: category,
-                          documents: categoryDocuments,
-                        ),
-                      ),
-                    );
-                  },
-                  child: Card(
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      side: BorderSide(
-                        color: getCategoryColor(category).withOpacity(0.2),
-                        width: 1,
-                      ),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Category Header
-                        Container(
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [
-                                getCategoryColor(category).withOpacity(0.1),
-                                getCategoryColor(category).withOpacity(0.05),
-                              ],
-                            ),
-                            borderRadius: const BorderRadius.only(
-                              topLeft: Radius.circular(16),
-                              topRight: Radius.circular(16),
-                            ),
-                          ),
-                          padding: const EdgeInsets.all(16),
-                          child: Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  color: getCategoryColor(category)
-                                      .withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Icon(
-                                  getCategoryIcon(category),
-                                  color: getCategoryColor(category),
-                                  size: 24,
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      getCategoryDisplayName(category),
-                                      style: AppTextStyles.subtitle1.copyWith(
-                                        fontWeight: FontWeight.bold,
-                                        color: theme.colorScheme.onSurface,
-                                      ),
-                                    ),
-                                    Text(
-                                      '${categoryDocuments.length} document${categoryDocuments.length != 1 ? 's' : ''}',
-                                      style: AppTextStyles.caption.copyWith(
-                                        color: theme.colorScheme.onSurface
-                                            .withOpacity(0.6),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              Icon(
-                                Icons.keyboard_arrow_right,
-                                color: getCategoryColor(category),
-                              ),
-                            ],
-                          ),
-                        ),
-                        // Documents List
-                        ClipRRect(
-                          borderRadius: const BorderRadius.only(
-                            bottomLeft: Radius.circular(16),
-                            bottomRight: Radius.circular(16),
-                          ),
-                          child: DocumentSection(
-                            title: category,
+              offset: const Offset(0, 0),
+              child: AnimatedOpacity(
+                duration: Duration(milliseconds: 300 + (index * 100)),
+                opacity: 1,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 0),
+                  child: InkWell(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => CategoryDocumentsScreen(
+                            category: category,
                             documents: categoryDocuments,
                           ),
                         ),
-                      ],
+                      );
+                    },
+                    child: Card(
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        side: BorderSide(
+                          color: getCategoryColor(category).withOpacity(0.2),
+                          width: 1,
+                        ),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Category Header
+                          Container(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  getCategoryColor(category).withOpacity(0.1),
+                                  getCategoryColor(category).withOpacity(0.05),
+                                ],
+                              ),
+                              borderRadius: const BorderRadius.only(
+                                topLeft: Radius.circular(16),
+                                topRight: Radius.circular(16),
+                              ),
+                            ),
+                            padding: const EdgeInsets.all(16),
+                            child: Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: getCategoryColor(category)
+                                        .withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Icon(
+                                    getCategoryIcon(category),
+                                    color: getCategoryColor(category),
+                                    size: 24,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        getCategoryDisplayName(category),
+                                        style: AppTextStyles.subtitle1.copyWith(
+                                          fontWeight: FontWeight.bold,
+                                          color: theme.colorScheme.onSurface,
+                                        ),
+                                      ),
+                                      Text(
+                                        '${categoryDocuments.length} document${categoryDocuments.length != 1 ? 's' : ''}',
+                                        style: AppTextStyles.caption.copyWith(
+                                          color: theme.colorScheme.onSurface
+                                              .withOpacity(0.6),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Icon(
+                                  Icons.keyboard_arrow_right,
+                                  color: getCategoryColor(category),
+                                ),
+                              ],
+                            ),
+                          ),
+                          // Documents List
+                          ClipRRect(
+                            borderRadius: const BorderRadius.only(
+                              bottomLeft: Radius.circular(16),
+                              bottomRight: Radius.circular(16),
+                            ),
+                            child: DocumentSection(
+                              title: category,
+                              documents: categoryDocuments,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-          );
-        },
+            );
+          },
+        ),
       ),
     );
   }

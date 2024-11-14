@@ -1,6 +1,4 @@
-import 'package:docnest_flutter/theme/app_theme.dart';
 import 'package:flutter/material.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'dart:io';
@@ -9,6 +7,7 @@ import 'package:http/http.dart' as http;
 import 'package:open_filex/open_filex.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 
+import '../theme/app_theme.dart';
 import '../models/document.dart';
 import '../utils/formatters.dart';
 import '../providers/document_provider.dart';
@@ -28,7 +27,7 @@ class DocumentTileClipper extends CustomClipper<Path> {
     const double wedgeHeight = 13.0; // Height of the wedge
     const double cornerRadius = 20.0; // Corner radius of the main container
 
-    // Calculate center positionr
+    // Calculate center position
     final center = size.width / 2;
 
     // Start from top-left with rounded corner
@@ -80,7 +79,7 @@ class DocumentTileClipper extends CustomClipper<Path> {
   bool shouldReclip(CustomClipper<Path> oldClipper) => false;
 }
 
-class DocumentTile extends StatelessWidget {
+class DocumentTile extends StatefulWidget {
   final Document document;
   final bool isDragging;
 
@@ -89,6 +88,58 @@ class DocumentTile extends StatelessWidget {
     required this.document,
     this.isDragging = false,
   }) : super(key: key);
+
+  @override
+  _DocumentTileState createState() => _DocumentTileState();
+}
+
+class _DocumentTileState extends State<DocumentTile> {
+  ScrollController? _scrollController;
+  double _scrollSpeed = 0.0;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController = ScrollController();
+  }
+
+  @override
+  void dispose() {
+    _scrollController?.dispose();
+    super.dispose();
+  }
+
+  void _startScrolling(DragUpdateDetails details) {
+    final screenHeight = MediaQuery.of(context).size.height;
+    final tileHeight = 80.0; // Adjust this value based on your tile height
+
+    if (details.globalPosition.dy < tileHeight) {
+      // Scroll up
+      _scrollSpeed = (tileHeight - details.globalPosition.dy) / tileHeight * 10;
+    } else if (details.globalPosition.dy > screenHeight - tileHeight) {
+      // Scroll down
+      _scrollSpeed = (details.globalPosition.dy - (screenHeight - tileHeight)) /
+          tileHeight *
+          10;
+    } else {
+      _scrollSpeed = 0.0;
+    }
+  }
+
+  void _stopScrolling() {
+    _scrollSpeed = 0.0;
+  }
+
+  void _handleScroll() {
+    if (_scrollSpeed != 0.0) {
+      _scrollController?.animateTo(
+        _scrollController!.offset + _scrollSpeed,
+        duration: const Duration(milliseconds: 16),
+        curve: Curves.linear,
+      );
+      Future.delayed(const Duration(milliseconds: 16), _handleScroll);
+    }
+  }
 
   Future<void> _handleEdit(
       BuildContext context, DocumentProvider provider) async {
@@ -106,7 +157,7 @@ class DocumentTile extends StatelessWidget {
     try {
       final result = await showDialog<Map<String, dynamic>>(
         context: context,
-        builder: (context) => EditDocumentDialog(document: document),
+        builder: (context) => EditDocumentDialog(document: widget.document),
       );
 
       if (result != null && context.mounted) {
@@ -127,7 +178,7 @@ class DocumentTile extends StatelessWidget {
 
         final documentService = DocumentService(token: provider.token);
         final updatedDoc = await documentService.updateDocument(
-          documentId: document.id,
+          documentId: widget.document.id,
           name: result['name'],
           description: result['description'],
           category: result['category'],
@@ -182,6 +233,7 @@ class DocumentTile extends StatelessWidget {
         break;
       case 'delete':
         await _deleteDocument(context, provider);
+        break;
       case 'edit':
         await _handleEdit(context, provider);
         break;
@@ -210,7 +262,7 @@ class DocumentTile extends StatelessWidget {
 
       // Download the file first
       final response = await http.get(
-        Uri.parse('${ApiConfig.documentsUrl}${document.id}/download'),
+        Uri.parse('${ApiConfig.documentsUrl}${widget.document.id}/download'),
         headers: ApiConfig.authHeaders(provider.token),
       );
 
@@ -225,9 +277,9 @@ class DocumentTile extends StatelessWidget {
           contentDisposition.contains('filename=')) {
         filename = contentDisposition.split('filename=')[1].replaceAll('"', '');
       } else {
-        filename = document.name;
-        if (!filename.contains('.') && document.fileType != null) {
-          filename = '$filename.${document.fileType!.split('/').last}';
+        filename = widget.document.name;
+        if (!filename.contains('.') && widget.document.fileType != null) {
+          filename = '$filename.${widget.document.fileType!.split('/').last}';
         }
       }
 
@@ -243,16 +295,16 @@ class DocumentTile extends StatelessWidget {
         // Share the file
         final files = [tempFile.path];
         final text = '''
-Document: ${document.name}
-Category: ${document.category}
-Description: ${document.description ?? 'No description'}
-Size: ${formatFileSize(document.fileSize)}
+Document: ${widget.document.name}
+Category: ${widget.document.category}
+Description: ${widget.document.description ?? 'No description'}
+Size: ${formatFileSize(widget.document.fileSize)}
 ''';
 
         await Share.shareXFiles(
           files.map((path) => XFile(path)).toList(),
           text: text,
-          subject: document.name,
+          subject: widget.document.name,
         );
 
         // Clean up temp file after a delay
@@ -307,15 +359,18 @@ Size: ${formatFileSize(document.fileSize)}
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              _metadataRow('Name', document.name),
-              _metadataRow('Category', document.category),
-              _metadataRow('Description', document.description),
-              _metadataRow('File Size', formatFileSize(document.fileSize)),
-              _metadataRow('File Type', document.fileType ?? 'N/A'),
-              _metadataRow('Created', formatDateDetailed(document.createdAt)),
-              _metadataRow('Modified', formatDateDetailed(document.modifiedAt)),
-              _metadataRow('Version', document.version.toString()),
-              _metadataRow('Shared', document.isShared ? 'Yes' : 'No'),
+              _metadataRow('Name', widget.document.name),
+              _metadataRow('Category', widget.document.category),
+              _metadataRow('Description', widget.document.description ?? ''),
+              _metadataRow(
+                  'File Size', formatFileSize(widget.document.fileSize)),
+              _metadataRow('File Type', widget.document.fileType ?? 'N/A'),
+              _metadataRow(
+                  'Created', formatDateDetailed(widget.document.createdAt)),
+              _metadataRow(
+                  'Modified', formatDateDetailed(widget.document.modifiedAt)),
+              _metadataRow('Version', widget.document.version.toString()),
+              _metadataRow('Shared', widget.document.isShared ? 'Yes' : 'No'),
             ],
           ),
         ),
@@ -355,15 +410,6 @@ Size: ${formatFileSize(document.fileSize)}
 
   Future<void> _downloadDocument(BuildContext context) async {
     try {
-      // Request necessary permissions
-      if (Platform.isAndroid) {
-        if (await Permission.storage.request().isGranted) {
-          // Permission granted
-        } else {
-          throw Exception('Storage permission is required to download files');
-        }
-      }
-
       // Show download progress dialog
       showDialog(
         context: context,
@@ -384,7 +430,7 @@ Size: ${formatFileSize(document.fileSize)}
 
       // Make download request
       final response = await http.get(
-        Uri.parse('${ApiConfig.documentsUrl}${document.id}/download'),
+        Uri.parse('${ApiConfig.documentsUrl}${widget.document.id}/download'),
         headers: ApiConfig.authHeaders(provider.token),
       );
 
@@ -399,14 +445,13 @@ Size: ${formatFileSize(document.fileSize)}
           contentDisposition.contains('filename=')) {
         filename = contentDisposition.split('filename=')[1].replaceAll('"', '');
       } else {
-        filename = document.name;
+        filename = widget.document.name;
         // Add extension if not present
-        if (!filename.contains('.') && document.fileType != null) {
-          filename = '$filename.${document.fileType!.split('/').last}';
+        if (!filename.contains('.') && widget.document.fileType != null) {
+          filename = '$filename.${widget.document.fileType!.split('/').last}';
         }
       }
 
-      // THIS IS WHERE THE NEW CODE GOES
       String? downloadsPath;
       if (Platform.isAndroid) {
         // Try primary path first
@@ -439,7 +484,6 @@ Size: ${formatFileSize(document.fileSize)}
       // Create the full file path
       final filePath = '$downloadsPath/$filename';
       final file = File(filePath);
-      // END OF NEW CODE
 
       // Write the file
       await file.writeAsBytes(response.bodyBytes);
@@ -464,31 +508,6 @@ Size: ${formatFileSize(document.fileSize)}
               ],
             ),
             duration: const Duration(seconds: 6),
-            action: SnackBarAction(
-              label: 'Open',
-              onPressed: () async {
-                // try {
-                //   final result = await OpenFile.open(filePath);
-                //   if (result.type != ResultType.done && context.mounted) {
-                //     ScaffoldMessenger.of(context).showSnackBar(
-                //       SnackBar(
-                //         content: Text('Error opening file: ${result.message}'),
-                //         backgroundColor: Colors.red,
-                //       ),
-                //     );
-                //   }
-                // } catch (e) {
-                //   if (context.mounted) {
-                //     ScaffoldMessenger.of(context).showSnackBar(
-                //       SnackBar(
-                //         content: Text('Could not open file: $e'),
-                //         backgroundColor: Colors.red,
-                //       ),
-                //     );
-                //   }
-                // }
-              },
-            ),
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -538,7 +557,7 @@ Size: ${formatFileSize(document.fileSize)}
       );
 
       // Check if the file is already cached
-      final cacheKey = 'document_${document.id}';
+      final cacheKey = 'document_${widget.document.id}';
       final fileInfo = await DefaultCacheManager().getFileFromCache(cacheKey);
 
       if (fileInfo != null) {
@@ -548,7 +567,7 @@ Size: ${formatFileSize(document.fileSize)}
         // File is not cached, fetch it from the server
         print('Fetching document file...');
         final response = await http.get(
-          Uri.parse('${ApiConfig.documentsUrl}${document.id}/download'),
+          Uri.parse('${ApiConfig.documentsUrl}${widget.document.id}/download'),
           headers: ApiConfig.authHeaders(provider.token),
         );
 
@@ -559,7 +578,7 @@ Size: ${formatFileSize(document.fileSize)}
         }
 
         // Get the original file name
-        final fileName = document.name;
+        final fileName = widget.document.name;
 
         // Create a new file with the original name in the cache directory
         final cacheDir = await getTemporaryDirectory();
@@ -616,7 +635,7 @@ Size: ${formatFileSize(document.fileSize)}
             ),
           ),
           content: Text(
-            'Are you sure you want to delete "${document.name}"?',
+            'Are you sure you want to delete "${widget.document.name}"?',
             style: theme.textTheme.bodyLarge?.copyWith(
               color: theme.colorScheme.onSurface,
             ),
@@ -664,7 +683,7 @@ Size: ${formatFileSize(document.fileSize)}
           ),
         );
 
-        await provider.removeDocument(document.id);
+        await provider.removeDocument(widget.document.id);
 
         if (context.mounted) {
           // Dismiss loading indicator
@@ -724,177 +743,196 @@ Size: ${formatFileSize(document.fileSize)}
   Widget build(BuildContext context) {
     return Consumer<DocumentProvider>(
       builder: (context, provider, _) {
-        final isSelected = provider.isSelected(document.id);
+        final isSelected = provider.isSelected(widget.document.id);
         final isSelectionMode = provider.isSelectionMode;
         final theme = Theme.of(context);
 
-        return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-          child: Stack(
-            children: [
-              Container(
-                decoration: BoxDecoration(
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 10,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: ClipPath(
-                  clipper: DocumentTileClipper(),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: theme.cardColor,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Material(
-                      color: Colors.transparent,
-                      child: InkWell(
+        return Listener(
+          onPointerMove: (event) {
+            if (widget.isDragging) {
+              _startScrolling(event as DragUpdateDetails);
+              _handleScroll();
+            }
+          },
+          onPointerUp: (_) => _stopScrolling(),
+          onPointerCancel: (_) => _stopScrolling(),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            child: Stack(
+              children: [
+                Container(
+                  decoration: BoxDecoration(
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 10,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: ClipPath(
+                    clipper: DocumentTileClipper(),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: theme.cardColor,
                         borderRadius: BorderRadius.circular(20),
-                        onTap: () {
-                          if (isSelectionMode) {
-                            provider.toggleSelection(document.id);
-                          } else {
-                            _openDocument(context);
-                          }
-                        },
-                        child: Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Row(
-                            children: [
-                              // Preview or Checkbox
-                              isSelectionMode
-                                  ? Checkbox(
-                                      value: isSelected,
-                                      onChanged: (_) =>
-                                          provider.toggleSelection(document.id),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(4),
-                                      ),
-                                      activeColor: theme.colorScheme.primary,
-                                    )
-                                  : DocumentPreview(
-                                      fileType: document.fileType ?? '',
-                                      filePath: document.filePath ?? '',
-                                      token: provider.token,
-                                      category: document.category,
-                                      document: document,
-                                    ),
-                              const SizedBox(width: 16),
-                              // Document Info
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      document.name,
-                                      style: AppTextStyles.subtitle1.copyWith(
-                                        color: theme.colorScheme.onSurface,
-                                        fontWeight: FontWeight.w800,
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                    Row(
-                                      children: [
-                                        Icon(
-                                          Icons.calendar_month_rounded,
-                                          size: 12,
-                                          color: theme
-                                              .colorScheme.onSurfaceVariant,
+                      ),
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(20),
+                          onTap: () {
+                            if (isSelectionMode) {
+                              provider.toggleSelection(widget.document.id);
+                            } else {
+                              _openDocument(context);
+                            }
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Row(
+                              children: [
+                                // Preview or Checkbox
+                                isSelectionMode
+                                    ? Checkbox(
+                                        value: isSelected,
+                                        onChanged: (_) =>
+                                            provider.toggleSelection(
+                                                widget.document.id),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(4),
                                         ),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          getRelativeDate(document.createdAt),
-                                          style: AppTextStyles.caption.copyWith(
+                                        activeColor: theme.colorScheme.primary,
+                                      )
+                                    : DocumentPreview(
+                                        fileType:
+                                            widget.document.fileType ?? '',
+                                        filePath:
+                                            widget.document.filePath ?? '',
+                                        token: provider.token,
+                                        category: widget.document.category,
+                                        document: widget.document,
+                                      ),
+                                const SizedBox(width: 16),
+                                // Document Info
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        widget.document.name,
+                                        style: AppTextStyles.subtitle1.copyWith(
+                                          color: theme.colorScheme.onSurface,
+                                          fontWeight: FontWeight.w800,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      Row(
+                                        children: [
+                                          Icon(
+                                            Icons.calendar_month_rounded,
+                                            size: 12,
                                             color: theme
                                                 .colorScheme.onSurfaceVariant,
                                           ),
-                                        ),
-                                        if (document.fileSize != null) ...[
-                                          const SizedBox(width: 12),
+                                          const SizedBox(width: 4),
                                           Text(
-                                            formatFileSize(document.fileSize),
+                                            getRelativeDate(
+                                                widget.document.createdAt),
                                             style:
                                                 AppTextStyles.caption.copyWith(
                                               color: theme
                                                   .colorScheme.onSurfaceVariant,
                                             ),
                                           ),
+                                          if (widget.document.fileSize !=
+                                              null) ...[
+                                            const SizedBox(width: 12),
+                                            Text(
+                                              formatFileSize(
+                                                  widget.document.fileSize),
+                                              style: AppTextStyles.caption
+                                                  .copyWith(
+                                                color: theme.colorScheme
+                                                    .onSurfaceVariant,
+                                              ),
+                                            ),
+                                          ],
                                         ],
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              // Menu Button
-                              if (!isSelectionMode)
-                                PopupMenuButton<String>(
-                                  icon: Icon(
-                                    Icons.more_vert,
-                                    color: theme.colorScheme.onSurfaceVariant,
+                                      ),
+                                    ],
                                   ),
-                                  elevation: 3,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  position: PopupMenuPosition.under,
-                                  onSelected: (action) =>
-                                      _handleMenuAction(context, action),
-                                  itemBuilder: (context) => [
-                                    PopupMenuItem(
-                                      value: 'info',
-                                      child: _buildMenuItem(
-                                        Icons.info_outline,
-                                        'Info',
-                                        theme.colorScheme.onSurface,
-                                      ),
-                                    ),
-                                    PopupMenuItem(
-                                      value: 'edit',
-                                      child: _buildMenuItem(
-                                        Icons.edit_outlined,
-                                        'Edit',
-                                        theme.colorScheme.onSurface,
-                                      ),
-                                    ),
-                                    PopupMenuItem(
-                                      value: 'share',
-                                      child: _buildMenuItem(
-                                        Icons.share_outlined,
-                                        'Share',
-                                        theme.colorScheme.onSurface,
-                                      ),
-                                    ),
-                                    PopupMenuItem(
-                                      value: 'download',
-                                      child: _buildMenuItem(
-                                        Icons.download_outlined,
-                                        'Download',
-                                        theme.colorScheme.onSurface,
-                                      ),
-                                    ),
-                                    PopupMenuItem(
-                                      value: 'delete',
-                                      child: _buildMenuItem(
-                                        Icons.delete_outline,
-                                        'Delete',
-                                        Colors.red,
-                                      ),
-                                    ),
-                                  ],
                                 ),
-                            ],
+                                // Menu Button
+                                if (!isSelectionMode)
+                                  PopupMenuButton<String>(
+                                    icon: Icon(
+                                      Icons.more_vert,
+                                      color: theme.colorScheme.onSurfaceVariant,
+                                    ),
+                                    elevation: 3,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    position: PopupMenuPosition.under,
+                                    onSelected: (action) =>
+                                        _handleMenuAction(context, action),
+                                    itemBuilder: (context) => [
+                                      PopupMenuItem(
+                                        value: 'info',
+                                        child: _buildMenuItem(
+                                          Icons.info_outline,
+                                          'Info',
+                                          theme.colorScheme.onSurface,
+                                        ),
+                                      ),
+                                      PopupMenuItem(
+                                        value: 'edit',
+                                        child: _buildMenuItem(
+                                          Icons.edit_outlined,
+                                          'Edit',
+                                          theme.colorScheme.onSurface,
+                                        ),
+                                      ),
+                                      PopupMenuItem(
+                                        value: 'share',
+                                        child: _buildMenuItem(
+                                          Icons.share_outlined,
+                                          'Share',
+                                          theme.colorScheme.onSurface,
+                                        ),
+                                      ),
+                                      PopupMenuItem(
+                                        value: 'download',
+                                        child: _buildMenuItem(
+                                          Icons.download_outlined,
+                                          'Download',
+                                          theme.colorScheme.onSurface,
+                                        ),
+                                      ),
+                                      PopupMenuItem(
+                                        value: 'delete',
+                                        child: _buildMenuItem(
+                                          Icons.delete_outline,
+                                          'Delete',
+                                          Colors.red,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                              ],
+                            ),
                           ),
                         ),
                       ),
                     ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         );
       },
