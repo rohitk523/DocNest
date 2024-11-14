@@ -1,3 +1,4 @@
+import 'package:docnest_flutter/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:open_file/open_file.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -12,7 +13,69 @@ import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:http/http.dart' as http;
 import '../services/api_config.dart';
-import 'dart:convert';
+
+class DocumentTileClipper extends CustomClipper<Path> {
+  @override
+  Path getClip(Size size) {
+    final path = Path();
+
+    // Adjustable values
+    const double wedgeWidth = 120.0; // Total width of the wedge
+    const double flatBottomWidth = 40.0; // Width of the flat bottom
+    const double wedgeHeight = 20.0; // Height of the wedge
+    const double cornerRadius = 20.0; // Corner radius of the main container
+
+    // Calculate center positionr
+    final center = size.width / 2;
+
+    // Start from top-left with rounded corner
+    path.moveTo(cornerRadius, 0);
+
+    // Line to start of left wedge
+    path.lineTo(center - wedgeWidth / 2, 0);
+
+    // Left slant of wedge
+    path.lineTo(center - flatBottomWidth / 2, wedgeHeight);
+
+    // Flat bottom of wedge
+    path.lineTo(center + flatBottomWidth / 2, wedgeHeight);
+
+    // Right slant of wedge
+    path.lineTo(center + wedgeWidth / 2, 0);
+
+    // Line to top-right corner
+    path.lineTo(size.width - cornerRadius, 0);
+
+    // Add rounded corners
+    // Top right corner
+    path.quadraticBezierTo(size.width, 0, size.width, cornerRadius);
+
+    // Right side line
+    path.lineTo(size.width, size.height - cornerRadius);
+
+    // Bottom right corner
+    path.quadraticBezierTo(
+        size.width, size.height, size.width - cornerRadius, size.height);
+
+    // Bottom line
+    path.lineTo(cornerRadius, size.height);
+
+    // Bottom left corner
+    path.quadraticBezierTo(0, size.height, 0, size.height - cornerRadius);
+
+    // Left side line
+    path.lineTo(0, cornerRadius);
+
+    // Top left corner
+    path.quadraticBezierTo(0, 0, cornerRadius, 0);
+
+    path.close();
+    return path;
+  }
+
+  @override
+  bool shouldReclip(CustomClipper<Path> oldClipper) => false;
+}
 
 class DocumentTile extends StatelessWidget {
   final Document document;
@@ -566,141 +629,223 @@ Size: ${formatFileSize(document.fileSize)}
 
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-          child: Container(
-            decoration: BoxDecoration(
-              color: theme.cardColor,
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, 2),
+          child: Stack(
+            children: [
+              // Main container with shadow
+              Container(
+                decoration: BoxDecoration(
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 10,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                borderRadius: BorderRadius.circular(20),
-                onTap: () {
-                  if (isSelectionMode) {
-                    provider.toggleSelection(document.id);
-                  }
-                },
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Row(
-                    children: [
-                      // Leading icon
-                      Container(
-                        width: 48,
-                        height: 48,
-                        decoration: BoxDecoration(
-                          color:
-                              theme.colorScheme.surfaceVariant.withOpacity(0.5),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: isSelectionMode
-                            ? Checkbox(
-                                value: isSelected,
-                                onChanged: (_) =>
-                                    provider.toggleSelection(document.id),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(4),
+                child: ClipPath(
+                  clipper: DocumentTileClipper(),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: theme.cardColor,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(20),
+                        onTap: () {
+                          if (isSelectionMode) {
+                            provider.toggleSelection(document.id);
+                          }
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Row(
+                            children: [
+                              // Leading icon
+                              Container(
+                                width: 48,
+                                height: 48,
+                                decoration: BoxDecoration(
+                                  color: getCategoryColor(document.category)
+                                      .withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(12),
                                 ),
-                                activeColor: theme.colorScheme.primary,
-                              )
-                            : Icon(
-                                getCategoryIcon(document.category),
-                                color: theme.colorScheme.primary,
-                                size: 24,
+                                child: isSelectionMode
+                                    ? Checkbox(
+                                        value: isSelected,
+                                        onChanged: (_) => provider
+                                            .toggleSelection(document.id),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(4),
+                                        ),
+                                        activeColor: theme.colorScheme.primary,
+                                      )
+                                    : Icon(
+                                        getCategoryIcon(document.category),
+                                        color:
+                                            getCategoryColor(document.category),
+                                        size: 24,
+                                      ),
                               ),
-                      ),
-                      const SizedBox(width: 16),
-                      // Content
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              document.name,
-                              style: theme.textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.w600,
-                                color: theme.colorScheme.onSurface,
+                              const SizedBox(width: 16),
+                              // Content
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      document.name,
+                                      style: AppTextStyles.subtitle1.copyWith(
+                                        color: theme.colorScheme.onSurface,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    // const SizedBox(height: 4),
+                                    // if (document.description.isNotEmpty) ...[
+                                    //   Text(
+                                    //     document.description,
+                                    //     style: AppTextStyles.caption.copyWith(
+                                    //       color: theme
+                                    //           .colorScheme.onSurfaceVariant,
+                                    //     ),
+                                    //     maxLines: 1,
+                                    //     overflow: TextOverflow.ellipsis,
+                                    //   ),
+                                    //   const SizedBox(height: 4),
+                                    // ],
+                                    Row(
+                                      children: [
+                                        Icon(
+                                          Icons.calendar_today,
+                                          size: 12,
+                                          color: theme
+                                              .colorScheme.onSurfaceVariant,
+                                        ),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          getRelativeDate(document.createdAt),
+                                          style: AppTextStyles.caption.copyWith(
+                                            color: theme
+                                                .colorScheme.onSurfaceVariant,
+                                          ),
+                                        ),
+                                        if (document.fileType != null) ...[
+                                          const SizedBox(width: 12),
+                                          Icon(
+                                            Icons.description,
+                                            size: 12,
+                                            color: theme
+                                                .colorScheme.onSurfaceVariant,
+                                          ),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            document.fileType!
+                                                .split('/')
+                                                .last
+                                                .toUpperCase(),
+                                            style:
+                                                AppTextStyles.caption.copyWith(
+                                              color: theme
+                                                  .colorScheme.onSurfaceVariant,
+                                            ),
+                                          ),
+                                        ],
+                                      ],
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              getRelativeDate(document.createdAt),
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: theme.colorScheme.onSurfaceVariant,
-                              ),
-                            ),
-                          ],
+                              // Menu button
+                              if (!isSelectionMode)
+                                PopupMenuButton<String>(
+                                  icon: Icon(
+                                    Icons.more_vert,
+                                    color: theme.colorScheme.onSurfaceVariant,
+                                  ),
+                                  elevation: 3,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  position: PopupMenuPosition.under,
+                                  onSelected: (action) =>
+                                      _handleMenuAction(context, action),
+                                  itemBuilder: (context) => [
+                                    PopupMenuItem(
+                                      value: 'info',
+                                      child: _buildMenuItem(
+                                        Icons.info_outline,
+                                        'Info',
+                                        theme.colorScheme.onSurface,
+                                      ),
+                                    ),
+                                    PopupMenuItem(
+                                      value: 'edit',
+                                      child: _buildMenuItem(
+                                        Icons.edit_outlined,
+                                        'Edit',
+                                        theme.colorScheme.onSurface,
+                                      ),
+                                    ),
+                                    PopupMenuItem(
+                                      value: 'share',
+                                      child: _buildMenuItem(
+                                        Icons.share_outlined,
+                                        'Share',
+                                        theme.colorScheme.onSurface,
+                                      ),
+                                    ),
+                                    PopupMenuItem(
+                                      value: 'download',
+                                      child: _buildMenuItem(
+                                        Icons.download_outlined,
+                                        'Download',
+                                        theme.colorScheme.onSurface,
+                                      ),
+                                    ),
+                                    PopupMenuItem(
+                                      value: 'delete',
+                                      child: _buildMenuItem(
+                                        Icons.delete_outline,
+                                        'Delete',
+                                        Colors.red,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                            ],
+                          ),
                         ),
                       ),
-                      // Trailing menu
-                      if (!isSelectionMode)
-                        PopupMenuButton<String>(
-                          icon: Icon(
-                            Icons.more_vert,
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                          elevation: 3,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          position: PopupMenuPosition.under,
-                          onSelected: (action) =>
-                              _handleMenuAction(context, action),
-                          itemBuilder: (context) => [
-                            PopupMenuItem(
-                              value: 'info',
-                              child: _buildMenuItem(
-                                Icons.info_outline,
-                                'Info',
-                                theme.colorScheme.onSurface,
-                              ),
-                            ),
-                            PopupMenuItem(
-                              value: 'edit',
-                              child: _buildMenuItem(
-                                Icons.edit_outlined,
-                                'Edit',
-                                theme.colorScheme.onSurface,
-                              ),
-                            ),
-                            PopupMenuItem(
-                              value: 'share',
-                              child: _buildMenuItem(
-                                Icons.share_outlined,
-                                'Share',
-                                theme.colorScheme.onSurface,
-                              ),
-                            ),
-                            PopupMenuItem(
-                              value: 'download',
-                              child: _buildMenuItem(
-                                Icons.download_outlined,
-                                'Download',
-                                theme.colorScheme.onSurface,
-                              ),
-                            ),
-                            PopupMenuItem(
-                              value: 'delete',
-                              child: _buildMenuItem(
-                                Icons.delete_outline,
-                                'Delete',
-                                Colors.red,
-                              ),
-                            ),
-                          ],
-                        ),
-                    ],
+                    ),
                   ),
                 ),
               ),
-            ),
+              // Center top wedge overlay
+              // Positioned(
+              //   top: 0,
+              //   left: 0,
+              //   right: 0,
+              //   child: Center(
+              //     child: Container(
+              //       height: 15,
+              //       width: 100,
+              //       decoration: BoxDecoration(
+              //         color: theme.brightness == Brightness.dark
+              //             ? AppColors.surfaceDark
+              //             : Colors.grey[100],
+              //         borderRadius: const BorderRadius.only(
+              //           bottomLeft: Radius.circular(8),
+              //           bottomRight: Radius.circular(8),
+              //         ),
+              //       ),
+              //     ),
+              //   ),
+              // ),
+            ],
           ),
         );
       },
