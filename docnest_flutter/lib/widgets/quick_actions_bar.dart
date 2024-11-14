@@ -1,9 +1,9 @@
 // lib/widgets/quick_actions_bar.dart
 
 import 'dart:io';
+import 'dart:ui';
 import 'package:docnest_flutter/screens/login_screen.dart';
 import 'package:docnest_flutter/services/document_service.dart';
-import 'package:docnest_flutter/widgets/document_section.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:provider/provider.dart';
@@ -14,9 +14,10 @@ import 'package:http/http.dart' as http;
 import '../services/api_config.dart';
 import '../utils/formatters.dart';
 import '../providers/document_provider.dart';
-import './document_search.dart';
 import './upload_dialog.dart';
 import './search_widget.dart';
+import 'package:printing/printing.dart';
+import 'package:pdf/widgets.dart' as pw;
 
 class QuickActionsBar extends StatelessWidget {
   const QuickActionsBar({super.key});
@@ -168,12 +169,114 @@ class QuickActionsBar extends StatelessWidget {
   }
 
   Future<void> _handlePrint(BuildContext context) async {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Print feature coming soon'),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+    try {
+      final provider = Provider.of<DocumentProvider>(context, listen: false);
+      final selectedDocs = provider.selectedDocuments;
+
+      if (selectedDocs.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please select documents to print'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        return;
+      }
+
+      // Show loading dialog
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => AlertDialog(
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const CircularProgressIndicator(),
+              const SizedBox(height: 16),
+              Text(
+                  'Preparing ${selectedDocs.length} documents for printing...'),
+            ],
+          ),
+        ),
+      );
+
+      // Create a PDF document
+      final pdf = pw.Document();
+
+      for (final doc in selectedDocs) {
+        try {
+          final response = await http.get(
+            Uri.parse('${ApiConfig.documentsUrl}${doc.id}/download'),
+            headers: ApiConfig.authHeaders(provider.token),
+          );
+
+          if (response.statusCode == 200) {
+            // Add the document content to the PDF
+            pdf.addPage(
+              pw.Page(
+                build: (context) => pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    pw.Text(doc.name,
+                        style: pw.TextStyle(
+                            fontSize: 16, fontWeight: pw.FontWeight.bold)),
+                    pw.SizedBox(height: 8),
+                    pw.Text(doc.description ?? 'No description',
+                        style: pw.TextStyle(fontSize: 14)),
+                    pw.SizedBox(height: 16),
+                    pw.Expanded(
+                      child: pw.Container(
+                        decoration: pw.BoxDecoration(
+                          borderRadius: pw.BorderRadius.circular(8),
+                        ),
+                        padding: const pw.EdgeInsets.all(16),
+                        child: pw.Text(
+                          String.fromCharCodes(response.bodyBytes),
+                          style: pw.TextStyle(fontSize: 14),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }
+        } catch (e) {
+          print('Error downloading document ${doc.name}: $e');
+        }
+      }
+
+      if (context.mounted) {
+        // Dismiss loading dialog
+        Navigator.pop(context);
+
+        // Print the PDF
+        await Printing.layoutPdf(
+          onLayout: (format) async => pdf.save(),
+        );
+
+        // Clear selection after printing
+        provider.clearSelection();
+      }
+    } catch (e) {
+      if (context.mounted) {
+        // Dismiss loading dialog if showing
+        Navigator.pop(context);
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error printing documents: $e'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+            action: SnackBarAction(
+              label: 'Retry',
+              textColor: Colors.white,
+              onPressed: () => _handlePrint(context),
+            ),
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _handleUpload(BuildContext context) async {
