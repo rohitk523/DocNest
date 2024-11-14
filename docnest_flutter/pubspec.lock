@@ -440,6 +440,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.6"
+  mime_type:
+    dependency: "direct main"
+    description:
+      name: mime_type
+      sha256: d652b613e84dac1af28030a9fba82c0999be05b98163f9e18a0849c6e63838bb
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.1"
   nested:
     dependency: transitive
     description:
@@ -520,8 +528,16 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.0.3"
+  open_filex:
+    dependency: "direct main"
+    description:
+      name: open_filex
+      sha256: ba425ea49affd0a98a234aa9344b9ea5d4c4f7625a1377961eae9fe194c3d523
+      url: "https://pub.dev"
+    source: hosted
+    version: "4.5.0"
   path:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: path
       sha256: "087ce49c3f0dc39180befefc60fdb4acd8f8620e5682fe2476afd0b3688bb4af"

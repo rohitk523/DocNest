@@ -7,6 +7,7 @@ import 'package:share_plus/share_plus.dart';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:http/http.dart' as http;
+import 'package:open_filex/open_filex.dart';
 
 import '../models/document.dart';
 import '../utils/formatters.dart';
@@ -466,26 +467,26 @@ Size: ${formatFileSize(document.fileSize)}
             action: SnackBarAction(
               label: 'Open',
               onPressed: () async {
-                try {
-                  final result = await OpenFile.open(filePath);
-                  if (result.type != ResultType.done && context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Error opening file: ${result.message}'),
-                        backgroundColor: Colors.red,
-                      ),
-                    );
-                  }
-                } catch (e) {
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Could not open file: $e'),
-                        backgroundColor: Colors.red,
-                      ),
-                    );
-                  }
-                }
+                // try {
+                //   final result = await OpenFile.open(filePath);
+                //   if (result.type != ResultType.done && context.mounted) {
+                //     ScaffoldMessenger.of(context).showSnackBar(
+                //       SnackBar(
+                //         content: Text('Error opening file: ${result.message}'),
+                //         backgroundColor: Colors.red,
+                //       ),
+                //     );
+                //   }
+                // } catch (e) {
+                //   if (context.mounted) {
+                //     ScaffoldMessenger.of(context).showSnackBar(
+                //       SnackBar(
+                //         content: Text('Could not open file: $e'),
+                //         backgroundColor: Colors.red,
+                //       ),
+                //     );
+                //   }
+                // }
               },
             ),
             behavior: SnackBarBehavior.floating,
@@ -518,6 +519,84 @@ Size: ${formatFileSize(document.fileSize)}
           ),
         );
       }
+    }
+  }
+
+  Future<void> _openDocument(BuildContext context) async {
+    final provider = Provider.of<DocumentProvider>(context, listen: false);
+    File? tempFile;
+
+    try {
+      // Show loading indicator
+      print('Showing loading indicator...');
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const AlertDialog(
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(height: 16),
+              Text('Opening document...'),
+            ],
+          ),
+        ),
+      );
+
+      // Fetch the document file
+      print('Fetching document file...');
+      final response = await http.get(
+        Uri.parse('${ApiConfig.documentsUrl}${document.id}/download'),
+        headers: ApiConfig.authHeaders(provider.token),
+      );
+
+      if (context.mounted) {
+        // Dismiss the loading indicator
+        print('Dismissing loading indicator...');
+        Navigator.of(context).pop();
+      }
+
+      if (response.statusCode != 200) {
+        print(
+            'Failed to fetch document file, status code: ${response.statusCode}');
+        throw Exception('Failed to fetch document file');
+      }
+
+      // Get the file type
+      print('Getting file type...');
+      final tempDir = await getTemporaryDirectory();
+      tempFile = File('${tempDir.path}/${document.name}');
+      await tempFile.writeAsBytes(response.bodyBytes);
+
+      try {
+        print('Opening PDF file...');
+        await OpenFilex.open(tempFile.path, type: 'application/pdf');
+      } catch (e) {
+        print('Error opening PDF file: $e');
+        _showErrorSnackBar(
+            context, 'No PDF viewer found. Please download the file.');
+      }
+    } catch (e) {
+      if (context.mounted) {
+        // Dismiss the loading indicator
+        print('Dismissing loading indicator due to error...');
+        Navigator.of(context).pop();
+
+        // Show an error message
+        print('Showing error message: $e');
+        _showErrorSnackBar(context, 'Error opening document: ${e.toString()}');
+      }
+    } finally {
+      // Clean up the temporary file when the app is no longer in the foreground
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Future.delayed(const Duration(seconds: 5), () {
+          if (tempFile != null && tempFile.existsSync()) {
+            print('Deleting temporary file...');
+            tempFile.delete();
+          }
+        });
+      });
     }
   }
 
@@ -678,6 +757,8 @@ Size: ${formatFileSize(document.fileSize)}
                         onTap: () {
                           if (isSelectionMode) {
                             provider.toggleSelection(document.id);
+                          } else {
+                            _openDocument(context);
                           }
                         },
                         child: Padding(
