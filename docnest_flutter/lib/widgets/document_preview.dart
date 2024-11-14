@@ -74,6 +74,7 @@ class _DocumentPreviewState extends State<DocumentPreview> {
           ApiConfig.authHeaders(widget.token),
           maxAttempts: 2,
         );
+        print(response.statusCode);
 
         if (response.statusCode != 200) {
           print('Error loading preview: ${response.statusCode}');
@@ -203,7 +204,7 @@ class _DocumentPreviewState extends State<DocumentPreview> {
   }
 
   Future<http.Response> _retryableRequest(Uri uri, Map<String, String> headers,
-      {int maxAttempts = 2}) async {
+      {int maxAttempts = 3}) async {
     int attempts = 0;
     while (attempts < maxAttempts) {
       try {
@@ -213,7 +214,7 @@ class _DocumentPreviewState extends State<DocumentPreview> {
           headers: headers,
         )
             .timeout(
-          const Duration(seconds: 10),
+          const Duration(seconds: 60),
           onTimeout: () {
             throw TimeoutException('Request timed out');
           },
