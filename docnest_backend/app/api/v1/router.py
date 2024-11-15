@@ -22,7 +22,7 @@ api_router = APIRouter()
 async def create_document(
     name: str = Form(...),
     description: Optional[str] = Form(None),
-    category: str = Form(...),  
+    category: str = Form(...),
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
     current_user = Depends(get_current_user)
@@ -31,20 +31,27 @@ async def create_document(
     Create a new document with file upload.
     """
     try:
-        # Validate category exists
-        if category not in current_user.custom_categories and category not in ["government", "medical", "educational", "other"]:
+        # Normalize category
+        category = category.lower().strip()
+        
+        # Get valid categories for the user
+        default_categories = ["government", "medical", "educational", "other"]
+        user_categories = set(current_user.custom_categories or [])
+        valid_categories = set(default_categories) | user_categories
+
+        # Validate category
+        if category not in valid_categories:
+            print(f"Invalid category: {category}. Valid categories: {valid_categories}")
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                 detail="Invalid category"
             )
 
-        # Create document data
         document_data = {
             "name": name,
             "description": description,
             "category": category
         }
-        document_in = DocumentCreate(**document_data)
         
         # Initialize S3 service
         s3_service = S3Service()
@@ -60,7 +67,7 @@ async def create_document(
             document = Document(
                 name=document_in.name,
                 description=document_in.description,
-                category=document_in.category,
+                category=category,
                 file_path=file_path,
                 file_size=file_size,
                 file_type=file_type,
@@ -80,6 +87,7 @@ async def create_document(
             raise e
     
     except Exception as e:
+        print(f"Error creating document: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e)
