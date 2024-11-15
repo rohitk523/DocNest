@@ -1,6 +1,8 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:provider/provider.dart';
+import '../providers/document_provider.dart';
 import '../models/document.dart';
 import '../utils/formatters.dart';
 import '../theme/app_theme.dart';
@@ -24,13 +26,6 @@ class _UploadDocumentDialogState extends State<UploadDocumentDialog> {
   late String _selectedCategory;
   File? _selectedFile;
   bool _isUploading = false;
-
-  final List<Map<String, String>> _categories = [
-    {'value': 'government', 'label': 'Government'},
-    {'value': 'medical', 'label': 'Medical'},
-    {'value': 'educational', 'label': 'Educational'},
-    {'value': 'other', 'label': 'Other'},
-  ];
 
   @override
   void initState() {
@@ -104,8 +99,7 @@ class _UploadDocumentDialogState extends State<UploadDocumentDialog> {
       final result = {
         'name': _nameController.text.trim(),
         'description': _descriptionController.text.trim(),
-        'category':
-            widget.preSelectedCategory?.toLowerCase() ?? _selectedCategory,
+        'category': _selectedCategory.toLowerCase(),
         'file': _selectedFile,
       };
 
@@ -133,6 +127,7 @@ class _UploadDocumentDialogState extends State<UploadDocumentDialog> {
     final isDarkMode = theme.brightness == Brightness.dark;
     final mediaQuery = MediaQuery.of(context);
     final bottomPadding = mediaQuery.viewInsets.bottom;
+    final provider = Provider.of<DocumentProvider>(context);
 
     return Dialog(
       backgroundColor: Colors.transparent,
@@ -151,8 +146,7 @@ class _UploadDocumentDialogState extends State<UploadDocumentDialog> {
           ],
         ),
         child: SingleChildScrollView(
-          padding:
-              EdgeInsets.only(bottom: bottomPadding), // Adjust for keyboard
+          padding: EdgeInsets.only(bottom: bottomPadding),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -179,7 +173,7 @@ class _UploadDocumentDialogState extends State<UploadDocumentDialog> {
                         Expanded(
                           child: Text(
                             widget.preSelectedCategory != null
-                                ? 'Upload ${widget.preSelectedCategory!.toUpperCase()} Document'
+                                ? 'Upload ${getCategoryDisplayName(widget.preSelectedCategory!)} Document'
                                 : 'Upload Document',
                             style: AppTextStyles.headline2.copyWith(
                               color: theme.colorScheme.primary,
@@ -356,18 +350,41 @@ class _UploadDocumentDialogState extends State<UploadDocumentDialog> {
                               color: theme.colorScheme.primary,
                             ),
                           ),
-                          items: _categories.map((category) {
+                          items: provider.allCategories.map((category) {
+                            final isDefault =
+                                provider.isDefaultCategory(category);
                             return DropdownMenuItem(
-                              value: category['value'],
+                              value: category,
                               child: Row(
                                 children: [
                                   Icon(
-                                    getCategoryIcon(category['value']!),
-                                    color: getCategoryColor(category['value']!),
+                                    getCategoryIcon(category),
+                                    color: getCategoryColor(category),
                                     size: 20,
                                   ),
                                   const SizedBox(width: 12),
-                                  Text(category['label']!),
+                                  Text(getCategoryDisplayName(category)),
+                                  if (!isDefault) ...[
+                                    const Spacer(),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 2,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: getCategoryBadgeColor(category),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Text(
+                                        'Custom',
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          color: getCategoryColor(category),
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ],
                               ),
                             );

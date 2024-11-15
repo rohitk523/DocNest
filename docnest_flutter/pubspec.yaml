@@ -51,6 +51,7 @@ dependencies:
   open_filex: ^4.5.0
   flutter_cache_manager: ^3.3.0
   enum_to_string: ^2.0.1
+  
 
 
 dev_dependencies:

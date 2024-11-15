@@ -409,24 +409,11 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  void _handleAddCategory() async {
-    final newCategory = await showDialog<String>(
-      context: context,
-      builder: (context) =>
-          AddCategoryDialog(defaultCategories: _defaultCategories),
-    );
-
-    if (newCategory != null &&
-        !_defaultCategories.contains(newCategory) &&
-        !_userCategories.contains(newCategory)) {
-      setState(() {
-        _userCategories.add(newCategory);
-      });
-    }
-  }
+  // Inside _HomeScreenState class in home_screen.dart, modify _buildCategoryList:
 
   Widget _buildCategoryList(List<Document> documents) {
     final theme = Theme.of(context);
+    final provider = Provider.of<DocumentProvider>(context);
 
     return GestureDetector(
       onVerticalDragUpdate: _handleDragUpdate,
@@ -437,15 +424,13 @@ class _HomeScreenState extends State<HomeScreen> {
         child: ListView.separated(
           controller: _scrollController,
           padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
-          itemCount: _defaultCategories.length +
-              _userCategories.length +
-              1, // Add 1 for "Add New Category"
+          itemCount:
+              provider.allCategories.length + 1, // +1 for "Add New Category"
           separatorBuilder: (context, index) {
-            final category = index < _defaultCategories.length
-                ? _defaultCategories[index]
-                : index < _defaultCategories.length + _userCategories.length
-                    ? _userCategories[index - _defaultCategories.length]
-                    : 'add_new_category';
+            if (index >= provider.allCategories.length)
+              return const SizedBox.shrink();
+
+            final category = provider.allCategories[index];
             final categoryDocuments = _getDocumentsByCategory(category);
 
             if (categoryDocuments.isEmpty) {
@@ -476,30 +461,65 @@ class _HomeScreenState extends State<HomeScreen> {
             );
           },
           itemBuilder: (context, index) {
-            if (index == _defaultCategories.length + _userCategories.length) {
-              // Handle the "Add New Category" option
+            // Handle the "Add New Category" option
+            if (index == provider.allCategories.length) {
               return Padding(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
-                child: InkWell(
-                  onTap: _handleAddCategory,
-                  child: Card(
-                    elevation: 0,
-                    color: theme.colorScheme.primary.withOpacity(0.1),
+                child: Card(
+                  elevation: 0,
+                  color: theme.colorScheme.primary.withOpacity(0.1),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    side: BorderSide(
+                      color: theme.colorScheme.primary.withOpacity(0.2),
+                      width: 1,
+                    ),
+                  ),
+                  child: InkWell(
+                    onTap: _handleAddCategory,
+                    borderRadius: BorderRadius.circular(16),
                     child: Padding(
                       padding: const EdgeInsets.all(16),
                       child: Row(
                         children: [
-                          Icon(
-                            Icons.add_circle_outline,
-                            color: theme.colorScheme.primary,
-                          ),
-                          const SizedBox(width: 16),
-                          Text(
-                            'Add New Category',
-                            style: AppTextStyles.subtitle1.copyWith(
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: theme.colorScheme.primary.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Icon(
+                              Icons.add_circle_outline,
                               color: theme.colorScheme.primary,
                             ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Add New Category',
+                                  style: AppTextStyles.subtitle1.copyWith(
+                                    color: theme.colorScheme.primary,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                Text(
+                                  'Create a custom category for your documents',
+                                  style: AppTextStyles.caption.copyWith(
+                                    color: theme.colorScheme.primary
+                                        .withOpacity(0.7),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Icon(
+                            Icons.arrow_forward_ios,
+                            size: 16,
+                            color: theme.colorScheme.primary,
                           ),
                         ],
                       ),
@@ -509,13 +529,8 @@ class _HomeScreenState extends State<HomeScreen> {
               );
             }
 
-            String category;
-            if (index < _defaultCategories.length) {
-              category = _defaultCategories[index];
-            } else {
-              category = _userCategories[index - _defaultCategories.length];
-            }
-
+            final category = provider.allCategories[index];
+            final isCustomCategory = provider.isCustomCategory(category);
             final categoryDocuments = _getDocumentsByCategory(category);
 
             return AnimatedSlide(
@@ -550,7 +565,6 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Category Header
                           Container(
                             decoration: BoxDecoration(
                               gradient: LinearGradient(
@@ -564,53 +578,103 @@ class _HomeScreenState extends State<HomeScreen> {
                                 topRight: Radius.circular(16),
                               ),
                             ),
-                            padding: const EdgeInsets.all(16),
-                            child: Row(
+                            child: Stack(
                               children: [
-                                Container(
-                                  padding: const EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    color: getCategoryColor(category)
-                                        .withOpacity(0.1),
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Icon(
-                                    getCategoryIcon(category),
-                                    color: getCategoryColor(category),
-                                    size: 24,
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
+                                Padding(
+                                  padding: const EdgeInsets.all(16),
+                                  child: Row(
                                     children: [
-                                      Text(
-                                        getCategoryDisplayName(category),
-                                        style: AppTextStyles.subtitle1.copyWith(
-                                          fontWeight: FontWeight.bold,
-                                          color: theme.colorScheme.onSurface,
+                                      Container(
+                                        padding: const EdgeInsets.all(8),
+                                        decoration: BoxDecoration(
+                                          color: getCategoryColor(category)
+                                              .withOpacity(0.1),
+                                          borderRadius:
+                                              BorderRadius.circular(8),
+                                        ),
+                                        child: Icon(
+                                          getCategoryIcon(category),
+                                          color: getCategoryColor(category),
+                                          size: 24,
                                         ),
                                       ),
-                                      Text(
-                                        '${categoryDocuments.length} document${categoryDocuments.length != 1 ? 's' : ''}',
-                                        style: AppTextStyles.caption.copyWith(
-                                          color: theme.colorScheme.onSurface
-                                              .withOpacity(0.6),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Row(
+                                              children: [
+                                                Text(
+                                                  getCategoryDisplayName(
+                                                      category),
+                                                  style: AppTextStyles.subtitle1
+                                                      .copyWith(
+                                                    fontWeight: FontWeight.bold,
+                                                    color: theme
+                                                        .colorScheme.onSurface,
+                                                  ),
+                                                ),
+                                                if (isCustomCategory) ...[
+                                                  const SizedBox(width: 8),
+                                                  Container(
+                                                    padding: const EdgeInsets
+                                                        .symmetric(
+                                                      horizontal: 8,
+                                                      vertical: 2,
+                                                    ),
+                                                    decoration: BoxDecoration(
+                                                      color:
+                                                          getCategoryBadgeColor(
+                                                              category),
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              12),
+                                                    ),
+                                                    child: Text(
+                                                      'Custom',
+                                                      style: TextStyle(
+                                                        fontSize: 10,
+                                                        color: getCategoryColor(
+                                                            category),
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ],
+                                            ),
+                                            Text(
+                                              '${categoryDocuments.length} document${categoryDocuments.length != 1 ? 's' : ''}',
+                                              style: AppTextStyles.caption
+                                                  .copyWith(
+                                                color: theme
+                                                    .colorScheme.onSurface
+                                                    .withOpacity(0.6),
+                                              ),
+                                            ),
+                                          ],
                                         ),
+                                      ),
+                                      if (isCustomCategory)
+                                        IconButton(
+                                          icon:
+                                              const Icon(Icons.delete_outline),
+                                          color: Colors.red,
+                                          onPressed: () =>
+                                              _handleDeleteCategory(category),
+                                        ),
+                                      const Icon(
+                                        Icons.keyboard_arrow_right,
                                       ),
                                     ],
                                   ),
                                 ),
-                                Icon(
-                                  Icons.keyboard_arrow_right,
-                                  color: getCategoryColor(category),
-                                ),
                               ],
                             ),
                           ),
-                          // Documents List
                           ClipRRect(
                             borderRadius: const BorderRadius.only(
                               bottomLeft: Radius.circular(16),
@@ -632,6 +696,108 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
     );
+  }
+
+  // Add these new methods to _HomeScreenState:
+  void _handleAddCategory() async {
+    final newCategory = await showDialog<String>(
+      context: context,
+      builder: (context) => AddCategoryDialog(
+        defaultCategories: context.read<DocumentProvider>().defaultCategories,
+      ),
+    );
+
+    if (newCategory != null && mounted) {
+      try {
+        final success = await context
+            .read<DocumentProvider>()
+            .addCustomCategory(newCategory);
+        if (success && mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                  'Category "${getCategoryDisplayName(newCategory)}" added successfully'),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to add category: $e'),
+              behavior: SnackBarBehavior.floating,
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }
+  }
+
+  void _handleDeleteCategory(String category) async {
+    final provider = context.read<DocumentProvider>();
+
+    // Check if category has documents
+    final documents = _getDocumentsByCategory(category);
+    if (documents.isNotEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+                'Cannot delete category with documents. Move or delete the documents first.'),
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+      return;
+    }
+
+    // Show confirmation dialog
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Delete Category'),
+        content: Text(
+            'Are you sure you want to delete "${getCategoryDisplayName(category)}"?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text('Cancel'),
+          ),
+          TextButton(
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            onPressed: () => Navigator.pop(context, true),
+            child: Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      try {
+        final success = await provider.removeCustomCategory(category);
+        if (success && mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Category deleted successfully'),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to delete category: $e'),
+              behavior: SnackBarBehavior.floating,
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }
   }
 
   Future<void> _handleUpload() async {

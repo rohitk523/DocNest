@@ -1,7 +1,10 @@
+// lib/widgets/edit_document_dialog.dart
 import 'package:flutter/material.dart';
 import '../models/document.dart';
 import '../theme/app_theme.dart';
 import '../utils/formatters.dart';
+import 'package:provider/provider.dart';
+import '../providers/document_provider.dart';
 
 class EditDocumentDialog extends StatefulWidget {
   final Document document;
@@ -20,13 +23,6 @@ class _EditDocumentDialogState extends State<EditDocumentDialog> {
   late TextEditingController _nameController;
   late TextEditingController _descriptionController;
   late String _selectedCategory;
-
-  final List<Map<String, String>> _categories = [
-    {'value': 'government', 'label': 'Government'},
-    {'value': 'medical', 'label': 'Medical'},
-    {'value': 'educational', 'label': 'Educational'},
-    {'value': 'other', 'label': 'Other'},
-  ];
 
   @override
   void initState() {
@@ -58,6 +54,10 @@ class _EditDocumentDialogState extends State<EditDocumentDialog> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDarkMode = theme.brightness == Brightness.dark;
+    final provider = Provider.of<DocumentProvider>(context);
+
+    // Combine default and custom categories for the dropdown
+    final allCategories = provider.allCategories;
 
     return Dialog(
       backgroundColor: Colors.transparent,
@@ -156,18 +156,40 @@ class _EditDocumentDialogState extends State<EditDocumentDialog> {
                           color: theme.colorScheme.primary,
                         ),
                       ),
-                      items: _categories.map((category) {
+                      items: allCategories.map((category) {
+                        final isDefault = provider.isDefaultCategory(category);
                         return DropdownMenuItem(
-                          value: category['value'],
+                          value: category,
                           child: Row(
                             children: [
                               Icon(
-                                getCategoryIcon(category['value']!),
-                                color: getCategoryColor(category['value']!),
+                                getCategoryIcon(category),
+                                color: getCategoryColor(category),
                                 size: 20,
                               ),
                               const SizedBox(width: 12),
-                              Text(category['label']!),
+                              Text(getCategoryDisplayName(category)),
+                              if (!isDefault) ...[
+                                const Spacer(),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 2,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: getCategoryBadgeColor(category),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Text(
+                                    'Custom',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      color: getCategoryColor(category),
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ],
                           ),
                         );
