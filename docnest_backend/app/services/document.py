@@ -7,7 +7,7 @@ import magic
 import boto3
 from botocore.exceptions import ClientError
 import uuid
-from ..models.document import Document, DocumentType
+from ..models.document import Document
 from ..schemas.document import DocumentCreate, DocumentUpdate
 from ..core.config import settings
 
@@ -209,7 +209,7 @@ class DocumentService:
         self,
         db: Session,
         owner_id: str,
-        category: Optional[DocumentType] = None
+        category: Optional[str] = Form(None)
     ) -> List[Document]:
         """Get all documents for a user, optionally filtered by category"""
         query = db.query(Document).filter(Document.owner_id == owner_id)

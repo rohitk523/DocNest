@@ -9,7 +9,6 @@ from typing import List, Optional, Dict, Any
 from app.db.session import get_db
 from app.core.auth import get_current_user
 from app.schemas.document import DocumentCreate, DocumentResponse, DocumentUpdate
-from app.models.document import DocumentType
 from app.services.s3_service import S3Service
 from app.models.document import Document
 from pydantic import parse_obj_as
@@ -23,7 +22,7 @@ api_router = APIRouter()
 async def create_document(
     name: str = Form(...),
     description: Optional[str] = Form(None),
-    category: DocumentType = Form(...),
+    category: str = Form(...),  
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
     current_user = Depends(get_current_user)
@@ -32,13 +31,20 @@ async def create_document(
     Create a new document with file upload.
     """
     try:
+        # Validate category exists
+        if category not in current_user.custom_categories and category not in ["government", "medical", "educational", "other"]:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Invalid category"
+            )
+
         # Create document data
         document_data = {
             "name": name,
             "description": description,
             "category": category
         }
-        document_in = parse_obj_as(DocumentCreate, document_data)
+        document_in = DocumentCreate(**document_data)
         
         # Initialize S3 service
         s3_service = S3Service()
@@ -81,7 +87,7 @@ async def create_document(
 
 @api_router.get("/documents/", response_model=List[DocumentResponse])
 async def list_documents(
-    category: Optional[DocumentType] = None,
+    category: Optional[str] = Form(None),
     db: Session = Depends(get_db),
     current_user = Depends(get_current_user)
 ):
@@ -117,7 +123,7 @@ async def update_document(
     document_id: str,
     name: Optional[str] = Form(None),
     description: Optional[str] = Form(None),
-    category: Optional[DocumentType] = Form(None),
+    category: Optional[str] = Form(None),
     file: Optional[UploadFile] = File(None),
     db: Session = Depends(get_db),
     current_user = Depends(get_current_user)

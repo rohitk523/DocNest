@@ -2,12 +2,11 @@
 from pydantic import BaseModel, constr
 from typing import Optional
 from datetime import datetime
-from ..models.document import DocumentType
 
 class DocumentBase(BaseModel):
     name: constr(min_length=1, max_length=255)
     description: Optional[str] = None
-    category: DocumentType
+    category: str 
 
 class DocumentCreate(DocumentBase):
     pass
@@ -15,7 +14,7 @@ class DocumentCreate(DocumentBase):
 class DocumentUpdate(BaseModel):
     name: Optional[constr(min_length=1, max_length=255)] = None
     description: Optional[str] = None
-    category: Optional[DocumentType] = None
+    category: Optional[str] = None
 
 class DocumentInDB(DocumentBase):
     id: str

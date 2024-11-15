@@ -1,16 +1,9 @@
 # app/models/document.py
-from sqlalchemy import Column, String, DateTime, ForeignKey, Text, Integer, Enum as SQLEnum, Boolean
+from sqlalchemy import Column, String, DateTime, ForeignKey, Text, Integer, Boolean
 from sqlalchemy.orm import relationship
-import enum
 from datetime import datetime
 from uuid import uuid4
 from ..db.base import Base
-
-class DocumentType(str, enum.Enum):
-    government = "government"
-    medical = "medical"
-    educational = "educational"
-    other = "other"
 
 class Document(Base):
     __tablename__ = "documents"
@@ -21,7 +14,7 @@ class Document(Base):
     file_path = Column(String, nullable=True)
     file_size = Column(Integer, nullable=True)
     file_type = Column(String, nullable=True)
-    category = Column(SQLEnum(DocumentType), nullable=False)
+    category = Column(String, nullable=False)  # Changed from Enum to String
     version = Column(Integer, default=1)
     is_shared = Column(Boolean, default=False)
     owner_id = Column(String, ForeignKey("users.id"))
