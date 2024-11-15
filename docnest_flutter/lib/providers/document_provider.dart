@@ -21,6 +21,7 @@ class DocumentProvider with ChangeNotifier {
   bool _isDragging = false;
   User? _currentUser;
   bool _isLoadingProfile = false;
+  static const int MAX_CUSTOM_CATEGORIES = 20;
 
   // Category Management
   final List<String> _defaultCategories = [
@@ -32,6 +33,12 @@ class DocumentProvider with ChangeNotifier {
   Set<String> _customCategories = {};
   final String _customCategoriesKey = 'user_custom_categories';
   SharedPreferences? _prefs;
+
+  void _debugPrintCategories() {
+    print('Default categories: $_defaultCategories');
+    print('Custom categories: $_customCategories');
+    print('All categories: ${[..._defaultCategories, ..._customCategories]}');
+  }
 
   DocumentProvider({required String token}) : _token = token {
     if (_token.isNotEmpty) {
@@ -51,10 +58,23 @@ class DocumentProvider with ChangeNotifier {
   User? get currentUser => _currentUser;
   bool get isLoadingProfile => _isLoadingProfile;
   bool get hasValidToken => _token.isNotEmpty;
-  List<String> get defaultCategories => _defaultCategories;
-  List<String> get customCategories => _customCategories.toList();
-  List<String> get allCategories =>
-      [..._defaultCategories, ..._customCategories];
+
+  List<String> get defaultCategories {
+    _debugPrintCategories();
+    return _defaultCategories;
+  }
+
+  List<String> get customCategories {
+    _debugPrintCategories();
+    return _customCategories.toList();
+  }
+
+  List<String> get allCategories {
+    _debugPrintCategories();
+    final all = [..._defaultCategories, ..._customCategories];
+    print('Returning all categories: $all');
+    return all;
+  }
 
   List<Document> get selectedDocuments =>
       _documents.where((doc) => _selectedDocuments.contains(doc.id)).toList();
@@ -69,78 +89,102 @@ class DocumentProvider with ChangeNotifier {
   // Category Management Methods
   Future<void> _initializePreferences() async {
     _prefs = await SharedPreferences.getInstance();
-    _loadCustomCategories();
+    await _loadCustomCategories();
+    _debugPrintCategories();
   }
 
-  void _loadCustomCategories() {
+  Future<void> _loadCustomCategories() async {
     if (_prefs == null) return;
     final savedCategories = _prefs!.getStringList(_customCategoriesKey) ?? [];
-    _customCategories = savedCategories.toSet();
+    print('Loading saved categories: $savedCategories');
+    _customCategories = savedCategories.map((e) => e.toLowerCase()).toSet();
     notifyListeners();
   }
 
   Future<void> _saveCustomCategories() async {
     if (_prefs == null) return;
-    await _prefs!
-        .setStringList(_customCategoriesKey, _customCategories.toList());
+    final categoriesToSave = _customCategories.toList();
+    print('Saving categories: $categoriesToSave');
+    await _prefs!.setStringList(_customCategoriesKey, categoriesToSave);
   }
 
   Future<bool> addCustomCategory(String category) async {
     final normalizedCategory = category.trim().toLowerCase();
+    print('Adding custom category: $normalizedCategory');
 
-    if (normalizedCategory.isEmpty) {
+    if (normalizedCategory.isEmpty || normalizedCategory.length < 2) {
+      print('Invalid category name: too short');
       return false;
     }
 
-    if (_defaultCategories.contains(normalizedCategory) ||
-        _customCategories.contains(normalizedCategory)) {
+    if (_defaultCategories.contains(normalizedCategory)) {
+      print('Category is a default category');
+      return false;
+    }
+
+    if (_customCategories.contains(normalizedCategory)) {
+      print('Category already exists in custom categories');
+      return false;
+    }
+
+    if (_customCategories.length >= MAX_CUSTOM_CATEGORIES) {
+      print('Maximum number of custom categories reached');
       return false;
     }
 
     _customCategories.add(normalizedCategory);
     await _saveCustomCategories();
+    _debugPrintCategories();
     notifyListeners();
-
-    if (currentUser != null) {
-      try {
-        // TODO: Add API call to save category on backend
-        // await _documentService.addCustomCategory(normalizedCategory);
-      } catch (e) {
-        print('Failed to sync category with backend: $e');
-      }
-    }
 
     return true;
   }
 
   Future<bool> removeCustomCategory(String category) async {
-    if (_defaultCategories.contains(category)) {
+    final normalizedCategory = category.toLowerCase();
+    print('Removing custom category: $normalizedCategory');
+
+    if (_defaultCategories.contains(normalizedCategory)) {
+      print('Cannot remove default category');
       return false;
     }
 
-    final success = _customCategories.remove(category);
+    // Check if category is in use
+    final hasDocuments = _documents
+        .any((doc) => doc.category.toLowerCase() == normalizedCategory);
+
+    if (hasDocuments) {
+      print('Cannot remove category that has documents');
+      return false;
+    }
+
+    final success = _customCategories.remove(normalizedCategory);
     if (success) {
       await _saveCustomCategories();
+      _debugPrintCategories();
       notifyListeners();
-
-      if (currentUser != null) {
-        try {
-          // TODO: Add API call to remove category on backend
-          // await _documentService.removeCustomCategory(category);
-        } catch (e) {
-          print('Failed to sync category removal with backend: $e');
-        }
-      }
     }
     return success;
   }
 
   bool isDefaultCategory(String category) {
-    return _defaultCategories.contains(category.toLowerCase());
+    final isDefault = _defaultCategories.contains(category.toLowerCase());
+    print('Checking if $category is default: $isDefault');
+    return isDefault;
   }
 
   bool isCustomCategory(String category) {
-    return _customCategories.contains(category.toLowerCase());
+    final isCustom = _customCategories.contains(category.toLowerCase());
+    print('Checking if $category is custom: $isCustom');
+    return isCustom;
+  }
+
+  bool isCategoryValid(String category) {
+    final normalized = category.toLowerCase();
+    final isValid = _defaultCategories.contains(normalized) ||
+        _customCategories.contains(normalized);
+    print('Validating category $category: $isValid');
+    return isValid;
   }
 
   // Selection Methods
@@ -189,23 +233,60 @@ class DocumentProvider with ChangeNotifier {
   }
 
   void setDocuments(List<Document> documents) {
+    print('Setting documents: ${documents.length}');
     _documents = documents;
+
     if (currentUser != null && currentUser!.customCategories.isNotEmpty) {
-      _customCategories = Set.from(currentUser!.customCategories);
+      print('Loading custom categories from user profile');
+      _customCategories =
+          Set.from(currentUser!.customCategories.map((e) => e.toLowerCase()));
       _saveCustomCategories();
     }
+
+    // Extract unique categories from documents
+    final documentCategories = documents
+        .map((doc) => doc.category.toLowerCase())
+        .where((category) => !_defaultCategories.contains(category))
+        .toSet();
+
+    print('Found categories in documents: $documentCategories');
+    _customCategories.addAll(documentCategories);
+    _saveCustomCategories();
+
+    _debugPrintCategories();
     notifyListeners();
   }
 
   void addDocument(Document document) {
+    print(
+        'Adding document: ${document.name} with category: ${document.category}');
+    final category = document.category.toLowerCase();
+
+    if (!_defaultCategories.contains(category)) {
+      _customCategories.add(category);
+      _saveCustomCategories();
+    }
+
     _documents.add(document);
+    _debugPrintCategories();
     notifyListeners();
   }
 
   void updateDocument(Document updatedDoc) {
     final index = _documents.indexWhere((doc) => doc.id == updatedDoc.id);
     if (index != -1) {
+      print(
+          'Updating document: ${updatedDoc.name} with category: ${updatedDoc.category}');
       _documents[index] = updatedDoc;
+
+      // Update custom categories if needed
+      final category = updatedDoc.category.toLowerCase();
+      if (!_defaultCategories.contains(category)) {
+        _customCategories.add(category);
+        _saveCustomCategories();
+      }
+
+      _debugPrintCategories();
       notifyListeners();
     }
   }

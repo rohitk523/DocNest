@@ -279,6 +279,8 @@ class QuickActionsBar extends StatelessWidget {
     }
   }
 
+  // In QuickActionsBar class
+
   Future<void> _handleUpload(BuildContext context) async {
     try {
       final result = await showDialog<Map<String, dynamic>>(
@@ -287,18 +289,44 @@ class QuickActionsBar extends StatelessWidget {
       );
 
       if (result != null && context.mounted) {
-        // Show loading indicator
+        // Show loading indicator with fixed width and better constraints
         showDialog(
           context: context,
           barrierDismissible: false,
-          builder: (context) => const AlertDialog(
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                CircularProgressIndicator(),
-                SizedBox(height: 16),
-                Text('Uploading document...'),
-              ],
+          builder: (context) => Center(
+            child: Container(
+              constraints: const BoxConstraints(maxWidth: 300),
+              child: Material(
+                color: Colors.transparent,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).dialogBackgroundColor,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  padding: const EdgeInsets.all(24),
+                  child: const Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SizedBox(
+                        width: 40,
+                        height: 40,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 3,
+                        ),
+                      ),
+                      SizedBox(height: 24),
+                      Text(
+                        'Uploading document...',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ),
           ),
         );
@@ -336,7 +364,7 @@ class QuickActionsBar extends StatelessWidget {
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Error uploading document: $e'),
+              content: Text('Error uploading document: ${e.toString()}'),
               behavior: SnackBarBehavior.floating,
               action: SnackBarAction(
                 label: 'Retry',

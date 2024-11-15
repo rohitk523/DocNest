@@ -80,6 +80,8 @@ class _UploadDocumentDialogState extends State<UploadDocumentDialog> {
     }
   }
 
+  // In UploadDocumentDialog
+
   void _handleUpload() {
     if (!_formKey.currentState!.validate() || _selectedFile == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -93,15 +95,37 @@ class _UploadDocumentDialogState extends State<UploadDocumentDialog> {
       return;
     }
 
+    // Validate category
+    final provider = Provider.of<DocumentProvider>(context, listen: false);
+    final normalizedCategory = _selectedCategory.toLowerCase();
+
+    // Debug prints
+    print('Selected category: $normalizedCategory');
+    print('Available categories: ${provider.allCategories}');
+
+    if (!provider.allCategories.contains(normalizedCategory)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Invalid category selected'),
+          backgroundColor: AppColors.errorLight,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
     setState(() => _isUploading = true);
 
     try {
       final result = {
         'name': _nameController.text.trim(),
         'description': _descriptionController.text.trim(),
-        'category': _selectedCategory.toLowerCase(),
+        'category': normalizedCategory,
         'file': _selectedFile,
       };
+
+      // Debug print
+      print('Uploading document with data: $result');
 
       Navigator.pop(context, result);
     } catch (e) {
@@ -343,6 +367,7 @@ class _UploadDocumentDialogState extends State<UploadDocumentDialog> {
                         const SizedBox(height: 16),
                         DropdownButtonFormField<String>(
                           value: _selectedCategory,
+                          isExpanded: true,
                           decoration: InputDecoration(
                             labelText: 'Category',
                             prefixIcon: Icon(
@@ -353,39 +378,57 @@ class _UploadDocumentDialogState extends State<UploadDocumentDialog> {
                           items: provider.allCategories.map((category) {
                             final isDefault =
                                 provider.isDefaultCategory(category);
-                            return DropdownMenuItem(
+                            return DropdownMenuItem<String>(
                               value: category,
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    getCategoryIcon(category),
-                                    color: getCategoryColor(category),
-                                    size: 20,
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Text(getCategoryDisplayName(category)),
-                                  if (!isDefault) ...[
-                                    const Spacer(),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 8,
-                                        vertical: 2,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: getCategoryBadgeColor(category),
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      child: Text(
-                                        'Custom',
-                                        style: TextStyle(
-                                          fontSize: 10,
+                              child: Container(
+                                constraints: const BoxConstraints(
+                                    maxWidth: double.infinity),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(
+                                          getCategoryIcon(category),
                                           color: getCategoryColor(category),
-                                          fontWeight: FontWeight.bold,
+                                          size: 20,
+                                        ),
+                                        const SizedBox(width: 12),
+                                        Flexible(
+                                          child: Text(
+                                            getCategoryDisplayName(category),
+                                            style: theme.textTheme.bodyMedium,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    if (!isDefault)
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 2,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color:
+                                              getCategoryBadgeColor(category),
+                                          borderRadius:
+                                              BorderRadius.circular(12),
+                                        ),
+                                        child: Text(
+                                          'Custom',
+                                          style: TextStyle(
+                                            fontSize: 10,
+                                            color: getCategoryColor(category),
+                                            fontWeight: FontWeight.bold,
+                                          ),
                                         ),
                                       ),
-                                    ),
                                   ],
-                                ],
+                                ),
                               ),
                             );
                           }).toList(),

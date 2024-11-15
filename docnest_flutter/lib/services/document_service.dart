@@ -69,6 +69,8 @@ class DocumentService {
     }
   }
 
+  // lib/services/document_service.dart
+
   Future<Document> uploadDocument({
     required String name,
     required String description,
@@ -76,18 +78,28 @@ class DocumentService {
     required File file,
   }) async {
     try {
-      // Validate file size
       final fileSize = await file.length();
       if (fileSize > 10 * 1024 * 1024) {
         throw Exception('File size exceeds 10MB limit');
       }
 
+      final normalizedCategory = category.toLowerCase().trim();
+      print('Uploading document with normalized category: $normalizedCategory');
+
       final request =
-          http.MultipartRequest('POST', Uri.parse(ApiConfig.documentsUrl))
-            ..headers.addAll(ApiConfig.authHeaders(token))
-            ..fields['name'] = name.trim()
-            ..fields['description'] = description.trim()
-            ..fields['category'] = category.toLowerCase();
+          http.MultipartRequest('POST', Uri.parse(ApiConfig.documentsUrl));
+
+      // Set headers properly for multipart request
+      request.headers.addAll({
+        'Authorization': 'Bearer $token',
+        'Accept': 'application/json',
+      });
+
+      request.fields.addAll({
+        'name': name.trim(),
+        'description': description.trim(),
+        'category': normalizedCategory,
+      });
 
       // Add file
       final fileName = path.basename(file.path);
@@ -104,16 +116,25 @@ class DocumentService {
 
       request.files.add(multipartFile);
 
-      print('Uploading document to: ${request.url}');
-      print('Upload fields: ${request.fields}');
+      print('Upload request fields: ${request.fields}');
+      print('Upload request headers: ${request.headers}');
 
       final streamedResponse = await request.send();
       final response = await http.Response.fromStream(streamedResponse);
 
-      return _handleResponse(response, (json) => Document.fromJson(json));
+      print('Upload response status: ${response.statusCode}');
+      print('Upload response body: ${response.body}');
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return Document.fromJson(json.decode(response.body));
+      } else {
+        final errorBody = json.decode(response.body);
+        throw Exception(errorBody['detail'] ??
+            'Operation failed with status ${response.statusCode}');
+      }
     } catch (e) {
       print('Error in uploadDocument: $e');
-      throw Exception('Error uploading document: $e');
+      rethrow;
     }
   }
 
