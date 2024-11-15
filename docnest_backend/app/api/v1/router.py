@@ -1,5 +1,7 @@
 # app/api/v1/router.py
 
+import re
+from app.models.user import User
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
@@ -12,6 +14,8 @@ from app.services.s3_service import S3Service
 from app.models.document import Document
 from pydantic import parse_obj_as
 import os
+from sqlalchemy import func
+from app.core.exceptions import CategoryValidationError, CategoryLimitExceeded, CategoryNotFound, CategoryInUse
 
 api_router = APIRouter()
 
@@ -333,3 +337,141 @@ async def get_document_share_info(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=str(e)
         )
+    
+
+# Add new category management endpoints
+@api_router.get("/categories", response_model=List[str])
+async def get_categories(
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Get all categories (both default and custom) for the current user
+    """
+    default_categories = ["government", "medical", "educational", "other"]
+    return default_categories + (current_user.custom_categories or [])
+
+@api_router.post("/categories/{category_name}")
+async def add_category(
+    category_name: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+) -> dict:
+    """
+    Add a new custom category
+    """
+    # Validate category name
+    category_name = category_name.lower().strip()
+    if not re.match(r'^[a-z0-9][a-z0-9\s-_]{0,28}[a-z0-9]$', category_name):
+        raise CategoryValidationError(
+            "Category name must be 2-30 characters, containing only letters, numbers, spaces, hyphens, and underscores"
+        )
+
+    # Check if category already exists
+    default_categories = ["government", "medical", "educational", "other"]
+    if category_name in default_categories:
+        raise CategoryValidationError("Cannot add default category")
+
+    custom_categories = current_user.custom_categories or []
+    if category_name in custom_categories:
+        raise CategoryValidationError("Category already exists")
+
+    # Check category limit
+    if len(custom_categories) >= 20:
+        raise CategoryLimitExceeded()
+
+    # Add new category
+    custom_categories.append(category_name)
+    current_user.custom_categories = custom_categories
+    db.commit()
+
+    return {"message": f"Category '{category_name}' added successfully"}
+
+@api_router.delete("/categories/{category_name}")
+async def delete_category(
+    category_name: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+) -> dict:
+    """
+    Delete a custom category
+    """
+    category_name = category_name.lower().strip()
+    
+    # Verify category exists and is custom
+    default_categories = ["government", "medical", "educational", "other"]
+    if category_name in default_categories:
+        raise CategoryValidationError("Cannot delete default category")
+
+    custom_categories = current_user.custom_categories or []
+    if category_name not in custom_categories:
+        raise CategoryNotFound()
+
+    # Check if category is in use
+    documents_count = db.query(func.count(Document.id))\
+        .filter(
+            Document.owner_id == current_user.id,
+            Document.category == category_name
+        ).scalar()
+
+    if documents_count > 0:
+        raise CategoryInUse()
+
+    # Remove category
+    custom_categories.remove(category_name)
+    current_user.custom_categories = custom_categories
+    db.commit()
+
+    return {"message": f"Category '{category_name}' deleted successfully"}
+
+@api_router.put("/categories/{old_category_name}")
+async def rename_category(
+    old_category_name: str,
+    new_category_name: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+) -> dict:
+    """
+    Rename a custom category
+    """
+    old_category_name = old_category_name.lower().strip()
+    new_category_name = new_category_name.lower().strip()
+
+    # Validate new category name
+    if not re.match(r'^[a-z0-9][a-z0-9\s-_]{0,28}[a-z0-9]$', new_category_name):
+        raise CategoryValidationError(
+            "Category name must be 2-30 characters, containing only letters, numbers, spaces, hyphens, and underscores"
+        )
+
+    # Verify old category exists and is custom
+    default_categories = ["government", "medical", "educational", "other"]
+    if old_category_name in default_categories:
+        raise CategoryValidationError("Cannot rename default category")
+
+    custom_categories = current_user.custom_categories or []
+    if old_category_name not in custom_categories:
+        raise CategoryNotFound()
+
+    # Check if new name already exists
+    if new_category_name in default_categories or new_category_name in custom_categories:
+        raise CategoryValidationError("Category name already exists")
+
+    # Update category name in user's custom categories
+    custom_categories[custom_categories.index(old_category_name)] = new_category_name
+    current_user.custom_categories = custom_categories
+
+    # Update category name in all relevant documents
+    documents = db.query(Document)\
+        .filter(
+            Document.owner_id == current_user.id,
+            Document.category == old_category_name
+        ).all()
+
+    for doc in documents:
+        doc.category = new_category_name
+
+    db.commit()
+
+    return {
+        "message": f"Category renamed from '{old_category_name}' to '{new_category_name}' successfully",
+        "documents_updated": len(documents)
+    }

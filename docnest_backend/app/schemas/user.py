@@ -1,6 +1,6 @@
 # app/schemas/user.py
 from pydantic import BaseModel, EmailStr, HttpUrl
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime
 
 class UserBase(BaseModel):
@@ -17,6 +17,7 @@ class UserCreateGoogle(UserBase):
 class UserUpdate(BaseModel):
     full_name: Optional[str] = None
     profile_picture: Optional[HttpUrl] = None
+    custom_categories: Optional[List[str]] = None
 
 class UserInDB(UserBase):
     id: str
@@ -24,6 +25,7 @@ class UserInDB(UserBase):
     is_google_user: bool
     created_at: datetime
     last_login: Optional[datetime]
+    custom_categories: List[str] = []
 
     class Config:
         from_attributes = True
@@ -48,7 +50,8 @@ class TokenResponse(BaseModel):
                     "is_active": True,
                     "is_google_user": False,
                     "created_at": "2024-01-01T00:00:00",
-                    "last_login": "2024-01-01T00:00:00"
+                    "last_login": "2024-01-01T00:00:00",
+                    "custom_categories": []
                 }
             }
         }

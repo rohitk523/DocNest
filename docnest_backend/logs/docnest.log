@@ -1006,3 +1006,7 @@ NameError: name 'get_password_hash' is not defined
 2024-11-13 20:31:45,661 - docnest - INFO - Path: /api/v1/documents/c01c885e-54e3-4adf-a4df-e7f2f2382931/share Method: GET Status: 200 Duration: 0.12s
 2024-11-13 20:34:54,740 - docnest - INFO - Path: /api/v1/documents/c01c885e-54e3-4adf-a4df-e7f2f2382931/download Method: GET Status: 500 Duration: 3.18s
 2024-11-13 20:35:21,971 - docnest - INFO - Path: /api/v1/documents/c01c885e-54e3-4adf-a4df-e7f2f2382931/download Method: GET Status: 200 Duration: 4.27s
+2024-11-15 16:09:16,684 - docnest - INFO - Path: / Method: GET Status: 404 Duration: 0.00s
+2024-11-15 16:09:16,689 - docnest - INFO - Path: /favicon.ico Method: GET Status: 404 Duration: 0.00s
+2024-11-15 16:09:21,180 - docnest - INFO - Path: /docs Method: GET Status: 200 Duration: 0.00s
+2024-11-15 16:09:21,352 - docnest - INFO - Path: /openapi.json Method: GET Status: 200 Duration: 0.03s

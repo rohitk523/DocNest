@@ -1,4 +1,5 @@
-from sqlalchemy import Boolean, Column, String, DateTime
+# app/models/user.py
+from sqlalchemy import Boolean, Column, String, DateTime, ARRAY
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from uuid import uuid4
@@ -9,7 +10,7 @@ class User(Base):
 
     id = Column(String, primary_key=True, default=lambda: str(uuid4()))
     email = Column(String, unique=True, index=True, nullable=False)
-    hashed_password = Column(String, nullable=True)  # Changed to nullable for Google users
+    hashed_password = Column(String, nullable=True)  # Nullable for Google users
     full_name = Column(String)
     is_active = Column(Boolean, default=True)
     is_google_user = Column(Boolean, default=False)
@@ -17,7 +18,8 @@ class User(Base):
     profile_picture = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     last_login = Column(DateTime, nullable=True)
+    # Add custom categories field
+    custom_categories = Column(ARRAY(String), default=list)
     
     # Relationships
     documents = relationship("Document", back_populates="owner", cascade="all, delete-orphan")
-    

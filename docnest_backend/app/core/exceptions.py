@@ -39,3 +39,33 @@ class TokenValidationError(DocumentNestException):
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Could not validate credentials"
         )
+
+
+# Add these new exceptions
+class CategoryValidationError(HTTPException):
+    def __init__(self, message: str = "Invalid category name"):
+        super().__init__(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=message
+        )
+
+class CategoryLimitExceeded(HTTPException):
+    def __init__(self):
+        super().__init__(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Maximum number of custom categories reached"
+        )
+
+class CategoryNotFound(HTTPException):
+    def __init__(self):
+        super().__init__(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Category not found"
+        )
+
+class CategoryInUse(HTTPException):
+    def __init__(self):
+        super().__init__(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot delete category that is in use by documents"
+        )

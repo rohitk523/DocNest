@@ -29,19 +29,6 @@ async def login(
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db)
 ) -> Dict[str, str]:
-    """
-    Authenticate user and return access token
-    
-    Args:
-        form_data: OAuth2 password request form containing username and password
-        db: Database session
-        
-    Returns:
-        Dict containing access token and token type
-        
-    Raises:
-        InvalidCredentialsException: If username or password is incorrect
-    """
     try:
         user = authenticate_user(db, form_data.username, form_data.password)
         if not user:
@@ -59,7 +46,8 @@ async def login(
 
         return {
             "access_token": create_access_token(data={"sub": user.id}),
-            "token_type": "bearer"
+            "token_type": "bearer",
+            "user": user  # User model now includes custom_categories
         }
     except Exception as e:
         raise HTTPException(
@@ -67,6 +55,31 @@ async def login(
             detail=str(e),
             headers={"WWW-Authenticate": "Bearer"},
         )
+
+
+@auth_router.post("/google/signin", response_model=TokenResponse)
+async def google_signin(
+    token: str = Body(..., embed=True),
+    db: Session = Depends(get_db)
+) -> Dict[str, Any]:
+    try:
+        google_service = GoogleAuthService()
+        user_data = await google_service.verify_google_token(token)
+        user = await google_service.get_or_create_user(db, user_data)
+        
+        user.last_login = datetime.utcnow()
+        db.commit()
+        
+        access_token = create_access_token(data={"sub": user.id})
+        
+        return {
+            "access_token": access_token,
+            "token_type": "bearer",
+            "user": user  # User model now includes custom_categories
+        }
+    except Exception as e:
+        raise GoogleAuthenticationError(str(e))
+
 
 @auth_router.post("/register", response_model=UserResponse)
 async def register(
@@ -117,6 +130,7 @@ async def register(
             detail=str(e)
         )
 
+
 @auth_router.get("/me", response_model=UserResponse)
 async def read_users_me(
     current_user: User = Depends(get_current_user)
@@ -132,47 +146,6 @@ async def read_users_me(
     """
     return current_user
 
-@auth_router.post("/google/signin", response_model=TokenResponse)
-async def google_signin(
-    token: str = Body(..., embed=True),
-    db: Session = Depends(get_db)
-) -> Dict[str, Any]:
-    """
-    Handle Google Sign-in authentication
-    
-    Args:
-        token: Google ID token from client
-        db: Database session
-        
-    Returns:
-        Dict containing access token, token type and user info
-        
-    Raises:
-        GoogleAuthenticationError: If Google token validation fails
-    """
-    try:
-        google_service = GoogleAuthService()
-        # Verify the Google token
-        user_data = await google_service.verify_google_token(token)
-        
-        # Get or create user
-        user = await google_service.get_or_create_user(db, user_data)
-        
-        # Update last login
-        user.last_login = datetime.utcnow()
-        db.commit()
-        
-        # Create access token
-        access_token = create_access_token(data={"sub": user.id})
-        
-        return {
-            "access_token": access_token,
-            "token_type": "bearer",
-            "user": UserResponse.model_validate(user)
-        }
-        
-    except Exception as e:
-        raise GoogleAuthenticationError(str(e))
 
 @auth_router.post("/refresh", response_model=TokenResponse)
 async def refresh_token(
