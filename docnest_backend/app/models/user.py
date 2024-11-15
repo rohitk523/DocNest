@@ -19,7 +19,7 @@ class User(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     last_login = Column(DateTime, nullable=True)
     # Add custom categories field
-    custom_categories = Column(ARRAY(String), default=list)
+    custom_categories = Column(ARRAY(String), default=list, nullable=True)
     
     # Relationships
     documents = relationship("Document", back_populates="owner", cascade="all, delete-orphan")

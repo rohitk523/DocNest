@@ -1010,3 +1010,827 @@ NameError: name 'get_password_hash' is not defined
 2024-11-15 16:09:16,689 - docnest - INFO - Path: /favicon.ico Method: GET Status: 404 Duration: 0.00s
 2024-11-15 16:09:21,180 - docnest - INFO - Path: /docs Method: GET Status: 200 Duration: 0.00s
 2024-11-15 16:09:21,352 - docnest - INFO - Path: /openapi.json Method: GET Status: 200 Duration: 0.03s
+2024-11-16 01:59:29,108 - docnest - INFO - Path: / Method: GET Status: 404 Duration: 0.00s
+2024-11-16 01:59:29,113 - docnest - INFO - Path: /favicon.ico Method: GET Status: 404 Duration: 0.00s
+2024-11-16 01:59:47,677 - docnest - INFO - Path: /docs Method: GET Status: 200 Duration: 0.00s
+2024-11-16 01:59:47,832 - docnest - INFO - Path: /openapi.json Method: GET Status: 200 Duration: 0.05s
+2024-11-16 02:00:11,972 - docnest - INFO - Path: /api/v1/auth/login Method: POST Status: 200 Duration: 1.24s
+2024-11-16 02:00:36,165 - docnest - ERROR - Global error: bad character range \s-_ at position 16
+  + Exception Group Traceback (most recent call last):
+  |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/_utils.py", line 85, in collapse_excgroups
+  |     yield
+  |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 190, in __call__
+  |     async with anyio.create_task_group() as task_group:
+  |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 763, in __aexit__
+  |     raise BaseExceptionGroup(
+  | ExceptionGroup: unhandled errors in a TaskGroup (1 sub-exception)
+  +-+---------------- 1 ----------------
+    | Traceback (most recent call last):
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    |     await self.app(scope, receive, _send)
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 189, in __call__
+    |     with collapse_excgroups():
+    |   File "/opt/homebrew/Cellar/python@3.11/3.11.3/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 155, in __exit__
+    |     self.gen.throw(typ, value, traceback)
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/_utils.py", line 91, in collapse_excgroups
+    |     raise exc
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 191, in __call__
+    |     response = await self.dispatch_func(request, call_next)
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/main.py", line 38, in log_requests
+    |     response = await call_next(request)
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 165, in call_next
+    |     raise app_exc
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 151, in coro
+    |     await self.app(scope, receive_or_disconnect, send_no_error)
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/cors.py", line 91, in __call__
+    |     await self.simple_response(scope, receive, send, request_headers=headers)
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/cors.py", line 146, in simple_response
+    |     await self.app(scope, receive, send)
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/exceptions.py", line 62, in __call__
+    |     await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    |     raise exc
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    |     await app(scope, receive, sender)
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/routing.py", line 762, in __call__
+    |     await self.middleware_stack(scope, receive, send)
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/routing.py", line 782, in app
+    |     await route.handle(scope, receive, send)
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/routing.py", line 297, in handle
+    |     await self.app(scope, receive, send)
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/routing.py", line 77, in app
+    |     await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    |     raise exc
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    |     await app(scope, receive, sender)
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/routing.py", line 72, in app
+    |     response = await func(request)
+    |                ^^^^^^^^^^^^^^^^^^^
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/fastapi/routing.py", line 299, in app
+    |     raise e
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/fastapi/routing.py", line 294, in app
+    |     raw_response = await run_endpoint_function(
+    |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/fastapi/routing.py", line 191, in run_endpoint_function
+    |     return await dependant.call(**values)
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/app/api/v1/router.py", line 390, in add_category
+    |     if not re.match(r'^[a-z0-9][a-z0-9\s-_]{0,28}[a-z0-9]$', category_name):
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/opt/homebrew/Cellar/python@3.11/3.11.3/Frameworks/Python.framework/Versions/3.11/lib/python3.11/re/__init__.py", line 166, in match
+    |     return _compile(pattern, flags).match(string)
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/opt/homebrew/Cellar/python@3.11/3.11.3/Frameworks/Python.framework/Versions/3.11/lib/python3.11/re/__init__.py", line 294, in _compile
+    |     p = _compiler.compile(pattern, flags)
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/opt/homebrew/Cellar/python@3.11/3.11.3/Frameworks/Python.framework/Versions/3.11/lib/python3.11/re/_compiler.py", line 743, in compile
+    |     p = _parser.parse(p, flags)
+    |         ^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/opt/homebrew/Cellar/python@3.11/3.11.3/Frameworks/Python.framework/Versions/3.11/lib/python3.11/re/_parser.py", line 980, in parse
+    |     p = _parse_sub(source, state, flags & SRE_FLAG_VERBOSE, 0)
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/opt/homebrew/Cellar/python@3.11/3.11.3/Frameworks/Python.framework/Versions/3.11/lib/python3.11/re/_parser.py", line 455, in _parse_sub
+    |     itemsappend(_parse(source, state, verbose, nested + 1,
+    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/opt/homebrew/Cellar/python@3.11/3.11.3/Frameworks/Python.framework/Versions/3.11/lib/python3.11/re/_parser.py", line 607, in _parse
+    |     raise source.error(msg, len(this) + 1 + len(that))
+    | re.error: bad character range \s-_ at position 16
+    +------------------------------------
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 189, in __call__
+    with collapse_excgroups():
+  File "/opt/homebrew/Cellar/python@3.11/3.11.3/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 155, in __exit__
+    self.gen.throw(typ, value, traceback)
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/_utils.py", line 91, in collapse_excgroups
+    raise exc
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 191, in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/main.py", line 38, in log_requests
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 165, in call_next
+    raise app_exc
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 151, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/cors.py", line 91, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/cors.py", line 146, in simple_response
+    await self.app(scope, receive, send)
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/exceptions.py", line 62, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    raise exc
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/routing.py", line 762, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/routing.py", line 782, in app
+    await route.handle(scope, receive, send)
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/routing.py", line 297, in handle
+    await self.app(scope, receive, send)
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/routing.py", line 77, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    raise exc
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/routing.py", line 72, in app
+    response = await func(request)
+               ^^^^^^^^^^^^^^^^^^^
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/fastapi/routing.py", line 299, in app
+    raise e
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/fastapi/routing.py", line 294, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/fastapi/routing.py", line 191, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/app/api/v1/router.py", line 390, in add_category
+    if not re.match(r'^[a-z0-9][a-z0-9\s-_]{0,28}[a-z0-9]$', category_name):
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.11/3.11.3/Frameworks/Python.framework/Versions/3.11/lib/python3.11/re/__init__.py", line 166, in match
+    return _compile(pattern, flags).match(string)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.11/3.11.3/Frameworks/Python.framework/Versions/3.11/lib/python3.11/re/__init__.py", line 294, in _compile
+    p = _compiler.compile(pattern, flags)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.11/3.11.3/Frameworks/Python.framework/Versions/3.11/lib/python3.11/re/_compiler.py", line 743, in compile
+    p = _parser.parse(p, flags)
+        ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.11/3.11.3/Frameworks/Python.framework/Versions/3.11/lib/python3.11/re/_parser.py", line 980, in parse
+    p = _parse_sub(source, state, flags & SRE_FLAG_VERBOSE, 0)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.11/3.11.3/Frameworks/Python.framework/Versions/3.11/lib/python3.11/re/_parser.py", line 455, in _parse_sub
+    itemsappend(_parse(source, state, verbose, nested + 1,
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.11/3.11.3/Frameworks/Python.framework/Versions/3.11/lib/python3.11/re/_parser.py", line 607, in _parse
+    raise source.error(msg, len(this) + 1 + len(that))
+re.error: bad character range \s-_ at position 16
+2024-11-16 02:00:43,573 - docnest - ERROR - Global error: bad character range \s-_ at position 16
+  + Exception Group Traceback (most recent call last):
+  |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/_utils.py", line 85, in collapse_excgroups
+  |     yield
+  |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 190, in __call__
+  |     async with anyio.create_task_group() as task_group:
+  |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 763, in __aexit__
+  |     raise BaseExceptionGroup(
+  | ExceptionGroup: unhandled errors in a TaskGroup (1 sub-exception)
+  +-+---------------- 1 ----------------
+    | Traceback (most recent call last):
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    |     await self.app(scope, receive, _send)
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 189, in __call__
+    |     with collapse_excgroups():
+    |   File "/opt/homebrew/Cellar/python@3.11/3.11.3/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 155, in __exit__
+    |     self.gen.throw(typ, value, traceback)
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/_utils.py", line 91, in collapse_excgroups
+    |     raise exc
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 191, in __call__
+    |     response = await self.dispatch_func(request, call_next)
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/main.py", line 38, in log_requests
+    |     response = await call_next(request)
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 165, in call_next
+    |     raise app_exc
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 151, in coro
+    |     await self.app(scope, receive_or_disconnect, send_no_error)
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/cors.py", line 91, in __call__
+    |     await self.simple_response(scope, receive, send, request_headers=headers)
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/cors.py", line 146, in simple_response
+    |     await self.app(scope, receive, send)
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/exceptions.py", line 62, in __call__
+    |     await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    |     raise exc
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    |     await app(scope, receive, sender)
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/routing.py", line 762, in __call__
+    |     await self.middleware_stack(scope, receive, send)
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/routing.py", line 782, in app
+    |     await route.handle(scope, receive, send)
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/routing.py", line 297, in handle
+    |     await self.app(scope, receive, send)
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/routing.py", line 77, in app
+    |     await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    |     raise exc
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    |     await app(scope, receive, sender)
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/routing.py", line 72, in app
+    |     response = await func(request)
+    |                ^^^^^^^^^^^^^^^^^^^
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/fastapi/routing.py", line 299, in app
+    |     raise e
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/fastapi/routing.py", line 294, in app
+    |     raw_response = await run_endpoint_function(
+    |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/fastapi/routing.py", line 191, in run_endpoint_function
+    |     return await dependant.call(**values)
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/app/api/v1/router.py", line 390, in add_category
+    |     if not re.match(r'^[a-z0-9][a-z0-9\s-_]{0,28}[a-z0-9]$', category_name):
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/opt/homebrew/Cellar/python@3.11/3.11.3/Frameworks/Python.framework/Versions/3.11/lib/python3.11/re/__init__.py", line 166, in match
+    |     return _compile(pattern, flags).match(string)
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/opt/homebrew/Cellar/python@3.11/3.11.3/Frameworks/Python.framework/Versions/3.11/lib/python3.11/re/__init__.py", line 294, in _compile
+    |     p = _compiler.compile(pattern, flags)
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/opt/homebrew/Cellar/python@3.11/3.11.3/Frameworks/Python.framework/Versions/3.11/lib/python3.11/re/_compiler.py", line 743, in compile
+    |     p = _parser.parse(p, flags)
+    |         ^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/opt/homebrew/Cellar/python@3.11/3.11.3/Frameworks/Python.framework/Versions/3.11/lib/python3.11/re/_parser.py", line 980, in parse
+    |     p = _parse_sub(source, state, flags & SRE_FLAG_VERBOSE, 0)
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/opt/homebrew/Cellar/python@3.11/3.11.3/Frameworks/Python.framework/Versions/3.11/lib/python3.11/re/_parser.py", line 455, in _parse_sub
+    |     itemsappend(_parse(source, state, verbose, nested + 1,
+    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/opt/homebrew/Cellar/python@3.11/3.11.3/Frameworks/Python.framework/Versions/3.11/lib/python3.11/re/_parser.py", line 607, in _parse
+    |     raise source.error(msg, len(this) + 1 + len(that))
+    | re.error: bad character range \s-_ at position 16
+    +------------------------------------
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 189, in __call__
+    with collapse_excgroups():
+  File "/opt/homebrew/Cellar/python@3.11/3.11.3/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 155, in __exit__
+    self.gen.throw(typ, value, traceback)
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/_utils.py", line 91, in collapse_excgroups
+    raise exc
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 191, in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/main.py", line 38, in log_requests
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 165, in call_next
+    raise app_exc
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 151, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/cors.py", line 91, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/cors.py", line 146, in simple_response
+    await self.app(scope, receive, send)
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/exceptions.py", line 62, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    raise exc
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/routing.py", line 762, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/routing.py", line 782, in app
+    await route.handle(scope, receive, send)
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/routing.py", line 297, in handle
+    await self.app(scope, receive, send)
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/routing.py", line 77, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    raise exc
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/routing.py", line 72, in app
+    response = await func(request)
+               ^^^^^^^^^^^^^^^^^^^
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/fastapi/routing.py", line 299, in app
+    raise e
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/fastapi/routing.py", line 294, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/fastapi/routing.py", line 191, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/app/api/v1/router.py", line 390, in add_category
+    if not re.match(r'^[a-z0-9][a-z0-9\s-_]{0,28}[a-z0-9]$', category_name):
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.11/3.11.3/Frameworks/Python.framework/Versions/3.11/lib/python3.11/re/__init__.py", line 166, in match
+    return _compile(pattern, flags).match(string)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.11/3.11.3/Frameworks/Python.framework/Versions/3.11/lib/python3.11/re/__init__.py", line 294, in _compile
+    p = _compiler.compile(pattern, flags)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.11/3.11.3/Frameworks/Python.framework/Versions/3.11/lib/python3.11/re/_compiler.py", line 743, in compile
+    p = _parser.parse(p, flags)
+        ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.11/3.11.3/Frameworks/Python.framework/Versions/3.11/lib/python3.11/re/_parser.py", line 980, in parse
+    p = _parse_sub(source, state, flags & SRE_FLAG_VERBOSE, 0)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.11/3.11.3/Frameworks/Python.framework/Versions/3.11/lib/python3.11/re/_parser.py", line 455, in _parse_sub
+    itemsappend(_parse(source, state, verbose, nested + 1,
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.11/3.11.3/Frameworks/Python.framework/Versions/3.11/lib/python3.11/re/_parser.py", line 607, in _parse
+    raise source.error(msg, len(this) + 1 + len(that))
+re.error: bad character range \s-_ at position 16
+2024-11-16 02:00:55,869 - docnest - INFO - Path: / Method: GET Status: 404 Duration: 0.00s
+2024-11-16 02:00:55,872 - docnest - INFO - Path: /favicon.ico Method: GET Status: 404 Duration: 0.00s
+2024-11-16 02:01:03,348 - docnest - INFO - Path: /docs Method: GET Status: 200 Duration: 0.00s
+2024-11-16 02:01:03,485 - docnest - INFO - Path: /openapi.json Method: GET Status: 200 Duration: 0.01s
+2024-11-16 02:01:09,711 - docnest - INFO - Path: /api/v1/categories/Bank Method: POST Status: 401 Duration: 0.01s
+2024-11-16 02:01:28,822 - docnest - INFO - Path: /api/v1/auth/login Method: POST Status: 200 Duration: 0.75s
+2024-11-16 02:01:34,240 - docnest - ERROR - Global error: bad character range \s-_ at position 16
+  + Exception Group Traceback (most recent call last):
+  |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/_utils.py", line 85, in collapse_excgroups
+  |     yield
+  |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 190, in __call__
+  |     async with anyio.create_task_group() as task_group:
+  |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 763, in __aexit__
+  |     raise BaseExceptionGroup(
+  | ExceptionGroup: unhandled errors in a TaskGroup (1 sub-exception)
+  +-+---------------- 1 ----------------
+    | Traceback (most recent call last):
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    |     await self.app(scope, receive, _send)
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 189, in __call__
+    |     with collapse_excgroups():
+    |   File "/opt/homebrew/Cellar/python@3.11/3.11.3/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 155, in __exit__
+    |     self.gen.throw(typ, value, traceback)
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/_utils.py", line 91, in collapse_excgroups
+    |     raise exc
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 191, in __call__
+    |     response = await self.dispatch_func(request, call_next)
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/main.py", line 38, in log_requests
+    |     response = await call_next(request)
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 165, in call_next
+    |     raise app_exc
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 151, in coro
+    |     await self.app(scope, receive_or_disconnect, send_no_error)
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/cors.py", line 91, in __call__
+    |     await self.simple_response(scope, receive, send, request_headers=headers)
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/cors.py", line 146, in simple_response
+    |     await self.app(scope, receive, send)
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/exceptions.py", line 62, in __call__
+    |     await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    |     raise exc
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    |     await app(scope, receive, sender)
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/routing.py", line 762, in __call__
+    |     await self.middleware_stack(scope, receive, send)
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/routing.py", line 782, in app
+    |     await route.handle(scope, receive, send)
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/routing.py", line 297, in handle
+    |     await self.app(scope, receive, send)
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/routing.py", line 77, in app
+    |     await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    |     raise exc
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    |     await app(scope, receive, sender)
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/routing.py", line 72, in app
+    |     response = await func(request)
+    |                ^^^^^^^^^^^^^^^^^^^
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/fastapi/routing.py", line 299, in app
+    |     raise e
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/fastapi/routing.py", line 294, in app
+    |     raw_response = await run_endpoint_function(
+    |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/fastapi/routing.py", line 191, in run_endpoint_function
+    |     return await dependant.call(**values)
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/app/api/v1/router.py", line 390, in add_category
+    |     if not re.match(r'^[a-z0-9][a-z0-9\s-_]{0,28}[a-z0-9]$', category_name):
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/opt/homebrew/Cellar/python@3.11/3.11.3/Frameworks/Python.framework/Versions/3.11/lib/python3.11/re/__init__.py", line 166, in match
+    |     return _compile(pattern, flags).match(string)
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/opt/homebrew/Cellar/python@3.11/3.11.3/Frameworks/Python.framework/Versions/3.11/lib/python3.11/re/__init__.py", line 294, in _compile
+    |     p = _compiler.compile(pattern, flags)
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/opt/homebrew/Cellar/python@3.11/3.11.3/Frameworks/Python.framework/Versions/3.11/lib/python3.11/re/_compiler.py", line 743, in compile
+    |     p = _parser.parse(p, flags)
+    |         ^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/opt/homebrew/Cellar/python@3.11/3.11.3/Frameworks/Python.framework/Versions/3.11/lib/python3.11/re/_parser.py", line 980, in parse
+    |     p = _parse_sub(source, state, flags & SRE_FLAG_VERBOSE, 0)
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/opt/homebrew/Cellar/python@3.11/3.11.3/Frameworks/Python.framework/Versions/3.11/lib/python3.11/re/_parser.py", line 455, in _parse_sub
+    |     itemsappend(_parse(source, state, verbose, nested + 1,
+    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/opt/homebrew/Cellar/python@3.11/3.11.3/Frameworks/Python.framework/Versions/3.11/lib/python3.11/re/_parser.py", line 607, in _parse
+    |     raise source.error(msg, len(this) + 1 + len(that))
+    | re.error: bad character range \s-_ at position 16
+    +------------------------------------
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 189, in __call__
+    with collapse_excgroups():
+  File "/opt/homebrew/Cellar/python@3.11/3.11.3/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 155, in __exit__
+    self.gen.throw(typ, value, traceback)
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/_utils.py", line 91, in collapse_excgroups
+    raise exc
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 191, in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/main.py", line 38, in log_requests
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 165, in call_next
+    raise app_exc
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 151, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/cors.py", line 91, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/cors.py", line 146, in simple_response
+    await self.app(scope, receive, send)
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/exceptions.py", line 62, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    raise exc
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/routing.py", line 762, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/routing.py", line 782, in app
+    await route.handle(scope, receive, send)
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/routing.py", line 297, in handle
+    await self.app(scope, receive, send)
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/routing.py", line 77, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    raise exc
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/routing.py", line 72, in app
+    response = await func(request)
+               ^^^^^^^^^^^^^^^^^^^
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/fastapi/routing.py", line 299, in app
+    raise e
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/fastapi/routing.py", line 294, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/fastapi/routing.py", line 191, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/app/api/v1/router.py", line 390, in add_category
+    if not re.match(r'^[a-z0-9][a-z0-9\s-_]{0,28}[a-z0-9]$', category_name):
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.11/3.11.3/Frameworks/Python.framework/Versions/3.11/lib/python3.11/re/__init__.py", line 166, in match
+    return _compile(pattern, flags).match(string)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.11/3.11.3/Frameworks/Python.framework/Versions/3.11/lib/python3.11/re/__init__.py", line 294, in _compile
+    p = _compiler.compile(pattern, flags)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.11/3.11.3/Frameworks/Python.framework/Versions/3.11/lib/python3.11/re/_compiler.py", line 743, in compile
+    p = _parser.parse(p, flags)
+        ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.11/3.11.3/Frameworks/Python.framework/Versions/3.11/lib/python3.11/re/_parser.py", line 980, in parse
+    p = _parse_sub(source, state, flags & SRE_FLAG_VERBOSE, 0)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.11/3.11.3/Frameworks/Python.framework/Versions/3.11/lib/python3.11/re/_parser.py", line 455, in _parse_sub
+    itemsappend(_parse(source, state, verbose, nested + 1,
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.11/3.11.3/Frameworks/Python.framework/Versions/3.11/lib/python3.11/re/_parser.py", line 607, in _parse
+    raise source.error(msg, len(this) + 1 + len(that))
+re.error: bad character range \s-_ at position 16
+2024-11-16 02:06:24,499 - docnest - INFO - Path: / Method: GET Status: 404 Duration: 0.00s
+2024-11-16 02:06:24,506 - docnest - INFO - Path: /favicon.ico Method: GET Status: 404 Duration: 0.00s
+2024-11-16 02:06:29,088 - docnest - INFO - Path: / Method: GET Status: 404 Duration: 0.00s
+2024-11-16 02:06:29,091 - docnest - INFO - Path: /favicon.ico Method: GET Status: 404 Duration: 0.00s
+2024-11-16 02:06:30,378 - docnest - INFO - Path: /docs Method: GET Status: 200 Duration: 0.00s
+2024-11-16 02:06:30,461 - docnest - INFO - Path: /openapi.json Method: GET Status: 200 Duration: 0.01s
+2024-11-16 02:06:56,154 - docnest - INFO - Path: /api/v1/auth/login Method: POST Status: 200 Duration: 0.85s
+2024-11-16 02:07:50,461 - docnest - INFO - Path: /api/v1/documents/ Method: POST Status: 200 Duration: 8.24s
+2024-11-16 02:08:14,279 - docnest - ERROR - Global error: bad character range \s-_ at position 16
+  + Exception Group Traceback (most recent call last):
+  |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/_utils.py", line 85, in collapse_excgroups
+  |     yield
+  |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 190, in __call__
+  |     async with anyio.create_task_group() as task_group:
+  |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 763, in __aexit__
+  |     raise BaseExceptionGroup(
+  | ExceptionGroup: unhandled errors in a TaskGroup (1 sub-exception)
+  +-+---------------- 1 ----------------
+    | Traceback (most recent call last):
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    |     await self.app(scope, receive, _send)
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 189, in __call__
+    |     with collapse_excgroups():
+    |   File "/opt/homebrew/Cellar/python@3.11/3.11.3/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 155, in __exit__
+    |     self.gen.throw(typ, value, traceback)
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/_utils.py", line 91, in collapse_excgroups
+    |     raise exc
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 191, in __call__
+    |     response = await self.dispatch_func(request, call_next)
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/main.py", line 38, in log_requests
+    |     response = await call_next(request)
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 165, in call_next
+    |     raise app_exc
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 151, in coro
+    |     await self.app(scope, receive_or_disconnect, send_no_error)
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/cors.py", line 91, in __call__
+    |     await self.simple_response(scope, receive, send, request_headers=headers)
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/cors.py", line 146, in simple_response
+    |     await self.app(scope, receive, send)
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/exceptions.py", line 62, in __call__
+    |     await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    |     raise exc
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    |     await app(scope, receive, sender)
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/routing.py", line 762, in __call__
+    |     await self.middleware_stack(scope, receive, send)
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/routing.py", line 782, in app
+    |     await route.handle(scope, receive, send)
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/routing.py", line 297, in handle
+    |     await self.app(scope, receive, send)
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/routing.py", line 77, in app
+    |     await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    |     raise exc
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    |     await app(scope, receive, sender)
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/routing.py", line 72, in app
+    |     response = await func(request)
+    |                ^^^^^^^^^^^^^^^^^^^
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/fastapi/routing.py", line 299, in app
+    |     raise e
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/fastapi/routing.py", line 294, in app
+    |     raw_response = await run_endpoint_function(
+    |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/fastapi/routing.py", line 191, in run_endpoint_function
+    |     return await dependant.call(**values)
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/app/api/v1/router.py", line 390, in add_category
+    |     if not re.match(r'^[a-z0-9][a-z0-9\s-_]{0,28}[a-z0-9]$', category_name):
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/opt/homebrew/Cellar/python@3.11/3.11.3/Frameworks/Python.framework/Versions/3.11/lib/python3.11/re/__init__.py", line 166, in match
+    |     return _compile(pattern, flags).match(string)
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/opt/homebrew/Cellar/python@3.11/3.11.3/Frameworks/Python.framework/Versions/3.11/lib/python3.11/re/__init__.py", line 294, in _compile
+    |     p = _compiler.compile(pattern, flags)
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/opt/homebrew/Cellar/python@3.11/3.11.3/Frameworks/Python.framework/Versions/3.11/lib/python3.11/re/_compiler.py", line 743, in compile
+    |     p = _parser.parse(p, flags)
+    |         ^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/opt/homebrew/Cellar/python@3.11/3.11.3/Frameworks/Python.framework/Versions/3.11/lib/python3.11/re/_parser.py", line 980, in parse
+    |     p = _parse_sub(source, state, flags & SRE_FLAG_VERBOSE, 0)
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/opt/homebrew/Cellar/python@3.11/3.11.3/Frameworks/Python.framework/Versions/3.11/lib/python3.11/re/_parser.py", line 455, in _parse_sub
+    |     itemsappend(_parse(source, state, verbose, nested + 1,
+    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/opt/homebrew/Cellar/python@3.11/3.11.3/Frameworks/Python.framework/Versions/3.11/lib/python3.11/re/_parser.py", line 607, in _parse
+    |     raise source.error(msg, len(this) + 1 + len(that))
+    | re.error: bad character range \s-_ at position 16
+    +------------------------------------
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 189, in __call__
+    with collapse_excgroups():
+  File "/opt/homebrew/Cellar/python@3.11/3.11.3/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 155, in __exit__
+    self.gen.throw(typ, value, traceback)
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/_utils.py", line 91, in collapse_excgroups
+    raise exc
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 191, in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/main.py", line 38, in log_requests
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 165, in call_next
+    raise app_exc
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 151, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/cors.py", line 91, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/cors.py", line 146, in simple_response
+    await self.app(scope, receive, send)
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/exceptions.py", line 62, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    raise exc
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/routing.py", line 762, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/routing.py", line 782, in app
+    await route.handle(scope, receive, send)
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/routing.py", line 297, in handle
+    await self.app(scope, receive, send)
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/routing.py", line 77, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    raise exc
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/routing.py", line 72, in app
+    response = await func(request)
+               ^^^^^^^^^^^^^^^^^^^
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/fastapi/routing.py", line 299, in app
+    raise e
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/fastapi/routing.py", line 294, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/fastapi/routing.py", line 191, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/app/api/v1/router.py", line 390, in add_category
+    if not re.match(r'^[a-z0-9][a-z0-9\s-_]{0,28}[a-z0-9]$', category_name):
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.11/3.11.3/Frameworks/Python.framework/Versions/3.11/lib/python3.11/re/__init__.py", line 166, in match
+    return _compile(pattern, flags).match(string)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.11/3.11.3/Frameworks/Python.framework/Versions/3.11/lib/python3.11/re/__init__.py", line 294, in _compile
+    p = _compiler.compile(pattern, flags)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.11/3.11.3/Frameworks/Python.framework/Versions/3.11/lib/python3.11/re/_compiler.py", line 743, in compile
+    p = _parser.parse(p, flags)
+        ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.11/3.11.3/Frameworks/Python.framework/Versions/3.11/lib/python3.11/re/_parser.py", line 980, in parse
+    p = _parse_sub(source, state, flags & SRE_FLAG_VERBOSE, 0)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.11/3.11.3/Frameworks/Python.framework/Versions/3.11/lib/python3.11/re/_parser.py", line 455, in _parse_sub
+    itemsappend(_parse(source, state, verbose, nested + 1,
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.11/3.11.3/Frameworks/Python.framework/Versions/3.11/lib/python3.11/re/_parser.py", line 607, in _parse
+    raise source.error(msg, len(this) + 1 + len(that))
+re.error: bad character range \s-_ at position 16
+2024-11-16 02:08:46,294 - docnest - ERROR - Global error: bad character range \s-_ at position 16
+  + Exception Group Traceback (most recent call last):
+  |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/_utils.py", line 85, in collapse_excgroups
+  |     yield
+  |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 190, in __call__
+  |     async with anyio.create_task_group() as task_group:
+  |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 763, in __aexit__
+  |     raise BaseExceptionGroup(
+  | ExceptionGroup: unhandled errors in a TaskGroup (1 sub-exception)
+  +-+---------------- 1 ----------------
+    | Traceback (most recent call last):
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    |     await self.app(scope, receive, _send)
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 189, in __call__
+    |     with collapse_excgroups():
+    |   File "/opt/homebrew/Cellar/python@3.11/3.11.3/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 155, in __exit__
+    |     self.gen.throw(typ, value, traceback)
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/_utils.py", line 91, in collapse_excgroups
+    |     raise exc
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 191, in __call__
+    |     response = await self.dispatch_func(request, call_next)
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/main.py", line 38, in log_requests
+    |     response = await call_next(request)
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 165, in call_next
+    |     raise app_exc
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 151, in coro
+    |     await self.app(scope, receive_or_disconnect, send_no_error)
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/cors.py", line 91, in __call__
+    |     await self.simple_response(scope, receive, send, request_headers=headers)
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/cors.py", line 146, in simple_response
+    |     await self.app(scope, receive, send)
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/exceptions.py", line 62, in __call__
+    |     await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    |     raise exc
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    |     await app(scope, receive, sender)
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/routing.py", line 762, in __call__
+    |     await self.middleware_stack(scope, receive, send)
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/routing.py", line 782, in app
+    |     await route.handle(scope, receive, send)
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/routing.py", line 297, in handle
+    |     await self.app(scope, receive, send)
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/routing.py", line 77, in app
+    |     await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    |     raise exc
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    |     await app(scope, receive, sender)
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/routing.py", line 72, in app
+    |     response = await func(request)
+    |                ^^^^^^^^^^^^^^^^^^^
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/fastapi/routing.py", line 299, in app
+    |     raise e
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/fastapi/routing.py", line 294, in app
+    |     raw_response = await run_endpoint_function(
+    |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/fastapi/routing.py", line 191, in run_endpoint_function
+    |     return await dependant.call(**values)
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/app/api/v1/router.py", line 390, in add_category
+    |     if not re.match(r'^[a-z0-9][a-z0-9\s-_]{0,28}[a-z0-9]$', category_name):
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/opt/homebrew/Cellar/python@3.11/3.11.3/Frameworks/Python.framework/Versions/3.11/lib/python3.11/re/__init__.py", line 166, in match
+    |     return _compile(pattern, flags).match(string)
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/opt/homebrew/Cellar/python@3.11/3.11.3/Frameworks/Python.framework/Versions/3.11/lib/python3.11/re/__init__.py", line 294, in _compile
+    |     p = _compiler.compile(pattern, flags)
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/opt/homebrew/Cellar/python@3.11/3.11.3/Frameworks/Python.framework/Versions/3.11/lib/python3.11/re/_compiler.py", line 743, in compile
+    |     p = _parser.parse(p, flags)
+    |         ^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/opt/homebrew/Cellar/python@3.11/3.11.3/Frameworks/Python.framework/Versions/3.11/lib/python3.11/re/_parser.py", line 980, in parse
+    |     p = _parse_sub(source, state, flags & SRE_FLAG_VERBOSE, 0)
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/opt/homebrew/Cellar/python@3.11/3.11.3/Frameworks/Python.framework/Versions/3.11/lib/python3.11/re/_parser.py", line 455, in _parse_sub
+    |     itemsappend(_parse(source, state, verbose, nested + 1,
+    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/opt/homebrew/Cellar/python@3.11/3.11.3/Frameworks/Python.framework/Versions/3.11/lib/python3.11/re/_parser.py", line 607, in _parse
+    |     raise source.error(msg, len(this) + 1 + len(that))
+    | re.error: bad character range \s-_ at position 16
+    +------------------------------------
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 189, in __call__
+    with collapse_excgroups():
+  File "/opt/homebrew/Cellar/python@3.11/3.11.3/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 155, in __exit__
+    self.gen.throw(typ, value, traceback)
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/_utils.py", line 91, in collapse_excgroups
+    raise exc
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 191, in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/main.py", line 38, in log_requests
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 165, in call_next
+    raise app_exc
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 151, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/cors.py", line 91, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/cors.py", line 146, in simple_response
+    await self.app(scope, receive, send)
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/exceptions.py", line 62, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    raise exc
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/routing.py", line 762, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/routing.py", line 782, in app
+    await route.handle(scope, receive, send)
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/routing.py", line 297, in handle
+    await self.app(scope, receive, send)
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/routing.py", line 77, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    raise exc
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/routing.py", line 72, in app
+    response = await func(request)
+               ^^^^^^^^^^^^^^^^^^^
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/fastapi/routing.py", line 299, in app
+    raise e
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/fastapi/routing.py", line 294, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/fastapi/routing.py", line 191, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/app/api/v1/router.py", line 390, in add_category
+    if not re.match(r'^[a-z0-9][a-z0-9\s-_]{0,28}[a-z0-9]$', category_name):
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.11/3.11.3/Frameworks/Python.framework/Versions/3.11/lib/python3.11/re/__init__.py", line 166, in match
+    return _compile(pattern, flags).match(string)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.11/3.11.3/Frameworks/Python.framework/Versions/3.11/lib/python3.11/re/__init__.py", line 294, in _compile
+    p = _compiler.compile(pattern, flags)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.11/3.11.3/Frameworks/Python.framework/Versions/3.11/lib/python3.11/re/_compiler.py", line 743, in compile
+    p = _parser.parse(p, flags)
+        ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.11/3.11.3/Frameworks/Python.framework/Versions/3.11/lib/python3.11/re/_parser.py", line 980, in parse
+    p = _parse_sub(source, state, flags & SRE_FLAG_VERBOSE, 0)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.11/3.11.3/Frameworks/Python.framework/Versions/3.11/lib/python3.11/re/_parser.py", line 455, in _parse_sub
+    itemsappend(_parse(source, state, verbose, nested + 1,
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.11/3.11.3/Frameworks/Python.framework/Versions/3.11/lib/python3.11/re/_parser.py", line 607, in _parse
+    raise source.error(msg, len(this) + 1 + len(that))
+re.error: bad character range \s-_ at position 16
+2024-11-16 02:14:22,942 - docnest - INFO - Path: /docs Method: GET Status: 200 Duration: 0.00s
+2024-11-16 02:14:23,160 - docnest - INFO - Path: /openapi.json Method: GET Status: 200 Duration: 0.04s
+2024-11-16 02:14:40,765 - docnest - INFO - Path: /api/v1/auth/login Method: POST Status: 200 Duration: 0.90s
+2024-11-16 02:14:48,082 - docnest - INFO - Path: /api/v1/categories/Bank Method: POST Status: 201 Duration: 0.07s
+2024-11-16 02:15:44,356 - docnest - INFO - Path: /api/v1/documents/ Method: POST Status: 200 Duration: 8.59s
