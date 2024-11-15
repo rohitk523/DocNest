@@ -1,5 +1,6 @@
 // lib/screens/home_screen.dart
 import 'package:docnest_flutter/screens/category_documents_screen.dart';
+import 'package:docnest_flutter/widgets/add_category_dialog.dart';
 import 'package:docnest_flutter/widgets/fluid_nav_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -15,7 +16,6 @@ import '../screens/login_screen.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../utils/formatters.dart';
 import '../theme/app_theme.dart';
-import '../widgets/document_tile.dart';
 
 class HomeScreen extends StatefulWidget {
   final String token;
@@ -37,12 +37,13 @@ class _HomeScreenState extends State<HomeScreen> {
   final ScrollController _scrollController = ScrollController();
   bool _isDragging = false;
 
-  final List<String> _categories = [
+  final List<String> _defaultCategories = [
     'government',
     'medical',
     'educational',
     'other'
   ];
+  List<String> _userCategories = [];
 
   @override
   void initState() {
@@ -408,6 +409,22 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  void _handleAddCategory() async {
+    final newCategory = await showDialog<String>(
+      context: context,
+      builder: (context) =>
+          AddCategoryDialog(defaultCategories: _defaultCategories),
+    );
+
+    if (newCategory != null &&
+        !_defaultCategories.contains(newCategory) &&
+        !_userCategories.contains(newCategory)) {
+      setState(() {
+        _userCategories.add(newCategory);
+      });
+    }
+  }
+
   Widget _buildCategoryList(List<Document> documents) {
     final theme = Theme.of(context);
 
@@ -420,9 +437,15 @@ class _HomeScreenState extends State<HomeScreen> {
         child: ListView.separated(
           controller: _scrollController,
           padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
-          itemCount: _categories.length,
+          itemCount: _defaultCategories.length +
+              _userCategories.length +
+              1, // Add 1 for "Add New Category"
           separatorBuilder: (context, index) {
-            final category = _categories[index];
+            final category = index < _defaultCategories.length
+                ? _defaultCategories[index]
+                : index < _defaultCategories.length + _userCategories.length
+                    ? _userCategories[index - _defaultCategories.length]
+                    : 'add_new_category';
             final categoryDocuments = _getDocumentsByCategory(category);
 
             if (categoryDocuments.isEmpty) {
@@ -453,12 +476,47 @@ class _HomeScreenState extends State<HomeScreen> {
             );
           },
           itemBuilder: (context, index) {
-            final category = _categories[index];
-            final categoryDocuments = _getDocumentsByCategory(category);
-
-            if (categoryDocuments.isEmpty) {
-              return const SizedBox.shrink();
+            if (index == _defaultCategories.length + _userCategories.length) {
+              // Handle the "Add New Category" option
+              return Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
+                child: InkWell(
+                  onTap: _handleAddCategory,
+                  child: Card(
+                    elevation: 0,
+                    color: theme.colorScheme.primary.withOpacity(0.1),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.add_circle_outline,
+                            color: theme.colorScheme.primary,
+                          ),
+                          const SizedBox(width: 16),
+                          Text(
+                            'Add New Category',
+                            style: AppTextStyles.subtitle1.copyWith(
+                              color: theme.colorScheme.primary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              );
             }
+
+            String category;
+            if (index < _defaultCategories.length) {
+              category = _defaultCategories[index];
+            } else {
+              category = _userCategories[index - _defaultCategories.length];
+            }
+
+            final categoryDocuments = _getDocumentsByCategory(category);
 
             return AnimatedSlide(
               duration: Duration(milliseconds: 300 + (index * 100)),
