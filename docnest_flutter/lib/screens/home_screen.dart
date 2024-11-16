@@ -224,155 +224,254 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildCategoryGrid() {
     final provider = context.watch<DocumentProvider>();
-    final categories = ['government', 'medical', 'educational', 'other'];
     final theme = Theme.of(context);
+    final categories = provider.allCategories;
 
     return GridView.builder(
       padding: const EdgeInsets.all(12),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
         mainAxisSpacing: 8,
-        crossAxisSpacing: 8,
         childAspectRatio: 1,
       ),
-      itemCount: categories.length,
+      itemCount: categories.length + 1, // +1 for "Add Category" card
       itemBuilder: (context, index) {
+        // Add Category Card
+        if (index == categories.length) {
+          return Hero(
+            tag: 'category_add_new',
+            child: Material(
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                child: InkWell(
+                  onTap: _handleAddCategory,
+                  child: Card(
+                    elevation: 8,
+                    shadowColor: theme.colorScheme.primary.withOpacity(0.3),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(20),
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            theme.colorScheme.primary.withOpacity(0.1),
+                            theme.colorScheme.primary.withOpacity(0.2),
+                          ],
+                        ),
+                      ),
+                      child: Stack(
+                        children: [
+                          // Background pattern
+                          Positioned(
+                            right: -20,
+                            top: -20,
+                            child: Icon(
+                              Icons.add_circle_outline,
+                              size: 100,
+                              color: theme.colorScheme.primary.withOpacity(0.1),
+                            ),
+                          ),
+                          // Content
+                          Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // Icon container
+                                Container(
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: theme.colorScheme.primary
+                                        .withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: theme.colorScheme.primary
+                                          .withOpacity(0.2),
+                                      width: 2,
+                                    ),
+                                  ),
+                                  child: Icon(
+                                    Icons.add_circle_outline,
+                                    color: theme.colorScheme.primary,
+                                    size: 24,
+                                  ),
+                                ),
+                                const Spacer(),
+                                // Title and description
+                                Text(
+                                  'Add Category',
+                                  style: AppTextStyles.subtitle1.copyWith(
+                                    color: theme.colorScheme.primary,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  'Create a custom category',
+                                  style: AppTextStyles.caption.copyWith(
+                                    color: theme.colorScheme.primary
+                                        .withOpacity(0.7),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          );
+        }
+
+        // Regular Category Cards
         final category = categories[index];
         final docs = provider.documents
-            .where((doc) => doc.category.toLowerCase() == category)
+            .where(
+                (doc) => doc.category.toLowerCase() == category.toLowerCase())
             .toList();
+        final isCustomCategory = provider.isCustomCategory(category);
 
         return Hero(
           tag: 'category_$category',
           child: Material(
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 300),
-              child: InkWell(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => CategoryDocumentsScreen(
-                        category: category,
-                        documents: docs,
-                      ),
+            child: InkWell(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => CategoryDocumentsScreen(
+                      category: category,
+                      documents: docs,
                     ),
-                  );
-                },
-                child: Card(
-                  elevation: 8,
-                  shadowColor: getCategoryColor(category).withOpacity(0.3),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
                   ),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(20),
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          getCategoryGradient(category)[0].withOpacity(0.1),
-                          getCategoryGradient(category)[1].withOpacity(0.2),
-                        ],
-                      ),
+                );
+              },
+              child: Card(
+                elevation: 8,
+                shadowColor: getCategoryColor(category).withOpacity(0.3),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(20),
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        getCategoryColor(category).withOpacity(0.1),
+                        getCategoryColor(category).withOpacity(0.2),
+                      ],
                     ),
-                    child: Stack(
-                      children: [
-                        // Background pattern
-                        Positioned(
-                          right: -20,
-                          top: -20,
-                          child: Icon(
-                            getCategoryIcon(category),
-                            size: 100,
-                            color: getCategoryColor(category).withOpacity(0.1),
-                          ),
+                  ),
+                  child: Stack(
+                    children: [
+                      // Background pattern
+                      Positioned(
+                        right: -20,
+                        top: -20,
+                        child: Icon(
+                          getCategoryIcon(category),
+                          size: 100,
+                          color: getCategoryColor(category).withOpacity(0.1),
                         ),
-                        // Content
-                        Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // Icon and count row
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.all(12),
-                                    decoration: BoxDecoration(
+                      ),
+                      // Content
+                      Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Icon and count row
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: getCategoryColor(category)
+                                        .withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
                                       color: getCategoryColor(category)
-                                          .withOpacity(0.1),
-                                      borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(
-                                        color: getCategoryColor(category)
-                                            .withOpacity(0.2),
-                                        width: 2,
-                                      ),
-                                    ),
-                                    child: Icon(
-                                      getCategoryIcon(category),
-                                      color: getCategoryColor(category),
-                                      size: 24,
+                                          .withOpacity(0.2),
+                                      width: 2,
                                     ),
                                   ),
+                                  child: Icon(
+                                    getCategoryIcon(category),
+                                    color: getCategoryColor(category),
+                                    size: 24,
+                                  ),
+                                ),
+                                if (isCustomCategory)
+                                  IconButton(
+                                    icon: const Icon(Icons.delete_outline),
+                                    color: Colors.red,
+                                    onPressed: () =>
+                                        _handleDeleteCategory(category),
+                                  ),
+                              ],
+                            ),
+                            const Spacer(),
+                            // Category name and document count
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        getCategoryDisplayName(category),
+                                        style: AppTextStyles.subtitle1.copyWith(
+                                          color: theme.colorScheme.onSurface,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        '${docs.length} document${docs.length != 1 ? 's' : ''}',
+                                        style: AppTextStyles.caption.copyWith(
+                                          color: theme.colorScheme.onSurface
+                                              .withOpacity(0.6),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                if (isCustomCategory)
                                   Container(
                                     padding: const EdgeInsets.symmetric(
-                                      horizontal: 12,
-                                      vertical: 6,
+                                      horizontal: 8,
+                                      vertical: 2,
                                     ),
                                     decoration: BoxDecoration(
                                       color: getCategoryBadgeColor(category),
-                                      borderRadius: BorderRadius.circular(20),
+                                      borderRadius: BorderRadius.circular(12),
                                     ),
                                     child: Text(
-                                      docs.length.toString(),
-                                      style: AppTextStyles.caption.copyWith(
+                                      'Custom',
+                                      style: TextStyle(
+                                        fontSize: 10,
                                         color: getCategoryColor(category),
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),
                                   ),
-                                ],
-                              ),
-                              const Spacer(),
-                              // Category name
-                              Text(
-                                getCategoryDisplayName(category),
-                                style: AppTextStyles.subtitle1.copyWith(
-                                  color: theme.colorScheme.onSurface,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              // Document count
-                              Text(
-                                '${docs.length} document${docs.length != 1 ? 's' : ''}',
-                                style: AppTextStyles.caption.copyWith(
-                                  color: theme.colorScheme.onSurface
-                                      .withOpacity(0.6),
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              // Progress indicator
-                              LinearProgressIndicator(
-                                value: docs.length /
-                                    (provider.documents.length > 0
-                                        ? provider.documents.length
-                                        : 1),
-                                backgroundColor:
-                                    theme.colorScheme.primary.withOpacity(0.1),
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                  getCategoryColor(category),
-                                ),
-                              ),
-                            ],
-                          ),
+                              ],
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
               ),
