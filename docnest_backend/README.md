@@ -5,3 +5,4 @@ try number:
 5: service was missing
 6: docker error
 7: env variables and ecsexecutionrole
+8: changing service name
