@@ -46,7 +46,7 @@ jobs:
 
     - name: Download and process task definition
       run: |
-        aws ecs describe-task-definition --task-definition docnest-backend \
+        aws ecs describe-task-definition --task-definition docnest-td \
         --query 'taskDefinition' > task-definition-full.json
         
         # Remove the fields that cause warnings
