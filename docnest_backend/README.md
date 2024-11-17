@@ -4,3 +4,4 @@ try number:
 4
 5: service was missing
 6: docker error
+7: env variables and ecsexecutionrole
