@@ -8,11 +8,11 @@ on:
   workflow_dispatch:
 
 env:
-  AWS_REGION: us-east-1                    # Change this to your region
-  ECR_REPOSITORY: docnest-backend          # Change this to your ECR repo name
-  ECS_SERVICE: docnest-backend-service     # Change this to your ECS service name
-  ECS_CLUSTER: docnest-cluster             # Change this to your ECS cluster name
-  CONTAINER_NAME: docnest-backend          # Change this to your container name
+  AWS_REGION: us-east-1
+  ECR_REPOSITORY: docnest-backend
+  ECS_SERVICE: docnest-backend-service
+  ECS_CLUSTER: docnest-cluster
+  CONTAINER_NAME: docnest-backend
 
 jobs:
   deploy:
@@ -44,10 +44,13 @@ jobs:
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
         echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
 
-    - name: Download task definition
+    - name: Download and process task definition
       run: |
-        aws ecs describe-task-definition --task-definition docnest-td \
-        --query taskDefinition > task-definition.json
+        aws ecs describe-task-definition --task-definition docnest-backend \
+        --query 'taskDefinition' > task-definition-full.json
+        
+        # Remove the fields that cause warnings
+        jq 'del(.taskDefinitionArn, .requiresAttributes, .compatibilities, .revision, .status, .registeredAt, .registeredBy)' task-definition-full.json > task-definition.json
 
     - name: Fill in the new image ID in the Amazon ECS task definition
       id: task-def
