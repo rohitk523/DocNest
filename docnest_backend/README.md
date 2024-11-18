@@ -12,6 +12,8 @@ try number:
 12: secretmanger inline policy
 13: claude way.
 14: ecs is run on aws
+15: working rolling updates trying github actions
+
 
 
 /Users/rohitkale/Downloads/docnest-key-pair.pem

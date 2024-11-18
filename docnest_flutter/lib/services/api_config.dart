@@ -15,7 +15,7 @@ class ApiConfig {
         return 'https://docnest-z9xr.onrender.com/api/v1';
 
       case Environment.staging:
-        return 'http://3.88.151.158:8000/api/v1'; // Your AWS ECS endpoint
+        return 'http://54.236.12.167:8000/api/v1'; // Your AWS ECS endpoint
 
       case Environment.development:
         final deviceIP = Platform.isAndroid ? "10.0.2.2" : "localhost";

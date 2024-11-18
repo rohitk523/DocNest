@@ -4,81 +4,99 @@ on:
   push:
     branches:
       - main
-    paths:
-      - 'docnest_backend/**'
-      - '.github/workflows/**'
 
 env:
-  AWS_REGION: us-east-1
-  ECR_REPOSITORY: docnest-backend
-  ECS_SERVICE: docnest-ecs-service
-  ECS_CLUSTER: docnest-cluster
-  ECS_TASK_DEFINITION: docnest-backend-td
-  CONTAINER_NAME: docnest-container
+  AWS_REGION: eu-north-1
+  IMAGE_TAG: ${{ github.sha }}
 
 jobs:
   deploy:
-    name: Deploy
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
+    - name: Checkout code
+      uses: actions/checkout@v3
 
     - name: Configure AWS credentials
-      uses: aws-actions/configure-aws-credentials@v4
+      uses: aws-actions/configure-aws-credentials@v2
       with:
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: ${{ env.AWS_REGION }}
 
+    - name: Verify AWS credentials
+      run: |
+        aws sts get-caller-identity
+        if [ $? -ne 0 ]; then
+          echo "Failed to verify AWS credentials"
+          exit 1
+        fi
+
     - name: Login to Amazon ECR
       id: login-ecr
-      uses: aws-actions/amazon-ecr-login@v2
-
-    - name: Create .env file
       run: |
-        cd docnest_backend
-        echo "POSTGRES_SERVER=${{ secrets.POSTGRES_SERVER }}" >> .env
-        echo "POSTGRES_USER=${{ secrets.POSTGRES_USER }}" >> .env
-        echo "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}" >> .env
-        echo "POSTGRES_DB=${{ secrets.POSTGRES_DB }}" >> .env
-        echo "JWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY }}" >> .env
-        echo "GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}" >> .env
-        echo "GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}" >> .env
-        echo "AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}" >> .env
-        echo "AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> .env
-        echo "AWS_BUCKET_NAME=${{ secrets.AWS_BUCKET_NAME }}" >> .env
-        echo "AWS_REGION=${{ env.AWS_REGION }}" >> .env
+        set -e
+        aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${{ secrets.ECR_REPOSITORY }}
+        echo "Login Successful"
 
-    - name: Build, tag, and push image to Amazon ECR
-      id: build-image
-      env:
-        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-        IMAGE_TAG: ${{ github.sha }}
+    - name: Build and tag Docker image
       run: |
-        cd docnest_backend
-        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
-        docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-        echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+        set -e
+        echo "Building Docker image..."
+        docker build -t fastapi-docker .
+        
+        echo "Tagging image..."
+        docker tag fastapi-docker:latest ${{ secrets.ECR_REPOSITORY }}:latest
+        docker tag fastapi-docker:latest ${{ secrets.ECR_REPOSITORY }}:${IMAGE_TAG}
+        
+        echo "Build and tag complete"
 
-    - name: Download task definition
+    - name: Push Docker image to ECR
       run: |
-        aws ecs describe-task-definition --task-definition ${{ env.ECS_TASK_DEFINITION }} \
-        --query taskDefinition > task-definition.json
+        set -e
+        echo "Pushing image to ECR..."
+        docker push ${{ secrets.ECR_REPOSITORY }}:latest
+        docker push ${{ secrets.ECR_REPOSITORY }}:${IMAGE_TAG}
+        echo "Push complete"
 
-    - name: Fill in the new image ID in the Amazon ECS task definition
-      id: task-def
-      uses: aws-actions/amazon-ecs-render-task-definition@v1
-      with:
-        task-definition: task-definition.json
-        container-name: ${{ env.CONTAINER_NAME }}
-        image: ${{ steps.build-image.outputs.image }}
+    - name: Get current task definition
+      run: |
+        aws ecs describe-task-definition \
+          --task-definition ${{ secrets.ECS_TASK_DEFINITION }} \
+          --query taskDefinition > task-definition.json
 
-    - name: Deploy Amazon ECS task definition
-      uses: aws-actions/amazon-ecs-deploy-task-definition@v1
-      with:
-        task-definition: ${{ steps.task-def.outputs.task-definition }}
-        service: ${{ env.ECS_SERVICE }}
-        cluster: ${{ env.ECS_CLUSTER }}
-        wait-for-service-stability: true
+    - name: Update ECS service
+      run: |
+        set -e
+        echo "Updating ECS service..."
+        aws ecs update-service \
+          --cluster ${{ secrets.ECS_CLUSTER }} \
+          --service ${{ secrets.ECS_SERVICE }} \
+          --force-new-deployment \
+          --task-definition ${{ secrets.ECS_TASK_DEFINITION }}
+
+    - name: Wait for service stability
+      run: |
+        echo "Waiting for service to stabilize..."
+        aws ecs wait services-stable \
+          --cluster ${{ secrets.ECS_CLUSTER }} \
+          --services ${{ secrets.ECS_SERVICE }}
+        
+        if [ $? -eq 0 ]; then
+          echo "Deployment successful!"
+        else
+          echo "Deployment failed to stabilize"
+          exit 1
+        fi
+
+    - name: Deployment Status
+      if: always()
+      run: |
+        DEPLOY_STATUS=$?
+        if [ $DEPLOY_STATUS -eq 0 ]; then
+          echo "Deployment completed successfully"
+          echo "Image: ${{ secrets.ECR_REPOSITORY }}:${IMAGE_TAG}"
+        else
+          echo "Deployment failed"
+          exit 1
+        fi
