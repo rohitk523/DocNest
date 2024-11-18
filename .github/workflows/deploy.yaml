@@ -12,7 +12,7 @@ env:
   AWS_REGION: us-east-1
   ECR_REPOSITORY: docnest-backend # Add this environment variable
   ECS_CLUSTER: docnest-cluster    # Add this environment variable
-  ECS_SERVICE: docnest-ecs-service    # Add this environment variable
+  ECS_SERVICE: docnest-ecs-service-2    # Add this environment variable
   ECS_TASK_DEFINITION: docnest-backend-td # Add this environment variable
 
 jobs:

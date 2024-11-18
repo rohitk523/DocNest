@@ -16,5 +16,6 @@ try number:
 16: ecr login problem
 17: ecr login problem
 18: removing task definition
+19: everything is working now adding ALB so that public ip doesnt change
 
 /Users/rohitkale/Downloads/docnest-key-pair.pem
