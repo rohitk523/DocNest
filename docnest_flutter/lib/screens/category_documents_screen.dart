@@ -161,6 +161,7 @@ class _CategoryDocumentsScreenState extends State<CategoryDocumentsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final categoryDocuments = _getCategoryDocuments(context);
 
     return Scaffold(
@@ -243,6 +244,7 @@ class _CategoryDocumentsScreenState extends State<CategoryDocumentsScreen> {
         onPressed: () => _handleUpload(context),
         child: const Icon(Icons.add),
       ),
+      backgroundColor: theme.colorScheme.surface,
     );
   }
 }
