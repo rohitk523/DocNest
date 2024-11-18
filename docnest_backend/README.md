@@ -11,6 +11,7 @@ try number:
 11: last try.
 12: secretmanger inline policy
 13: claude way.
+14: ecs is run on aws
 
 
 /Users/rohitkale/Downloads/docnest-key-pair.pem
