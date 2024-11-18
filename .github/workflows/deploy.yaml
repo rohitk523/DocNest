@@ -14,7 +14,7 @@ env:
   ECS_SERVICE: docnest-service
   ECS_CLUSTER: docnest-cluster
   ECS_TASK_DEFINITION: docnest-backend-td
-  CONTAINER_NAME: docnest-container
+  CONTAINER_NAME: docnest-backend
 
 jobs:
   deploy:

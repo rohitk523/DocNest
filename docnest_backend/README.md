@@ -6,3 +6,4 @@ try number:
 6: docker error
 7: env variables and ecsexecutionrole
 8: changing service name
+9: wrong container name
