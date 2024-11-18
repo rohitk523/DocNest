@@ -34,9 +34,12 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = true);
 
     try {
+      print('Attempting to log in with Google');
       final result = await _authService.loginWithGoogle();
+      print('Google login result: $result');
       if (!mounted) return;
 
+      print('Navigating to HomeScreen');
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
           builder: (context) => HomeScreen(token: result['access_token']),
@@ -44,6 +47,7 @@ class _LoginScreenState extends State<LoginScreen> {
       );
     } catch (e) {
       if (!mounted) return;
+      print('Error during Google login: $e');
       _showErrorSnackBar(e.toString().replaceAll('Exception: ', ''));
     } finally {
       if (mounted) {
