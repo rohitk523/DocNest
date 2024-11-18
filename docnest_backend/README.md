@@ -10,6 +10,7 @@ try number:
 10: does it add to parameter store commit
 11: last try.
 12: secretmanger inline policy
+13: claude way.
 
 
 /Users/rohitkale/Downloads/docnest-key-pair.pem
