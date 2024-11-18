@@ -15,5 +15,6 @@ try number:
 15: working rolling updates trying github actions
 16: ecr login problem
 17: ecr login problem
+18: removing task definition
 
 /Users/rohitkale/Downloads/docnest-key-pair.pem
