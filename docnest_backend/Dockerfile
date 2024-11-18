@@ -19,7 +19,6 @@ RUN apt-get update \
 
 # Copy requirements file
 COPY requirements.txt .
-COPY .env .
 
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
