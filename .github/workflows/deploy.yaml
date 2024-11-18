@@ -4,10 +4,16 @@ on:
   push:
     branches:
       - main
+    paths:
+      - 'docnest_backend/**'
+      - '.github/workflows/**'
 
 env:
-  AWS_REGION: eu-north-1
-  IMAGE_TAG: ${{ github.sha }}
+  AWS_REGION: us-east-1
+  ECR_REPOSITORY: docnest-backend # Add this environment variable
+  ECS_CLUSTER: docnest-cluster    # Add this environment variable
+  ECS_SERVICE: docnest-ecs-service    # Add this environment variable
+  ECS_TASK_DEFINITION: docnest-backend-td # Add this environment variable
 
 jobs:
   deploy:
@@ -36,63 +42,45 @@ jobs:
       id: login-ecr
       uses: aws-actions/amazon-ecr-login@v2
 
-    - name: Build and tag Docker image
+    - name: Build, tag, and push image to Amazon ECR
+      id: build-image
+      env:
+        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        IMAGE_TAG: ${{ github.sha }}
       run: |
-        set -e
-        echo "Building Docker image..."
-        docker build -t fastapi-docker .
-        
-        echo "Tagging image..."
-        docker tag fastapi-docker:latest ${{ secrets.ECR_REPOSITORY }}:latest
-        docker tag fastapi-docker:latest ${{ secrets.ECR_REPOSITORY }}:${IMAGE_TAG}
-        
-        echo "Build and tag complete"
-
-    - name: Push Docker image to ECR
-      run: |
-        set -e
-        echo "Pushing image to ECR..."
-        docker push ${{ secrets.ECR_REPOSITORY }}:latest
-        docker push ${{ secrets.ECR_REPOSITORY }}:${IMAGE_TAG}
-        echo "Push complete"
+        cd docnest_backend
+        docker build -t $ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:$IMAGE_TAG .
+        docker push $ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:$IMAGE_TAG
+        echo "image=$ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:$IMAGE_TAG" >> $GITHUB_OUTPUT
 
     - name: Get current task definition
       run: |
         aws ecs describe-task-definition \
-          --task-definition ${{ secrets.ECS_TASK_DEFINITION }} \
+          --task-definition ${{ env.ECS_TASK_DEFINITION }} \
           --query taskDefinition > task-definition.json
 
-    - name: Update ECS service
-      run: |
-        set -e
-        echo "Updating ECS service..."
-        aws ecs update-service \
-          --cluster ${{ secrets.ECS_CLUSTER }} \
-          --service ${{ secrets.ECS_SERVICE }} \
-          --force-new-deployment \
-          --task-definition ${{ secrets.ECS_TASK_DEFINITION }}
+    - name: Fill in the new image ID in the Amazon ECS task definition
+      id: task-def
+      uses: aws-actions/amazon-ecs-render-task-definition@v1
+      with:
+        task-definition: task-definition.json
+        container-name: docnest-container
+        image: ${{ steps.build-image.outputs.image }}
 
-    - name: Wait for service stability
-      run: |
-        echo "Waiting for service to stabilize..."
-        aws ecs wait services-stable \
-          --cluster ${{ secrets.ECS_CLUSTER }} \
-          --services ${{ secrets.ECS_SERVICE }}
-        
-        if [ $? -eq 0 ]; then
-          echo "Deployment successful!"
-        else
-          echo "Deployment failed to stabilize"
-          exit 1
-        fi
+    - name: Deploy Amazon ECS task definition
+      uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+      with:
+        task-definition: ${{ steps.task-def.outputs.task-definition }}
+        service: ${{ env.ECS_SERVICE }}
+        cluster: ${{ env.ECS_CLUSTER }}
+        wait-for-service-stability: true
 
     - name: Deployment Status
       if: always()
       run: |
-        DEPLOY_STATUS=$?
-        if [ $DEPLOY_STATUS -eq 0 ]; then
+        if [ "${{ job.status }}" == "success" ]; then
           echo "Deployment completed successfully"
-          echo "Image: ${{ secrets.ECR_REPOSITORY }}:${IMAGE_TAG}"
+          echo "Image: ${{ steps.build-image.outputs.image }}"
         else
           echo "Deployment failed"
           exit 1

@@ -14,6 +14,6 @@ try number:
 14: ecs is run on aws
 15: working rolling updates trying github actions
 16: ecr login problem
-
+17: ecr login problem
 
 /Users/rohitkale/Downloads/docnest-key-pair.pem
