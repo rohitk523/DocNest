@@ -1,25 +1,28 @@
-name: Deploy FastAPI to ECS
+name: Deploy to Amazon ECS
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
     paths:
       - 'docnest_backend/**'
-  workflow_dispatch:
+      - '.github/workflows/**'
 
 env:
   AWS_REGION: us-east-1
   ECR_REPOSITORY: docnest-backend
-  ECS_SERVICE: docnest-backend-service-2
+  ECS_SERVICE: docnest-service
   ECS_CLUSTER: docnest-cluster
-  CONTAINER_NAME: docnest-backend
+  ECS_TASK_DEFINITION: docnest-backend-td
+  CONTAINER_NAME: docnest-container
 
 jobs:
   deploy:
+    name: Deploy
     runs-on: ubuntu-latest
-    
+
     steps:
-    - name: Checkout code
+    - name: Checkout
       uses: actions/checkout@v4
 
     - name: Configure AWS credentials
@@ -33,24 +36,36 @@ jobs:
       id: login-ecr
       uses: aws-actions/amazon-ecr-login@v2
 
+    - name: Create .env file
+      run: |
+        cd docnest_backend
+        echo "POSTGRES_SERVER=${{ secrets.POSTGRES_SERVER }}" >> .env
+        echo "POSTGRES_USER=${{ secrets.POSTGRES_USER }}" >> .env
+        echo "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}" >> .env
+        echo "POSTGRES_DB=${{ secrets.POSTGRES_DB }}" >> .env
+        echo "JWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY }}" >> .env
+        echo "GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}" >> .env
+        echo "GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}" >> .env
+        echo "AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}" >> .env
+        echo "AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> .env
+        echo "AWS_BUCKET_NAME=${{ secrets.AWS_BUCKET_NAME }}" >> .env
+        echo "AWS_REGION=${{ env.AWS_REGION }}" >> .env
+
     - name: Build, tag, and push image to Amazon ECR
       id: build-image
       env:
         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         IMAGE_TAG: ${{ github.sha }}
-      working-directory: ./docnest_backend
       run: |
+        cd docnest_backend
         docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
         echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
 
-    - name: Download and process task definition
+    - name: Download task definition
       run: |
-        aws ecs describe-task-definition --task-definition docnest-backend \
-        --query 'taskDefinition' > task-definition-full.json
-        
-        # Remove the fields that cause warnings
-        jq 'del(.taskDefinitionArn, .requiresAttributes, .compatibilities, .revision, .status, .registeredAt, .registeredBy)' task-definition-full.json > task-definition.json
+        aws ecs describe-task-definition --task-definition ${{ env.ECS_TASK_DEFINITION }} \
+        --query taskDefinition > task-definition.json
 
     - name: Fill in the new image ID in the Amazon ECS task definition
       id: task-def
