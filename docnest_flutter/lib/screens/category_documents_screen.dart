@@ -2,6 +2,7 @@
 import 'package:docnest_flutter/screens/login_screen.dart';
 import 'package:flutter/material.dart';
 import '../models/document.dart';
+import '../widgets/custom_snackbar.dart';
 import '../widgets/document_tile.dart';
 import '../widgets/quick_actions_bar.dart';
 import '../widgets/upload_dialog.dart';
@@ -47,33 +48,22 @@ class _CategoryDocumentsScreenState extends State<CategoryDocumentsScreen> {
         final isAuthError = e.toString().contains('Authentication required') ||
             e.toString().contains('token');
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(isAuthError
-                ? 'Please log in again'
-                : 'Error refreshing documents: ${e.toString()}'),
-            backgroundColor: Colors.red,
-            behavior: SnackBarBehavior.floating,
-            action: isAuthError
-                ? SnackBarAction(
-                    label: 'Login',
-                    textColor: Colors.white,
-                    onPressed: () {
-                      Navigator.of(context).pushAndRemoveUntil(
-                        MaterialPageRoute(
-                          builder: (context) => const LoginScreen(),
-                        ),
-                        (route) => false,
-                      );
-                    },
-                  )
-                : SnackBarAction(
-                    label: 'Retry',
-                    textColor: Colors.white,
-                    onPressed: _refreshDocuments,
-                  ),
-          ),
-        );
+        if (isAuthError) {
+          CustomSnackBar.showError(
+            context,
+            'Please log in again',
+            actionLabel: 'Login', // Using consistent parameter name
+            onAction: () {
+              // Using consistent parameter name
+              Navigator.of(context).pushAndRemoveUntil(
+                MaterialPageRoute(
+                  builder: (context) => const LoginScreen(),
+                ),
+                (route) => false,
+              );
+            },
+          );
+        }
       }
     } finally {
       if (mounted) {
@@ -133,11 +123,13 @@ class _CategoryDocumentsScreenState extends State<CategoryDocumentsScreen> {
           Navigator.pop(context); // Dismiss loading dialog
           provider.addDocument(uploadedDoc);
 
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Document uploaded successfully'),
-              behavior: SnackBarBehavior.floating,
-            ),
+          CustomSnackBar.showSuccess(
+            context,
+            'Document uploaded successfully',
+            actionLabel: 'View',
+            onAction: () {
+              // Handle the action, e.g., navigate to a page
+            },
           );
         }
       }
@@ -145,15 +137,11 @@ class _CategoryDocumentsScreenState extends State<CategoryDocumentsScreen> {
       if (context.mounted) {
         Navigator.popUntil(context, (route) => route.isFirst);
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error uploading document: ${e.toString()}'),
-            behavior: SnackBarBehavior.floating,
-            action: SnackBarAction(
-              label: 'Retry',
-              onPressed: () => _handleUpload(context),
-            ),
-          ),
+        CustomSnackBar.showError(
+          context,
+          'Error uploading document: ${e.toString()}',
+          actionLabel: 'Retry',
+          onAction: () => _handleUpload(context),
         );
       }
     }

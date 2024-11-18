@@ -4,6 +4,7 @@ import 'package:docnest_flutter/widgets/add_category_dialog.dart';
 import 'package:docnest_flutter/widgets/fluid_nav_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../widgets/custom_snackbar.dart';
 import '../widgets/profile_tab.dart';
 import '../widgets/settings_tab.dart';
 import '../widgets/upload_dialog.dart';
@@ -99,15 +100,11 @@ class _HomeScreenState extends State<HomeScreen> {
         if (e.toString().contains('Could not validate credentials')) {
           _handleAuthError();
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Error loading documents: ${e.toString()}'),
-              behavior: SnackBarBehavior.floating,
-              action: SnackBarAction(
-                label: 'Retry',
-                onPressed: _loadDocuments,
-              ),
-            ),
+          CustomSnackBar.showError(
+            context,
+            'Error loading documents: ${e.toString()}',
+            actionLabel: 'Retry',
+            onAction: _loadDocuments,
           );
         }
       }
@@ -117,12 +114,12 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _handleAuthError() async {
     await _storage.delete(key: 'auth_token');
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Session expired. Please log in again.'),
-          behavior: SnackBarBehavior.floating,
-        ),
+      CustomSnackBar.showError(
+        context,
+        'Session expired. Please log in again.',
       );
+
+// After showing the snackbar, navigate to the login screen
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (context) => const LoginScreen()),
       );
@@ -812,22 +809,16 @@ class _HomeScreenState extends State<HomeScreen> {
             .read<DocumentProvider>()
             .addCustomCategory(newCategory);
         if (success && mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                  'Category "${getCategoryDisplayName(newCategory)}" added successfully'),
-              behavior: SnackBarBehavior.floating,
-            ),
+          CustomSnackBar.showSuccess(
+            context,
+            'Category "${getCategoryDisplayName(newCategory)}" added successfully',
           );
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Failed to add category: $e'),
-              behavior: SnackBarBehavior.floating,
-              backgroundColor: Colors.red,
-            ),
+          CustomSnackBar.showError(
+            context,
+            'Failed to add category: $e',
           );
         }
       }
@@ -841,13 +832,9 @@ class _HomeScreenState extends State<HomeScreen> {
     final documents = _getDocumentsByCategory(category);
     if (documents.isNotEmpty) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-                'Cannot delete category with documents. Move or delete the documents first.'),
-            behavior: SnackBarBehavior.floating,
-            backgroundColor: Colors.red,
-          ),
+        CustomSnackBar.showError(
+          context,
+          'Cannot delete category with documents. Move or delete the documents first.',
         );
       }
       return;
@@ -878,21 +865,16 @@ class _HomeScreenState extends State<HomeScreen> {
       try {
         final success = await provider.removeCustomCategory(category);
         if (success && mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Category deleted successfully'),
-              behavior: SnackBarBehavior.floating,
-            ),
+          CustomSnackBar.showSuccess(
+            context,
+            'Category deleted successfully',
           );
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Failed to delete category: $e'),
-              behavior: SnackBarBehavior.floating,
-              backgroundColor: Colors.red,
-            ),
+          CustomSnackBar.showError(
+            context,
+            'Failed to delete category: $e',
           );
         }
       }
@@ -936,11 +918,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
           context.read<DocumentProvider>().addDocument(uploadedDoc);
 
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Document uploaded successfully'),
-              behavior: SnackBarBehavior.floating,
-            ),
+          CustomSnackBar.showSuccess(
+            context,
+            'Document uploaded successfully',
           );
         }
       }
@@ -952,15 +932,11 @@ class _HomeScreenState extends State<HomeScreen> {
         if (e.toString().contains('Could not validate credentials')) {
           _handleAuthError();
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Error uploading document: ${e.toString()}'),
-              behavior: SnackBarBehavior.floating,
-              action: SnackBarAction(
-                label: 'Retry',
-                onPressed: _handleUpload,
-              ),
-            ),
+          CustomSnackBar.showError(
+            context,
+            'Error uploading document: ${e.toString()}',
+            actionLabel: 'Retry',
+            onAction: _handleUpload,
           );
         }
       }
