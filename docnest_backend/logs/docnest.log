@@ -1834,3 +1834,246 @@ re.error: bad character range \s-_ at position 16
 2024-11-16 02:14:40,765 - docnest - INFO - Path: /api/v1/auth/login Method: POST Status: 200 Duration: 0.90s
 2024-11-16 02:14:48,082 - docnest - INFO - Path: /api/v1/categories/Bank Method: POST Status: 201 Duration: 0.07s
 2024-11-16 02:15:44,356 - docnest - INFO - Path: /api/v1/documents/ Method: POST Status: 200 Duration: 8.59s
+2024-11-20 00:18:59,673 - docnest - INFO - Path: / Method: GET Status: 404 Duration: 0.00s
+2024-11-20 00:18:59,795 - docnest - INFO - Path: /apple-touch-icon-precomposed.png Method: GET Status: 404 Duration: 0.00s
+2024-11-20 00:18:59,801 - docnest - INFO - Path: /apple-touch-icon.png Method: GET Status: 404 Duration: 0.00s
+2024-11-20 00:19:04,584 - docnest - INFO - Path: /docs Method: GET Status: 200 Duration: 0.00s
+2024-11-20 00:19:05,049 - docnest - INFO - Path: /openapi.json Method: GET Status: 200 Duration: 0.02s
+2024-11-20 00:19:27,672 - docnest - INFO - Path: /api/v1/auth/login Method: POST Status: 200 Duration: 0.80s
+2024-11-20 00:20:19,341 - docnest - INFO - Path: /api/v1/documents/ Method: POST Status: 200 Duration: 9.62s
+2024-11-20 00:28:48,177 - docnest - ERROR - Global error: When initializing mapper Mapper[User(users)], expression 'ActivityLog' failed to locate a name ('ActivityLog'). If this is a class name, consider adding this relationship() to the <class 'app.models.user.User'> class after both dependent classes have been defined.
+Traceback (most recent call last):
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/sqlalchemy/orm/clsregistry.py", line 515, in _resolve_name
+    rval = d[token]
+           ~^^^^^^^
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/sqlalchemy/util/_collections.py", line 346, in __missing__
+    self[key] = val = self.creator(key)
+                      ^^^^^^^^^^^^^^^^^
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/sqlalchemy/orm/clsregistry.py", line 483, in _access_cls
+    return self.fallback[key]
+           ~~~~~~~~~~~~~^^^^^
+KeyError: 'ActivityLog'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 189, in __call__
+    with collapse_excgroups():
+  File "/opt/homebrew/Cellar/python@3.11/3.11.3/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 155, in __exit__
+    self.gen.throw(typ, value, traceback)
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/_utils.py", line 91, in collapse_excgroups
+    raise exc
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 191, in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/main.py", line 38, in log_requests
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 165, in call_next
+    raise app_exc
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 151, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/cors.py", line 91, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/cors.py", line 146, in simple_response
+    await self.app(scope, receive, send)
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/exceptions.py", line 62, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    raise exc
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/routing.py", line 762, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/routing.py", line 782, in app
+    await route.handle(scope, receive, send)
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/routing.py", line 297, in handle
+    await self.app(scope, receive, send)
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/routing.py", line 77, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    raise exc
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/routing.py", line 72, in app
+    response = await func(request)
+               ^^^^^^^^^^^^^^^^^^^
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/fastapi/routing.py", line 285, in app
+    raise e
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/fastapi/routing.py", line 275, in app
+    solved_result = await solve_dependencies(
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/fastapi/dependencies/utils.py", line 598, in solve_dependencies
+    solved = await call(**sub_values)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/app/core/auth.py", line 114, in get_current_user
+    user = db.query(User).filter(User.id == user_id).first()
+           ^^^^^^^^^^^^^^
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 2912, in query
+    return self._query_cls(entities, self, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/sqlalchemy/orm/query.py", line 276, in __init__
+    self._set_entities(entities)
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/sqlalchemy/orm/query.py", line 288, in _set_entities
+    self._raw_columns = [
+                        ^
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/sqlalchemy/orm/query.py", line 289, in <listcomp>
+    coercions.expect(
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/sqlalchemy/sql/coercions.py", line 406, in expect
+    insp._post_inspect
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/sqlalchemy/util/langhelpers.py", line 1260, in __get__
+    obj.__dict__[self.__name__] = result = self.fget(obj)
+                                           ^^^^^^^^^^^^^^
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/sqlalchemy/orm/mapper.py", line 2707, in _post_inspect
+    self._check_configure()
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/sqlalchemy/orm/mapper.py", line 2386, in _check_configure
+    _configure_registries({self.registry}, cascade=True)
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/sqlalchemy/orm/mapper.py", line 4199, in _configure_registries
+    _do_configure_registries(registries, cascade)
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/sqlalchemy/orm/mapper.py", line 4240, in _do_configure_registries
+    mapper._post_configure_properties()
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/sqlalchemy/orm/mapper.py", line 2403, in _post_configure_properties
+    prop.init()
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/sqlalchemy/orm/interfaces.py", line 579, in init
+    self.do_init()
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/sqlalchemy/orm/relationships.py", line 1638, in do_init
+    self._setup_entity()
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/sqlalchemy/orm/relationships.py", line 1852, in _setup_entity
+    self._clsregistry_resolve_name(argument)(),
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/sqlalchemy/orm/clsregistry.py", line 519, in _resolve_name
+    self._raise_for_name(name, err)
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/sqlalchemy/orm/clsregistry.py", line 500, in _raise_for_name
+    raise exc.InvalidRequestError(
+sqlalchemy.exc.InvalidRequestError: When initializing mapper Mapper[User(users)], expression 'ActivityLog' failed to locate a name ('ActivityLog'). If this is a class name, consider adding this relationship() to the <class 'app.models.user.User'> class after both dependent classes have been defined.
+2024-11-20 00:33:50,513 - docnest - INFO - Path: /docs Method: GET Status: 200 Duration: 0.00s
+2024-11-20 00:33:50,697 - docnest - INFO - Path: /openapi.json Method: GET Status: 200 Duration: 0.03s
+2024-11-20 00:34:23,482 - docnest - INFO - Path: /api/v1/auth/login Method: POST Status: 200 Duration: 0.82s
+2024-11-20 00:35:06,574 - docnest - INFO - Path: /api/v1/documents/ Method: POST Status: 200 Duration: 9.12s
+2024-11-20 00:36:26,967 - docnest - ERROR - Global error: name 'distinct' is not defined
+  + Exception Group Traceback (most recent call last):
+  |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/_utils.py", line 85, in collapse_excgroups
+  |     yield
+  |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 190, in __call__
+  |     async with anyio.create_task_group() as task_group:
+  |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 763, in __aexit__
+  |     raise BaseExceptionGroup(
+  | ExceptionGroup: unhandled errors in a TaskGroup (1 sub-exception)
+  +-+---------------- 1 ----------------
+    | Traceback (most recent call last):
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    |     await self.app(scope, receive, _send)
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 189, in __call__
+    |     with collapse_excgroups():
+    |   File "/opt/homebrew/Cellar/python@3.11/3.11.3/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 155, in __exit__
+    |     self.gen.throw(typ, value, traceback)
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/_utils.py", line 91, in collapse_excgroups
+    |     raise exc
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 191, in __call__
+    |     response = await self.dispatch_func(request, call_next)
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/main.py", line 39, in log_requests
+    |     response = await call_next(request)
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 165, in call_next
+    |     raise app_exc
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 151, in coro
+    |     await self.app(scope, receive_or_disconnect, send_no_error)
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/cors.py", line 83, in __call__
+    |     await self.app(scope, receive, send)
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/exceptions.py", line 62, in __call__
+    |     await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    |     raise exc
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    |     await app(scope, receive, sender)
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/routing.py", line 762, in __call__
+    |     await self.middleware_stack(scope, receive, send)
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/routing.py", line 782, in app
+    |     await route.handle(scope, receive, send)
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/routing.py", line 297, in handle
+    |     await self.app(scope, receive, send)
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/routing.py", line 77, in app
+    |     await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    |     raise exc
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    |     await app(scope, receive, sender)
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/routing.py", line 72, in app
+    |     response = await func(request)
+    |                ^^^^^^^^^^^^^^^^^^^
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/fastapi/routing.py", line 299, in app
+    |     raise e
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/fastapi/routing.py", line 294, in app
+    |     raw_response = await run_endpoint_function(
+    |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/fastapi/routing.py", line 191, in run_endpoint_function
+    |     return await dependant.call(**values)
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/app/api/v1/analytics_router.py", line 108, in get_analytics_summary
+    |     func.count(distinct(ActivityLog.user_id)).label('count')
+    |                ^^^^^^^^
+    | NameError: name 'distinct' is not defined
+    +------------------------------------
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 189, in __call__
+    with collapse_excgroups():
+  File "/opt/homebrew/Cellar/python@3.11/3.11.3/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 155, in __exit__
+    self.gen.throw(typ, value, traceback)
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/_utils.py", line 91, in collapse_excgroups
+    raise exc
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 191, in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/main.py", line 39, in log_requests
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 165, in call_next
+    raise app_exc
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 151, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/cors.py", line 83, in __call__
+    await self.app(scope, receive, send)
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/exceptions.py", line 62, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    raise exc
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/routing.py", line 762, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/routing.py", line 782, in app
+    await route.handle(scope, receive, send)
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/routing.py", line 297, in handle
+    await self.app(scope, receive, send)
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/routing.py", line 77, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    raise exc
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/routing.py", line 72, in app
+    response = await func(request)
+               ^^^^^^^^^^^^^^^^^^^
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/fastapi/routing.py", line 299, in app
+    raise e
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/fastapi/routing.py", line 294, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/fastapi/routing.py", line 191, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/app/api/v1/analytics_router.py", line 108, in get_analytics_summary
+    func.count(distinct(ActivityLog.user_id)).label('count')
+               ^^^^^^^^
+NameError: name 'distinct' is not defined
+2024-11-20 00:37:58,606 - docnest - INFO - Path: /summary Method: GET Status: 200 Duration: 0.59s
+2024-11-20 00:38:31,544 - docnest - INFO - Path: /api/v1/documents/ Method: POST Status: 200 Duration: 3.02s
+2024-11-20 00:38:42,798 - docnest - INFO - Path: /summary Method: GET Status: 200 Duration: 0.09s

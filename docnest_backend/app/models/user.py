@@ -1,4 +1,3 @@
-# app/models/user.py
 from sqlalchemy import Boolean, Column, String, DateTime, ARRAY
 from sqlalchemy.orm import relationship
 from datetime import datetime
@@ -18,8 +17,21 @@ class User(Base):
     profile_picture = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     last_login = Column(DateTime, nullable=True)
-    # Add custom categories field
     custom_categories = Column(ARRAY(String), default=list, nullable=True)
     
-    # Relationships
+    # Import relationships at the end to avoid circular imports
     documents = relationship("Document", back_populates="owner", cascade="all, delete-orphan")
+    
+    # These will be initialized after all models are loaded
+    activity_logs = relationship(
+        "ActivityLog",
+        back_populates="user",
+        cascade="all, delete-orphan",
+        lazy="dynamic"
+    )
+    analytics_events = relationship(
+        "AnalyticsEvent",
+        back_populates="user",
+        cascade="all, delete-orphan",
+        lazy="dynamic"
+    )

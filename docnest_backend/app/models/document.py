@@ -14,10 +14,10 @@ class Document(Base):
     file_path = Column(String, nullable=True)
     file_size = Column(Integer, nullable=True)
     file_type = Column(String, nullable=True)
-    category = Column(String, nullable=False)  # Changed from Enum to String
+    category = Column(String, nullable=False)
     version = Column(Integer, default=1)
     is_shared = Column(Boolean, default=False)
-    owner_id = Column(String, ForeignKey("users.id"))
+    owner_id = Column(String, ForeignKey("users.id"), nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     modified_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     

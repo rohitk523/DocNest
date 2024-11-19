@@ -10,6 +10,7 @@ from app.db.session import SessionLocal
 from app.core.logger import setup_logging
 # In main.py, add:
 from app.api.v1.auth_router import auth_router
+from app.api.v1.analytics_router import analytics_router
 
 
 
@@ -67,6 +68,10 @@ app.include_router(
     prefix=f"{settings.API_V1_STR}/auth",
     tags=["authentication"]
 )
+
+
+app.include_router(analytics_router)
+
 
 # Health check endpoint
 @app.get("/health")
