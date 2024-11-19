@@ -161,108 +161,28 @@ class QuickActionsBar extends StatelessWidget {
     }
   }
 
+  void _showSnackBar(BuildContext context, String message) {
+    CustomSnackBar.showInfo(
+      context: context,
+      title: 'Information',
+      message: message,
+    );
+  }
+
+  void _showErrorSnackBar(BuildContext context, String message) {
+    CustomSnackBar.showError(
+      context: context,
+      title: 'Error',
+      message: message,
+    );
+  }
+
   Future<void> _handlePrint(BuildContext context) async {
     try {
-      final provider = Provider.of<DocumentProvider>(context, listen: false);
-      final selectedDocs = provider.selectedDocuments;
-
-      if (selectedDocs.isEmpty) {
-        CustomSnackBar.showInfo(
-          context: context,
-          title: 'Select Documents',
-          message: 'Please select documents to print',
-        );
-        return;
-      }
-
-      // Show loading dialog
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => AlertDialog(
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const CircularProgressIndicator(),
-              const SizedBox(height: 16),
-              Text(
-                  'Preparing ${selectedDocs.length} documents for printing...'),
-            ],
-          ),
-        ),
-      );
-
-      // Create a PDF document
-      final pdf = pw.Document();
-
-      for (final doc in selectedDocs) {
-        try {
-          final response = await http.get(
-            Uri.parse('${ApiConfig.documentsUrl}${doc.id}/download'),
-            headers: ApiConfig.authHeaders(provider.token),
-          );
-
-          if (response.statusCode == 200) {
-            // Add the document content to the PDF
-            pdf.addPage(
-              pw.Page(
-                build: (context) => pw.Column(
-                  crossAxisAlignment: pw.CrossAxisAlignment.start,
-                  children: [
-                    pw.Text(doc.name,
-                        style: pw.TextStyle(
-                            fontSize: 16, fontWeight: pw.FontWeight.bold)),
-                    pw.SizedBox(height: 8),
-                    pw.Text(doc.description ?? 'No description',
-                        style: pw.TextStyle(fontSize: 14)),
-                    pw.SizedBox(height: 16),
-                    pw.Expanded(
-                      child: pw.Container(
-                        decoration: pw.BoxDecoration(
-                          borderRadius: pw.BorderRadius.circular(8),
-                        ),
-                        padding: const pw.EdgeInsets.all(16),
-                        child: pw.Text(
-                          String.fromCharCodes(response.bodyBytes),
-                          style: pw.TextStyle(fontSize: 14),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          }
-        } catch (e) {
-          print('Error downloading document ${doc.name}: $e');
-        }
-      }
-
-      if (context.mounted) {
-        // Dismiss loading dialog
-        Navigator.pop(context);
-
-        // Print the PDF
-        await Printing.layoutPdf(
-          onLayout: (format) async => pdf.save(),
-        );
-
-        // Clear selection after printing
-        provider.clearSelection();
-      }
+      // Implement print logic here
+      _showSnackBar(context, 'Print feature coming soon');
     } catch (e) {
-      if (context.mounted) {
-        // Dismiss loading dialog if showing
-        Navigator.pop(context);
-
-        CustomSnackBar.showError(
-          context: context,
-          title: 'Error Printing Documents',
-          message: 'Error: $e',
-          actionLabel: 'Retry',
-          onAction: () => _handlePrint(context),
-        );
-      }
+      _showErrorSnackBar(context, 'Error printing document: $e');
     }
   }
 
