@@ -139,13 +139,6 @@ class QuickActionsBar extends StatelessWidget {
           subject: 'Shared Documents (${selectedDocs.length})',
         );
 
-        CustomSnackBar.showSuccess(
-          context: context,
-          title: 'Shared Successfully',
-          message:
-              '${selectedDocs.length} document${selectedDocs.length > 1 ? 's' : ''} shared successfully',
-        );
-
         // Clear selection after sharing
         provider.clearSelection();
       }
@@ -317,6 +310,112 @@ class QuickActionsBar extends StatelessWidget {
     }
   }
 
+  Future<void> _handleMultipleDelete(
+      BuildContext context, DocumentProvider provider) async {
+    final selectedDocs = provider.selectedDocuments;
+
+    // Show confirmation dialog
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        final theme = Theme.of(context);
+        return AlertDialog(
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Text(
+            'Delete Documents',
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: theme.colorScheme.primary,
+            ),
+          ),
+          content: Text(
+            'Are you sure you want to delete ${selectedDocs.length} document${selectedDocs.length > 1 ? 's' : ''}?',
+            style: theme.textTheme.bodyLarge?.copyWith(
+              color: theme.colorScheme.onSurface,
+            ),
+          ),
+          backgroundColor: theme.cardTheme.color,
+          actionsPadding: const EdgeInsets.symmetric(horizontal: 16),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              style: TextButton.styleFrom(
+                foregroundColor: theme.colorScheme.secondary,
+              ),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.red,
+              ),
+              child: const Text('Delete'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed == true && context.mounted) {
+      try {
+        // Show loading indicator
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (BuildContext context) => const PopScope(
+            canPop: false,
+            child: AlertDialog(
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(height: 16),
+                  Text('Deleting documents...'),
+                ],
+              ),
+            ),
+          ),
+        );
+
+        // Delete each selected document
+        for (final doc in selectedDocs) {
+          await provider.removeDocument(doc.id);
+        }
+
+        if (context.mounted) {
+          // Dismiss loading indicator
+          Navigator.of(context).pop();
+
+          // Show success message
+          CustomSnackBar.showSuccess(
+            context: context,
+            title: 'Documents Deleted',
+            message:
+                '${selectedDocs.length} document${selectedDocs.length > 1 ? 's' : ''} deleted successfully',
+          );
+
+          // Clear selection after deletion
+          provider.clearSelection();
+        }
+      } catch (e) {
+        if (context.mounted) {
+          // Dismiss loading indicator
+          Navigator.of(context).pop();
+
+          // Show error message
+          CustomSnackBar.showError(
+            context: context,
+            title: 'Error Deleting Documents',
+            message: 'Error: ${e.toString()}',
+            actionLabel: 'Retry',
+            onAction: () => _handleMultipleDelete(context, provider),
+          );
+        }
+      }
+    }
+  }
+
   Widget _buildActionButton({
     required BuildContext context,
     required IconData icon,
@@ -357,6 +456,7 @@ class QuickActionsBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Consumer<DocumentProvider>(
       builder: (context, provider, child) {
         final isSelectionMode = provider.isSelectionMode;
@@ -388,9 +488,37 @@ class QuickActionsBar extends StatelessWidget {
                         '$selectedCount selected',
                         style: Theme.of(context).textTheme.titleSmall,
                       ),
-                      TextButton(
-                        onPressed: () => provider.clearSelection(),
-                        child: const Text('Clear'),
+                      Row(
+                        children: [
+                          TextButton.icon(
+                            onPressed: () => provider.selectAll(),
+                            icon: const Icon(Icons.select_all, size: 20),
+                            label: const Text('Select All'),
+                            style: TextButton.styleFrom(
+                              foregroundColor: theme.colorScheme.primary,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          TextButton.icon(
+                            onPressed: selectedCount > 0
+                                ? () => _handleMultipleDelete(context, provider)
+                                : null,
+                            icon: const Icon(Icons.delete_outline, size: 20),
+                            label: const Text('Delete'),
+                            style: TextButton.styleFrom(
+                              foregroundColor: Colors.red,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          TextButton.icon(
+                            onPressed: () => provider.clearSelection(),
+                            icon: const Icon(Icons.clear_all, size: 20),
+                            label: const Text('Clear'),
+                            style: TextButton.styleFrom(
+                              foregroundColor: theme.colorScheme.secondary,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),

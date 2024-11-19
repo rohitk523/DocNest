@@ -293,12 +293,6 @@ Size: ${formatFileSize(widget.document.fileSize)}
           text: text,
           subject: widget.document.name,
         );
-
-        CustomSnackBar.showSuccess(
-          context: context,
-          title: 'Shared Successfully',
-          message: 'Document shared successfully',
-        );
       }
     } catch (e) {
       if (context.mounted) {
