@@ -1,3 +1,4 @@
+import 'package:docnest_flutter/widgets/custom_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
@@ -144,12 +145,10 @@ class _DocumentTileState extends State<DocumentTile> {
   Future<void> _handleEdit(
       BuildContext context, DocumentProvider provider) async {
     if (!provider.hasValidToken) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please log in to edit documents'),
-          backgroundColor: Colors.red,
-          behavior: SnackBarBehavior.floating,
-        ),
+      CustomSnackBar.showError(
+        context: context,
+        title: 'Log In to Edit',
+        message: 'Please log in to edit documents',
       );
       return;
     }
@@ -188,28 +187,22 @@ class _DocumentTileState extends State<DocumentTile> {
 
         if (context.mounted) {
           Navigator.of(context).pop(); // Dismiss loading dialog
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Document updated successfully'),
-              behavior: SnackBarBehavior.floating,
-            ),
+          CustomSnackBar.showSuccess(
+            context: context,
+            title: 'Upload Successful',
+            message: 'Document uploaded successfully',
           );
         }
       }
     } catch (e) {
       if (context.mounted) {
         Navigator.of(context).pop(); // Dismiss loading dialog if showing
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error updating document: $e'),
-            backgroundColor: Colors.red,
-            behavior: SnackBarBehavior.floating,
-            action: SnackBarAction(
-              label: 'Retry',
-              textColor: Colors.white,
-              onPressed: () => _handleEdit(context, provider),
-            ),
-          ),
+        CustomSnackBar.showError(
+          context: context,
+          title: 'Error Updating Document',
+          message: 'Error updating document: $e',
+          actionLabel: 'Retry',
+          onAction: () => _handleEdit(context, provider),
         );
       }
     }
@@ -324,17 +317,12 @@ Size: ${formatFileSize(widget.document.fileSize)}
         Navigator.pop(context);
 
         // Show error message
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error sharing document: ${e.toString()}'),
-            backgroundColor: Colors.red,
-            behavior: SnackBarBehavior.floating,
-            action: SnackBarAction(
-              label: 'Retry',
-              textColor: Colors.white,
-              onPressed: () => _shareDocument(context),
-            ),
-          ),
+        CustomSnackBar.showError(
+          context: context,
+          title: 'Error Sharing Document',
+          message: 'Error: ${e.toString()}',
+          actionLabel: 'Retry',
+          onAction: () => _shareDocument(context),
         );
       }
     }
@@ -493,23 +481,10 @@ Size: ${formatFileSize(widget.document.fileSize)}
         Navigator.pop(context);
 
         // Show success message
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Document downloaded: $filename'),
-                const SizedBox(height: 4),
-                const Text(
-                  'Saved to Downloads folder',
-                  style: TextStyle(fontSize: 12),
-                ),
-              ],
-            ),
-            duration: const Duration(seconds: 6),
-            behavior: SnackBarBehavior.floating,
-          ),
+        CustomSnackBar.showSuccess(
+          context: context,
+          title: 'Document Downloaded',
+          message: 'Document downloaded: $filename\nSaved to Downloads folder',
         );
       }
     } catch (e) {
@@ -518,17 +493,12 @@ Size: ${formatFileSize(widget.document.fileSize)}
         Navigator.pop(context);
 
         // Show error message
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error downloading document: ${e.toString()}'),
-            backgroundColor: Colors.red,
-            behavior: SnackBarBehavior.floating,
-            action: SnackBarAction(
-              label: 'Retry',
-              textColor: Colors.white,
-              onPressed: () => _downloadDocument(context),
-            ),
-          ),
+        CustomSnackBar.showError(
+          context: context,
+          title: 'Error Downloading Document',
+          message: 'Error: ${e.toString()}',
+          actionLabel: 'Retry',
+          onAction: () => _downloadDocument(context),
         );
       }
     }
@@ -690,11 +660,10 @@ Size: ${formatFileSize(widget.document.fileSize)}
           Navigator.of(context).pop();
 
           // Show success message
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Document deleted successfully'),
-              behavior: SnackBarBehavior.floating,
-            ),
+          CustomSnackBar.showSuccess(
+            context: context,
+            title: 'Document Deleted',
+            message: 'Document deleted successfully',
           );
         }
       } catch (e) {
@@ -703,17 +672,12 @@ Size: ${formatFileSize(widget.document.fileSize)}
           Navigator.of(context).pop();
 
           // Show error message
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Error deleting document: ${e.toString()}'),
-              backgroundColor: Colors.red,
-              behavior: SnackBarBehavior.floating,
-              action: SnackBarAction(
-                label: 'Retry',
-                textColor: Colors.white,
-                onPressed: () => _deleteDocument(context, provider),
-              ),
-            ),
+          CustomSnackBar.showError(
+            context: context,
+            title: 'Error Deleting Document',
+            message: 'Error: ${e.toString()}',
+            actionLabel: 'Retry',
+            onAction: () => _deleteDocument(context, provider),
           );
         }
       }
@@ -721,21 +685,18 @@ Size: ${formatFileSize(widget.document.fileSize)}
   }
 
   void _showSnackBar(BuildContext context, String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        behavior: SnackBarBehavior.floating,
-      ),
+    CustomSnackBar.showInfo(
+      context: context,
+      title: 'Information',
+      message: message,
     );
   }
 
   void _showErrorSnackBar(BuildContext context, String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.red,
-        behavior: SnackBarBehavior.floating,
-      ),
+    CustomSnackBar.showError(
+      context: context,
+      title: 'Error',
+      message: message,
     );
   }
 

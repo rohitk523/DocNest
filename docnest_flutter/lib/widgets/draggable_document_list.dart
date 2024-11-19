@@ -1,3 +1,4 @@
+import 'package:docnest_flutter/widgets/custom_snackbar.dart';
 import 'package:flutter/material.dart';
 import '../models/document.dart';
 import '../providers/document_provider.dart';
@@ -35,21 +36,18 @@ class _DraggableDocumentListState extends State<DraggableDocumentList> {
 
       if (mounted) {
         context.read<DocumentProvider>().updateDocument(updatedDoc);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Moved to ${newCategory.toLowerCase()}'),
-            behavior: SnackBarBehavior.floating,
-          ),
+        CustomSnackBar.showSuccess(
+          context: context,
+          title: 'Document Moved',
+          message: 'Successfully moved to ${newCategory.toLowerCase()}',
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to move document: ${e.toString()}'),
-            backgroundColor: Colors.red,
-            behavior: SnackBarBehavior.floating,
-          ),
+        CustomSnackBar.showError(
+          context: context,
+          title: 'Move Failed',
+          message: 'Failed to move document: ${e.toString()}',
         );
       }
     }

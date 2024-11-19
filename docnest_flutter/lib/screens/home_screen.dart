@@ -101,10 +101,11 @@ class _HomeScreenState extends State<HomeScreen> {
           _handleAuthError();
         } else {
           CustomSnackBar.showError(
-            context,
-            'Error loading documents: ${e.toString()}',
+            context: context,
+            title: 'Upload Error',
+            message: 'Error uploading document: ${e.toString()}',
             actionLabel: 'Retry',
-            onAction: _loadDocuments,
+            onAction: _handleUpload,
           );
         }
       }
@@ -115,8 +116,9 @@ class _HomeScreenState extends State<HomeScreen> {
     await _storage.delete(key: 'auth_token');
     if (mounted) {
       CustomSnackBar.showError(
-        context,
-        'Session expired. Please log in again.',
+        context: context,
+        title: 'Session Expired',
+        message: 'Session expired. Please log in again.',
       );
 
 // After showing the snackbar, navigate to the login screen
@@ -810,15 +812,18 @@ class _HomeScreenState extends State<HomeScreen> {
             .addCustomCategory(newCategory);
         if (success && mounted) {
           CustomSnackBar.showSuccess(
-            context,
-            'Category "${getCategoryDisplayName(newCategory)}" added successfully',
+            context: context,
+            title: 'Category Added',
+            message:
+                'Category "${getCategoryDisplayName(newCategory)}" added successfully',
           );
         }
       } catch (e) {
         if (mounted) {
           CustomSnackBar.showError(
-            context,
-            'Failed to add category: $e',
+            context: context,
+            title: 'Category Error',
+            message: 'Failed to add category: $e',
           );
         }
       }
@@ -833,8 +838,10 @@ class _HomeScreenState extends State<HomeScreen> {
     if (documents.isNotEmpty) {
       if (mounted) {
         CustomSnackBar.showError(
-          context,
-          'Cannot delete category with documents. Move or delete the documents first.',
+          context: context,
+          title: 'Delete Error',
+          message:
+              'Cannot delete category with documents. Move or delete the documents first.',
         );
       }
       return;
@@ -866,15 +873,17 @@ class _HomeScreenState extends State<HomeScreen> {
         final success = await provider.removeCustomCategory(category);
         if (success && mounted) {
           CustomSnackBar.showSuccess(
-            context,
-            'Category deleted successfully',
+            context: context,
+            title: 'Category Deleted',
+            message: 'Category deleted successfully',
           );
         }
       } catch (e) {
         if (mounted) {
           CustomSnackBar.showError(
-            context,
-            'Failed to delete category: $e',
+            context: context,
+            title: 'Delete Error',
+            message: 'Failed to delete category: $e',
           );
         }
       }
@@ -919,8 +928,9 @@ class _HomeScreenState extends State<HomeScreen> {
           context.read<DocumentProvider>().addDocument(uploadedDoc);
 
           CustomSnackBar.showSuccess(
-            context,
-            'Document uploaded successfully',
+            context: context,
+            title: 'Upload Success',
+            message: 'Document uploaded successfully',
           );
         }
       }
@@ -933,10 +943,11 @@ class _HomeScreenState extends State<HomeScreen> {
           _handleAuthError();
         } else {
           CustomSnackBar.showError(
-            context,
-            'Error uploading document: ${e.toString()}',
+            context: context,
+            title: 'Loading Error',
+            message: 'Error loading documents: ${e.toString()}',
             actionLabel: 'Retry',
-            onAction: _handleUpload,
+            onAction: _loadDocuments,
           );
         }
       }

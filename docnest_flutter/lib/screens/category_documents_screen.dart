@@ -50,11 +50,11 @@ class _CategoryDocumentsScreenState extends State<CategoryDocumentsScreen> {
 
         if (isAuthError) {
           CustomSnackBar.showError(
-            context,
-            'Please log in again',
-            actionLabel: 'Login', // Using consistent parameter name
+            context: context,
+            title: 'Authentication Required',
+            message: 'Please log in again to continue',
+            actionLabel: 'Login',
             onAction: () {
-              // Using consistent parameter name
               Navigator.of(context).pushAndRemoveUntil(
                 MaterialPageRoute(
                   builder: (context) => const LoginScreen(),
@@ -124,11 +124,12 @@ class _CategoryDocumentsScreenState extends State<CategoryDocumentsScreen> {
           provider.addDocument(uploadedDoc);
 
           CustomSnackBar.showSuccess(
-            context,
-            'Document uploaded successfully',
+            context: context,
+            title: 'Success!',
+            message: 'Document uploaded successfully',
             actionLabel: 'View',
             onAction: () {
-              // Handle the action, e.g., navigate to a page
+              // Handle action
             },
           );
         }
@@ -137,9 +138,11 @@ class _CategoryDocumentsScreenState extends State<CategoryDocumentsScreen> {
       if (context.mounted) {
         Navigator.popUntil(context, (route) => route.isFirst);
 
+        // For upload error
         CustomSnackBar.showError(
-          context,
-          'Error uploading document: ${e.toString()}',
+          context: context,
+          title: 'Upload Failed',
+          message: 'Error uploading document: ${e.toString()}',
           actionLabel: 'Retry',
           onAction: () => _handleUpload(context),
         );

@@ -4,6 +4,7 @@ import 'dart:io';
 import 'dart:ui';
 import 'package:docnest_flutter/screens/login_screen.dart';
 import 'package:docnest_flutter/services/document_service.dart';
+import 'package:docnest_flutter/widgets/custom_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:provider/provider.dart';
@@ -41,11 +42,10 @@ class QuickActionsBar extends StatelessWidget {
       final selectedDocs = provider.selectedDocuments;
 
       if (selectedDocs.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Please select documents to share'),
-            behavior: SnackBarBehavior.floating,
-          ),
+        CustomSnackBar.showInfo(
+          context: context,
+          title: 'Select Documents',
+          message: 'Please select documents to share',
         );
         return;
       }
@@ -108,12 +108,10 @@ class QuickActionsBar extends StatelessWidget {
         Navigator.pop(context);
 
         if (filesToShare.isEmpty) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Error preparing files for sharing'),
-              backgroundColor: Colors.red,
-              behavior: SnackBarBehavior.floating,
-            ),
+          CustomSnackBar.showError(
+            context: context,
+            title: 'Error Preparing Files',
+            message: 'Error preparing files for sharing',
           );
           return;
         }
@@ -152,17 +150,12 @@ class QuickActionsBar extends StatelessWidget {
         // Dismiss loading dialog if showing
         Navigator.pop(context);
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error sharing documents: ${e.toString()}'),
-            backgroundColor: Colors.red,
-            behavior: SnackBarBehavior.floating,
-            action: SnackBarAction(
-              label: 'Retry',
-              textColor: Colors.white,
-              onPressed: () => _handleShare(context),
-            ),
-          ),
+        CustomSnackBar.showError(
+          context: context,
+          title: 'Error Sharing Documents',
+          message: 'Error: ${e.toString()}',
+          actionLabel: 'Retry',
+          onAction: () => _handleShare(context),
         );
       }
     }
@@ -174,11 +167,10 @@ class QuickActionsBar extends StatelessWidget {
       final selectedDocs = provider.selectedDocuments;
 
       if (selectedDocs.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Please select documents to print'),
-            behavior: SnackBarBehavior.floating,
-          ),
+        CustomSnackBar.showInfo(
+          context: context,
+          title: 'Select Documents',
+          message: 'Please select documents to print',
         );
         return;
       }
@@ -263,17 +255,12 @@ class QuickActionsBar extends StatelessWidget {
         // Dismiss loading dialog if showing
         Navigator.pop(context);
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error printing documents: $e'),
-            backgroundColor: Colors.red,
-            behavior: SnackBarBehavior.floating,
-            action: SnackBarAction(
-              label: 'Retry',
-              textColor: Colors.white,
-              onPressed: () => _handlePrint(context),
-            ),
-          ),
+        CustomSnackBar.showError(
+          context: context,
+          title: 'Error Printing Documents',
+          message: 'Error: $e',
+          actionLabel: 'Retry',
+          onAction: () => _handlePrint(context),
         );
       }
     }
@@ -346,11 +333,10 @@ class QuickActionsBar extends StatelessWidget {
 
           context.read<DocumentProvider>().addDocument(uploadedDoc);
 
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Document uploaded successfully'),
-              behavior: SnackBarBehavior.floating,
-            ),
+          CustomSnackBar.showSuccess(
+            context: context,
+            title: 'Upload Successful',
+            message: 'Document uploaded successfully',
           );
         }
       }
@@ -362,15 +348,12 @@ class QuickActionsBar extends StatelessWidget {
         if (e.toString().contains('Could not validate credentials')) {
           _handleAuthError(context);
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Error uploading document: ${e.toString()}'),
-              behavior: SnackBarBehavior.floating,
-              action: SnackBarAction(
-                label: 'Retry',
-                onPressed: () => _handleUpload(context),
-              ),
-            ),
+          CustomSnackBar.showError(
+            context: context,
+            title: 'Error Uploading Document',
+            message: 'Error: ${e.toString()}',
+            actionLabel: 'Retry',
+            onAction: () => _handleUpload(context),
           );
         }
       }
@@ -380,11 +363,10 @@ class QuickActionsBar extends StatelessWidget {
   Future<void> _handleAuthError(BuildContext context) async {
     await const FlutterSecureStorage().delete(key: 'auth_token');
     if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Session expired. Please log in again.'),
-          behavior: SnackBarBehavior.floating,
-        ),
+      CustomSnackBar.showInfo(
+        context: context,
+        title: 'Session Expired',
+        message: 'Please log in again',
       );
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (context) => const LoginScreen()),

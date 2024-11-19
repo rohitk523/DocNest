@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
+import '../widgets/custom_snackbar.dart';
 import './home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -14,19 +15,12 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isLoading = false;
 
   void _showErrorSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message, style: const TextStyle(color: Colors.white)),
-        backgroundColor: Colors.red,
-        behavior: SnackBarBehavior.floating,
-        margin: const EdgeInsets.all(16),
-        duration: const Duration(seconds: 4),
-        action: SnackBarAction(
-          label: 'Dismiss',
-          textColor: Colors.white,
-          onPressed: () => ScaffoldMessenger.of(context).hideCurrentSnackBar(),
-        ),
-      ),
+    CustomSnackBar.showError(
+      context: context,
+      title: 'Error',
+      message: message,
+      actionLabel: 'Dismiss',
+      onAction: () => ScaffoldMessenger.of(context).hideCurrentSnackBar(),
     );
   }
 

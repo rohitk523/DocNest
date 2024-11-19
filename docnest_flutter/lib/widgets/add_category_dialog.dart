@@ -1,3 +1,4 @@
+import 'package:docnest_flutter/widgets/custom_snackbar.dart';
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 
@@ -23,12 +24,10 @@ class _AddCategoryDialogState extends State<AddCategoryDialog> {
         !widget.defaultCategories.contains(newCategory)) {
       Navigator.of(context).pop(newCategory);
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Category already exists or is invalid.'),
-          backgroundColor: AppColors.errorLight,
-          behavior: SnackBarBehavior.floating,
-        ),
+      CustomSnackBar.showError(
+        context: context,
+        title: 'Invalid Category',
+        message: 'Category already exists or is invalid.',
       );
     }
   }

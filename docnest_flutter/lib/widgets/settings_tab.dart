@@ -1,4 +1,5 @@
 // lib/widgets/settings_tab.dart
+import 'package:docnest_flutter/widgets/custom_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../theme/app_theme.dart';
@@ -75,12 +76,10 @@ class SettingsTab extends StatelessWidget {
 
       // Show error message
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Logout failed: ${e.toString()}'),
-            backgroundColor: Colors.red,
-            behavior: SnackBarBehavior.floating,
-          ),
+        CustomSnackBar.showError(
+          context: context,
+          title: 'Logout Failed',
+          message: 'Error: ${e.toString()}',
         );
       }
     }

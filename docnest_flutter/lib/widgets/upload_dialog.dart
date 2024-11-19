@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:docnest_flutter/widgets/custom_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:provider/provider.dart';
@@ -47,14 +48,11 @@ class _UploadDocumentDialogState extends State<UploadDocumentDialog> {
 
         if (fileSize > 10 * 1024 * 1024) {
           if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
+            CustomSnackBar.showError(
+              context: context,
+              title: 'File Size Limit Exceeded',
+              message:
                   'File size must be less than 10MB. Current size: ${formatFileSize(fileSize)}',
-                ),
-                backgroundColor: AppColors.errorLight,
-                behavior: SnackBarBehavior.floating,
-              ),
             );
           }
           return;
@@ -69,12 +67,10 @@ class _UploadDocumentDialogState extends State<UploadDocumentDialog> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error picking file: $e'),
-            backgroundColor: AppColors.errorLight,
-            behavior: SnackBarBehavior.floating,
-          ),
+        CustomSnackBar.showError(
+          context: context,
+          title: 'Error Picking File',
+          message: 'Error: $e',
         );
       }
     }
@@ -84,13 +80,10 @@ class _UploadDocumentDialogState extends State<UploadDocumentDialog> {
 
   void _handleUpload() {
     if (!_formKey.currentState!.validate() || _selectedFile == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content:
-              const Text('Please fill all required fields and select a file'),
-          backgroundColor: AppColors.errorLight,
-          behavior: SnackBarBehavior.floating,
-        ),
+      CustomSnackBar.showError(
+        context: context,
+        title: 'Missing Required Fields',
+        message: 'Please fill all required fields and select a file',
       );
       return;
     }
@@ -104,12 +97,10 @@ class _UploadDocumentDialogState extends State<UploadDocumentDialog> {
     print('Available categories: ${provider.allCategories}');
 
     if (!provider.allCategories.contains(normalizedCategory)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Invalid category selected'),
-          backgroundColor: AppColors.errorLight,
-          behavior: SnackBarBehavior.floating,
-        ),
+      CustomSnackBar.showError(
+        context: context,
+        title: 'Invalid Category',
+        message: 'Invalid category selected',
       );
       return;
     }
@@ -130,12 +121,10 @@ class _UploadDocumentDialogState extends State<UploadDocumentDialog> {
       Navigator.pop(context, result);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Upload failed: $e'),
-            backgroundColor: AppColors.errorLight,
-            behavior: SnackBarBehavior.floating,
-          ),
+        CustomSnackBar.showError(
+          context: context,
+          title: 'Upload Failed',
+          message: 'Upload failed: $e',
         );
       }
     } finally {

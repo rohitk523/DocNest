@@ -1,3 +1,4 @@
+import 'package:docnest_flutter/widgets/custom_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/document.dart';
@@ -54,11 +55,10 @@ class _DocumentSectionState extends State<DocumentSection> {
         Navigator.of(context).pop();
 
         // Show success message
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Moved to ${newCategory.toLowerCase()}'),
-            behavior: SnackBarBehavior.floating,
-          ),
+        CustomSnackBar.showSuccess(
+          context: context,
+          title: 'Document Moved',
+          message: 'Successfully moved to ${newCategory.toLowerCase()}',
         );
       }
     } catch (e) {
@@ -67,17 +67,12 @@ class _DocumentSectionState extends State<DocumentSection> {
         Navigator.of(context).pop();
 
         // Show error message
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to move document: ${e.toString()}'),
-            backgroundColor: Colors.red,
-            behavior: SnackBarBehavior.floating,
-            action: SnackBarAction(
-              label: 'Retry',
-              textColor: Colors.white,
-              onPressed: () => _updateDocumentCategory(document, newCategory),
-            ),
-          ),
+        CustomSnackBar.showError(
+          context: context,
+          title: 'Move Failed',
+          message: 'Failed to move document: ${e.toString()}',
+          actionLabel: 'Retry',
+          onAction: () => _updateDocumentCategory(document, newCategory),
         );
       }
     }
