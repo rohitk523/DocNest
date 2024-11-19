@@ -8,6 +8,7 @@ import 'package:http/http.dart' as http;
 import 'package:open_filex/open_filex.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 
+import '../services/cache_service.dart';
 import '../theme/app_theme.dart';
 import '../models/document.dart';
 import '../utils/formatters.dart';
@@ -236,6 +237,8 @@ class _DocumentTileState extends State<DocumentTile> {
   Future<void> _shareDocument(BuildContext context) async {
     try {
       final provider = Provider.of<DocumentProvider>(context, listen: false);
+      final cacheService = CacheService();
+      final fileName = widget.document.name;
 
       // Show loading dialog
       showDialog(
@@ -253,40 +256,31 @@ class _DocumentTileState extends State<DocumentTile> {
         ),
       );
 
-      // Download the file first
-      final response = await http.get(
-        Uri.parse('${ApiConfig.documentsUrl}${widget.document.id}/download'),
-        headers: ApiConfig.authHeaders(provider.token),
-      );
+      // Try to get cached file first
+      File? cachedFile = await cacheService.getCachedDocumentByName(fileName);
 
-      if (response.statusCode != 200) {
-        throw Exception('Failed to download document for sharing');
-      }
+      if (cachedFile == null || !await cachedFile.exists()) {
+        // If not cached, download and cache
+        final response = await http.get(
+          Uri.parse('${ApiConfig.documentsUrl}${widget.document.id}/download'),
+          headers: ApiConfig.authHeaders(provider.token),
+        );
 
-      // Get filename from Content-Disposition header or document name
-      final contentDisposition = response.headers['content-disposition'];
-      String filename = '';
-      if (contentDisposition != null &&
-          contentDisposition.contains('filename=')) {
-        filename = contentDisposition.split('filename=')[1].replaceAll('"', '');
-      } else {
-        filename = widget.document.name;
-        if (!filename.contains('.') && widget.document.fileType != null) {
-          filename = '$filename.${widget.document.fileType!.split('/').last}';
+        if (response.statusCode != 200) {
+          throw Exception('Failed to download document for sharing');
         }
+
+        // Cache the downloaded file
+        await cacheService.cacheDocumentWithName(fileName, response.bodyBytes);
+        cachedFile = await cacheService.getCachedDocumentByName(fileName);
       }
 
-      // Create temporary file
-      final tempDir = await getTemporaryDirectory();
-      final tempFile = File('${tempDir.path}/$filename');
-      await tempFile.writeAsBytes(response.bodyBytes);
-
-      if (context.mounted) {
+      if (context.mounted && cachedFile != null) {
         // Dismiss loading dialog
         Navigator.pop(context);
 
-        // Share the file
-        final files = [tempFile.path];
+        // Share the cached file
+        final files = [cachedFile.path];
         final text = '''
 Document: ${widget.document.name}
 Category: ${widget.document.category}
@@ -300,23 +294,15 @@ Size: ${formatFileSize(widget.document.fileSize)}
           subject: widget.document.name,
         );
 
-        // Clean up temp file after a delay
-        Future.delayed(const Duration(minutes: 1), () {
-          try {
-            if (tempFile.existsSync()) {
-              tempFile.deleteSync();
-            }
-          } catch (e) {
-            print('Error cleaning up temp file: $e');
-          }
-        });
+        CustomSnackBar.showSuccess(
+          context: context,
+          title: 'Shared Successfully',
+          message: 'Document shared successfully',
+        );
       }
     } catch (e) {
       if (context.mounted) {
-        // Dismiss loading dialog
         Navigator.pop(context);
-
-        // Show error message
         CustomSnackBar.showError(
           context: context,
           title: 'Error Sharing Document',
@@ -506,11 +492,10 @@ Size: ${formatFileSize(widget.document.fileSize)}
 
   Future<void> _openDocument(BuildContext context) async {
     final provider = Provider.of<DocumentProvider>(context, listen: false);
-    File? tempFile;
+    final cacheService = CacheService();
+    final fileName = widget.document.name;
 
     try {
-      // Show loading indicator
-      print('Showing loading indicator...');
       showDialog(
         context: context,
         barrierDismissible: false,
@@ -526,63 +511,34 @@ Size: ${formatFileSize(widget.document.fileSize)}
         ),
       );
 
-      // Check if the file is already cached
-      final cacheKey = 'document_${widget.document.id}';
-      final fileInfo = await DefaultCacheManager().getFileFromCache(cacheKey);
+      // Try to get cached file
+      File? cachedFile = await cacheService.getCachedDocumentByName(fileName);
 
-      if (fileInfo != null) {
-        // File is cached, use the cached file
-        tempFile = fileInfo.file;
-      } else {
-        // File is not cached, fetch it from the server
-        print('Fetching document file...');
+      if (cachedFile == null || !await cachedFile.exists()) {
+        // If not cached, download and cache
         final response = await http.get(
           Uri.parse('${ApiConfig.documentsUrl}${widget.document.id}/download'),
           headers: ApiConfig.authHeaders(provider.token),
         );
 
         if (response.statusCode != 200) {
-          print(
-              'Failed to fetch document file, status code: ${response.statusCode}');
           throw Exception('Failed to fetch document file');
         }
 
-        // Get the original file name
-        final fileName = widget.document.name;
-
-        // Create a new file with the original name in the cache directory
-        final cacheDir = await getTemporaryDirectory();
-        tempFile = File('${cacheDir.path}/$fileName');
-
-        // Write the downloaded data to the file
-        await tempFile.writeAsBytes(response.bodyBytes);
-
-        // Put the file in the cache using the file bytes
-        await DefaultCacheManager().putFile(cacheKey, response.bodyBytes);
+        await cacheService.cacheDocumentWithName(fileName, response.bodyBytes);
+        cachedFile = await cacheService.getCachedDocumentByName(fileName);
       }
 
       if (context.mounted) {
-        // Dismiss the loading indicator
-        print('Dismissing loading indicator...');
-        Navigator.of(context).pop();
+        Navigator.of(context).pop(); // Dismiss loading dialog
       }
 
-      try {
-        print('Opening PDF file...');
-        await OpenFilex.open(tempFile!.path, type: 'application/pdf');
-      } catch (e) {
-        print('Error opening PDF file: $e');
-        _showErrorSnackBar(
-            context, 'No PDF viewer found. Please download the file.');
+      if (cachedFile != null) {
+        await OpenFilex.open(cachedFile.path, type: widget.document.fileType);
       }
     } catch (e) {
       if (context.mounted) {
-        // Dismiss the loading indicator
-        print('Dismissing loading indicator due to error...');
         Navigator.of(context).pop();
-
-        // Show an error message
-        print('Showing error message: $e');
         _showErrorSnackBar(context, 'Error opening document: ${e.toString()}');
       }
     }

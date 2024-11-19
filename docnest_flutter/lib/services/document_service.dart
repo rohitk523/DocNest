@@ -1,6 +1,7 @@
 // lib/services/document_service.dart
 import 'dart:async';
 import 'dart:io';
+import 'package:docnest_flutter/services/cache_service.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'dart:convert';
@@ -84,12 +85,10 @@ class DocumentService {
       }
 
       final normalizedCategory = category.toLowerCase().trim();
-      print('Uploading document with normalized category: $normalizedCategory');
+      final fileName = path.basename(file.path);
 
       final request =
           http.MultipartRequest('POST', Uri.parse(ApiConfig.documentsUrl));
-
-      // Set headers properly for multipart request
       request.headers.addAll({
         'Authorization': 'Bearer $token',
         'Accept': 'application/json',
@@ -101,32 +100,32 @@ class DocumentService {
         'category': normalizedCategory,
       });
 
-      // Add file
-      final fileName = path.basename(file.path);
-      final stream = http.ByteStream(file.openRead());
-      final length = await file.length();
-
-      final multipartFile = http.MultipartFile(
+      final fileBytes = await file.readAsBytes();
+      final multipartFile = http.MultipartFile.fromBytes(
         'file',
-        stream,
-        length,
+        fileBytes,
         filename: fileName,
         contentType: MediaType.parse(_getContentType(path.extension(fileName))),
       );
 
       request.files.add(multipartFile);
 
-      print('Upload request fields: ${request.fields}');
-      print('Upload request headers: ${request.headers}');
-
       final streamedResponse = await request.send();
       final response = await http.Response.fromStream(streamedResponse);
 
-      print('Upload response status: ${response.statusCode}');
-      print('Upload response body: ${response.body}');
-
       if (response.statusCode == 200 || response.statusCode == 201) {
-        return Document.fromJson(json.decode(response.body));
+        final document = Document.fromJson(json.decode(response.body));
+
+        // Cache both the document and its preview
+        final cacheService = CacheService();
+        await Future.wait([
+          cacheService.saveToCache(
+              document.filePath!, document.fileType!, fileBytes),
+          _cacheDocumentPreview(
+              document.filePath!, fileBytes, document.fileType!),
+        ]);
+
+        return document;
       } else {
         final errorBody = json.decode(response.body);
         throw Exception(errorBody['detail'] ??
@@ -135,6 +134,16 @@ class DocumentService {
     } catch (e) {
       print('Error in uploadDocument: $e');
       rethrow;
+    }
+  }
+
+  Future<void> _cacheDocumentPreview(
+      String filePath, List<int> fileBytes, String fileType) async {
+    try {
+      final cacheService = CacheService();
+      await cacheService.savePreview(filePath, fileType, fileBytes);
+    } catch (e) {
+      print('Error caching preview: $e');
     }
   }
 

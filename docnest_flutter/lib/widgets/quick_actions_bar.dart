@@ -13,6 +13,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:http/http.dart' as http;
 
 import '../services/api_config.dart';
+import '../services/cache_service.dart';
 import '../utils/formatters.dart';
 import '../providers/document_provider.dart';
 import './upload_dialog.dart';
@@ -40,6 +41,7 @@ class QuickActionsBar extends StatelessWidget {
     try {
       final provider = Provider.of<DocumentProvider>(context, listen: false);
       final selectedDocs = provider.selectedDocuments;
+      final cacheService = CacheService();
 
       if (selectedDocs.isEmpty) {
         CustomSnackBar.showInfo(
@@ -66,40 +68,46 @@ class QuickActionsBar extends StatelessWidget {
         ),
       );
 
-      // List to store temporary files
+      // List to store files to share
       final List<XFile> filesToShare = [];
-      final tempDir = await getTemporaryDirectory();
 
-      // Download each selected document
+      // Process each selected document
       for (final doc in selectedDocs) {
         try {
-          final response = await http.get(
-            Uri.parse('${ApiConfig.documentsUrl}${doc.id}/download'),
-            headers: ApiConfig.authHeaders(provider.token),
-          );
+          final fileName = doc.name;
+          File? cachedFile =
+              await cacheService.getCachedDocumentByName(fileName);
 
-          if (response.statusCode == 200) {
-            // Get filename from Content-Disposition header or use document name
-            final contentDisposition = response.headers['content-disposition'];
-            String filename = '';
-            if (contentDisposition != null &&
-                contentDisposition.contains('filename=')) {
-              filename =
-                  contentDisposition.split('filename=')[1].replaceAll('"', '');
-            } else {
-              filename = doc.name;
-              if (!filename.contains('.') && doc.fileType != null) {
-                filename = '$filename.${doc.fileType!.split('/').last}';
+          if (cachedFile == null || !await cachedFile.exists()) {
+            // If not cached, download and cache
+            final response = await http.get(
+              Uri.parse('${ApiConfig.documentsUrl}${doc.id}/download'),
+              headers: ApiConfig.authHeaders(provider.token),
+            );
+
+            if (response.statusCode == 200) {
+              // Cache the downloaded file
+              await cacheService.cacheDocumentWithName(
+                  fileName, response.bodyBytes);
+              cachedFile = await cacheService.getCachedDocumentByName(fileName);
+
+              // Also cache the preview if it's an image or PDF
+              if (doc.fileType?.startsWith('image/') == true ||
+                  doc.fileType == 'application/pdf') {
+                await cacheService.savePreview(
+                  doc.filePath ?? '',
+                  doc.fileType ?? '',
+                  response.bodyBytes,
+                );
               }
             }
+          }
 
-            // Create and save temporary file
-            final tempFile = File('${tempDir.path}/$filename');
-            await tempFile.writeAsBytes(response.bodyBytes);
-            filesToShare.add(XFile(tempFile.path));
+          if (cachedFile != null) {
+            filesToShare.add(XFile(cachedFile.path));
           }
         } catch (e) {
-          print('Error downloading document ${doc.name}: $e');
+          print('Error processing document ${doc.name}: $e');
         }
       }
 
@@ -131,16 +139,12 @@ class QuickActionsBar extends StatelessWidget {
           subject: 'Shared Documents (${selectedDocs.length})',
         );
 
-        // Clean up temporary files after a delay
-        Future.delayed(const Duration(minutes: 1), () {
-          for (var file in filesToShare) {
-            try {
-              File(file.path).deleteSync();
-            } catch (e) {
-              print('Error deleting temporary file: $e');
-            }
-          }
-        });
+        CustomSnackBar.showSuccess(
+          context: context,
+          title: 'Shared Successfully',
+          message:
+              '${selectedDocs.length} document${selectedDocs.length > 1 ? 's' : ''} shared successfully',
+        );
 
         // Clear selection after sharing
         provider.clearSelection();
@@ -196,7 +200,7 @@ class QuickActionsBar extends StatelessWidget {
       );
 
       if (result != null && context.mounted) {
-        // Show loading indicator with fixed width and better constraints
+        // Show loading indicator
         showDialog(
           context: context,
           barrierDismissible: false,
@@ -238,8 +242,10 @@ class QuickActionsBar extends StatelessWidget {
           ),
         );
 
-        final documentService =
-            DocumentService(token: context.read<DocumentProvider>().token);
+        final provider = context.read<DocumentProvider>();
+        final documentService = DocumentService(token: provider.token);
+        final cacheService = CacheService();
+
         final uploadedDoc = await documentService.uploadDocument(
           name: result['name'],
           description: result['description'],
@@ -247,11 +253,28 @@ class QuickActionsBar extends StatelessWidget {
           file: result['file'],
         );
 
+        // Cache the uploaded file
+        if (result['file'] is File) {
+          final file = result['file'] as File;
+          final bytes = await file.readAsBytes();
+          await cacheService.cacheDocumentWithName(uploadedDoc.name, bytes);
+
+          // Generate and cache preview if applicable
+          if (uploadedDoc.fileType?.startsWith('image/') == true ||
+              uploadedDoc.fileType == 'application/pdf') {
+            await cacheService.savePreview(
+              uploadedDoc.filePath ?? '',
+              uploadedDoc.fileType ?? '',
+              bytes,
+            );
+          }
+        }
+
         if (context.mounted) {
           // Dismiss loading dialog
           Navigator.pop(context);
 
-          context.read<DocumentProvider>().addDocument(uploadedDoc);
+          provider.addDocument(uploadedDoc);
 
           CustomSnackBar.showSuccess(
             context: context,
