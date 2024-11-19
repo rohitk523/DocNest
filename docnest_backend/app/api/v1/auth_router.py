@@ -24,37 +24,37 @@ from app.core.exceptions import (
 
 auth_router = APIRouter()
 
-@auth_router.post("/login", response_model=TokenResponse)
-async def login(
-    form_data: OAuth2PasswordRequestForm = Depends(),
-    db: Session = Depends(get_db)
-) -> Dict[str, str]:
-    try:
-        user = authenticate_user(db, form_data.username, form_data.password)
-        if not user:
-            raise InvalidCredentialsException()
+# @auth_router.post("/login", response_model=TokenResponse)
+# async def login(
+#     form_data: OAuth2PasswordRequestForm = Depends(),
+#     db: Session = Depends(get_db)
+# ) -> Dict[str, str]:
+#     try:
+#         user = authenticate_user(db, form_data.username, form_data.password)
+#         if not user:
+#             raise InvalidCredentialsException()
 
-        if not user.is_active:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Inactive user account"
-            )
+#         if not user.is_active:
+#             raise HTTPException(
+#                 status_code=status.HTTP_400_BAD_REQUEST,
+#                 detail="Inactive user account"
+#             )
 
-        # Update last login
-        user.last_login = datetime.utcnow()
-        db.commit()
+#         # Update last login
+#         user.last_login = datetime.utcnow()
+#         db.commit()
 
-        return {
-            "access_token": create_access_token(data={"sub": user.id}),
-            "token_type": "bearer",
-            "user": user  # User model now includes custom_categories
-        }
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=str(e),
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+#         return {
+#             "access_token": create_access_token(data={"sub": user.id}),
+#             "token_type": "bearer",
+#             "user": user  # User model now includes custom_categories
+#         }
+#     except Exception as e:
+#         raise HTTPException(
+#             status_code=status.HTTP_401_UNAUTHORIZED,
+#             detail=str(e),
+#             headers={"WWW-Authenticate": "Bearer"},
+#         )
 
 
 @auth_router.post("/google/signin", response_model=TokenResponse)
@@ -81,54 +81,54 @@ async def google_signin(
         raise GoogleAuthenticationError(str(e))
 
 
-@auth_router.post("/register", response_model=UserResponse)
-async def register(
-    *,
-    db: Session = Depends(get_db),
-    user_in: UserCreate
-) -> User:
-    """
-    Register a new user
+# @auth_router.post("/register", response_model=UserResponse)
+# async def register(
+#     *,
+#     db: Session = Depends(get_db),
+#     user_in: UserCreate
+# ) -> User:
+#     """
+#     Register a new user
     
-    Args:
-        db: Database session
-        user_in: User creation data
+#     Args:
+#         db: Database session
+#         user_in: User creation data
         
-    Returns:
-        Created user object
+#     Returns:
+#         Created user object
         
-    Raises:
-        UserAlreadyExistsException: If email is already registered
-    """
-    try:
-        # Check if user exists
-        existing_user = db.query(User).filter(User.email == user_in.email).first()
-        if existing_user:
-            raise UserAlreadyExistsException()
+#     Raises:
+#         UserAlreadyExistsException: If email is already registered
+#     """
+#     try:
+#         # Check if user exists
+#         existing_user = db.query(User).filter(User.email == user_in.email).first()
+#         if existing_user:
+#             raise UserAlreadyExistsException()
 
-        user = User(
-            email=user_in.email,
-            hashed_password=get_password_hash(user_in.password),
-            full_name=user_in.full_name,
-            is_active=True,
-            is_google_user=False,
-            created_at=datetime.utcnow()
-        )
-        db.add(user)
-        db.commit()
-        db.refresh(user)
-        return user
-    except ValidationError as e:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=str(e)
-        )
-    except Exception as e:
-        db.rollback()
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
+#         user = User(
+#             email=user_in.email,
+#             hashed_password=get_password_hash(user_in.password),
+#             full_name=user_in.full_name,
+#             is_active=True,
+#             is_google_user=False,
+#             created_at=datetime.utcnow()
+#         )
+#         db.add(user)
+#         db.commit()
+#         db.refresh(user)
+#         return user
+#     except ValidationError as e:
+#         raise HTTPException(
+#             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+#             detail=str(e)
+#         )
+#     except Exception as e:
+#         db.rollback()
+#         raise HTTPException(
+#             status_code=status.HTTP_400_BAD_REQUEST,
+#             detail=str(e)
+#         )
 
 
 @auth_router.get("/me", response_model=UserResponse)
