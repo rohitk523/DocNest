@@ -4,6 +4,7 @@ import 'package:docnest_flutter/widgets/add_category_dialog.dart';
 import 'package:docnest_flutter/widgets/fluid_nav_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../utils/version_checker.dart';
 import '../widgets/custom_snackbar.dart';
 import '../widgets/profile_tab.dart';
 import '../widgets/settings_tab.dart';
@@ -49,6 +50,9 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      VersionChecker.checkVersion(context);
+    });
     _initializeScreen();
   }
 

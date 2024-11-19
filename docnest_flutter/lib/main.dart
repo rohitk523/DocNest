@@ -6,10 +6,11 @@ import 'theme/app_theme.dart';
 import 'screens/login_screen.dart';
 import 'screens/home_screen.dart';
 import 'providers/document_provider.dart';
+import 'utils/error_handler.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
+  ErrorHandler.initialize();
   // Get token from secure storage
   const storage = FlutterSecureStorage();
   final token = await storage.read(key: 'auth_token') ?? '';
