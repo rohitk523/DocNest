@@ -2077,3 +2077,6 @@ NameError: name 'distinct' is not defined
 2024-11-20 00:37:58,606 - docnest - INFO - Path: /summary Method: GET Status: 200 Duration: 0.59s
 2024-11-20 00:38:31,544 - docnest - INFO - Path: /api/v1/documents/ Method: POST Status: 200 Duration: 3.02s
 2024-11-20 00:38:42,798 - docnest - INFO - Path: /summary Method: GET Status: 200 Duration: 0.09s
+2024-11-20 01:01:25,415 - docnest - INFO - Path: / Method: GET Status: 404 Duration: 0.00s
+2024-11-20 01:01:30,456 - docnest - INFO - Path: /docs Method: GET Status: 200 Duration: 0.00s
+2024-11-20 01:01:30,621 - docnest - INFO - Path: /openapi.json Method: GET Status: 200 Duration: 0.02s

@@ -70,7 +70,10 @@ app.include_router(
 )
 
 
-app.include_router(analytics_router)
+app.include_router(
+    analytics_router,
+    prefix=f"{settings.API_V1_STR}/analytics",
+    tags=["Analytics and logging"])
 
 
 # Health check endpoint
