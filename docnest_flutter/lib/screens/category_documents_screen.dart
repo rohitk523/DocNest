@@ -28,8 +28,6 @@ class CategoryDocumentsScreen extends StatefulWidget {
 class _CategoryDocumentsScreenState extends State<CategoryDocumentsScreen> {
   bool _isLoading = false;
 
-  // lib/screens/category_documents_screen.dart
-
   Future<void> _refreshDocuments() async {
     if (_isLoading) return;
 
