@@ -51,30 +51,19 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      VersionChecker.checkVersion(context);
+      _initializeScreen();
     });
-    _initializeScreen();
-  }
-
-  @override
-  void dispose() {
-    _scrollController.dispose();
-    super.dispose();
   }
 
   Future<void> _initializeScreen() async {
     _documentService = DocumentService(token: widget.token);
 
-    // Ensure token is set in provider
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        final provider = context.read<DocumentProvider>();
-        if (provider.token != widget.token) {
-          provider.updateToken(widget.token);
-        }
-        _loadDocuments();
-      }
-    });
+    final provider = context.read<DocumentProvider>();
+
+    if (provider.token != widget.token) {
+      provider.updateToken(widget.token);
+    }
+    _loadDocuments();
   }
 
   Future<void> _loadDocuments() async {

@@ -1,6 +1,4 @@
-// lib/providers/document_provider.dart
 import 'package:flutter/foundation.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../models/document.dart';
 import '../services/document_service.dart';
 import '../models/user.dart';
@@ -23,7 +21,6 @@ class DocumentProvider with ChangeNotifier {
   bool _isLoadingProfile = false;
   static const int MAX_CUSTOM_CATEGORIES = 20;
 
-  // Category Management
   final List<String> _defaultCategories = [
     'government',
     'medical',
@@ -31,20 +28,11 @@ class DocumentProvider with ChangeNotifier {
     'other'
   ];
   Set<String> _customCategories = {};
-  final String _customCategoriesKey = 'user_custom_categories';
-  SharedPreferences? _prefs;
-
-  void _debugPrintCategories() {
-    print('Default categories: $_defaultCategories');
-    print('Custom categories: $_customCategories');
-    print('All categories: ${[..._defaultCategories, ..._customCategories]}');
-  }
 
   DocumentProvider({required String token}) : _token = token {
     if (_token.isNotEmpty) {
       _documentService = DocumentService(token: _token);
-      _initializePreferences();
-      refreshDocuments();
+      // Don't call initialization here
     }
   }
 
@@ -58,24 +46,10 @@ class DocumentProvider with ChangeNotifier {
   User? get currentUser => _currentUser;
   bool get isLoadingProfile => _isLoadingProfile;
   bool get hasValidToken => _token.isNotEmpty;
-
-  List<String> get defaultCategories {
-    _debugPrintCategories();
-    return _defaultCategories;
-  }
-
-  List<String> get customCategories {
-    _debugPrintCategories();
-    return _customCategories.toList();
-  }
-
-  List<String> get allCategories {
-    _debugPrintCategories();
-    final all = [..._defaultCategories, ..._customCategories];
-    print('Returning all categories: $all');
-    return all;
-  }
-
+  List<String> get defaultCategories => _defaultCategories;
+  List<String> get customCategories => _customCategories.toList();
+  List<String> get allCategories =>
+      [..._defaultCategories, ..._customCategories];
   List<Document> get selectedDocuments =>
       _documents.where((doc) => _selectedDocuments.contains(doc.id)).toList();
 
@@ -86,105 +60,200 @@ class DocumentProvider with ChangeNotifier {
     return _documentService!;
   }
 
-  // Category Management Methods
-  Future<void> _initializePreferences() async {
-    _prefs = await SharedPreferences.getInstance();
-    await _loadCustomCategories();
-    _debugPrintCategories();
+  Future<void> initialize() async {
+    if (_token.isEmpty) return;
+
+    try {
+      _isLoadingProfile = true;
+      notifyListeners();
+
+      // First fetch user profile
+      await fetchUserProfile();
+
+      // Then fetch documents
+      await refreshDocuments();
+    } catch (e) {
+      print('Error initializing: $e');
+      rethrow;
+    } finally {
+      _isLoadingProfile = false;
+      notifyListeners();
+    }
   }
 
-  Future<void> _loadCustomCategories() async {
-    if (_prefs == null) return;
-    final savedCategories = _prefs!.getStringList(_customCategoriesKey) ?? [];
-    print('Loading saved categories: $savedCategories');
-    _customCategories = savedCategories.map((e) => e.toLowerCase()).toSet();
-    notifyListeners();
+  Future<void> fetchUserProfile() async {
+    if (_token.isEmpty) {
+      print('No token available for fetching profile');
+      return;
+    }
+
+    try {
+      final url = '${ApiConfig.authUrl}/me';
+      print('Fetching profile from: $url');
+
+      final response = await http.get(
+        Uri.parse(url),
+        headers: ApiConfig.authHeaders(_token),
+      );
+
+      print('Profile response status: ${response.statusCode}');
+      print('Profile response body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final userData = json.decode(response.body);
+        _currentUser = User.fromJson(userData);
+        _customCategories = Set.from(
+            (_currentUser?.customCategories ?? []).map((e) => e.toLowerCase()));
+        print('Successfully loaded user profile');
+      } else {
+        throw Exception('Failed to load user profile: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error fetching user profile: $e');
+      rethrow;
+    }
   }
 
-  Future<void> _saveCustomCategories() async {
-    if (_prefs == null) return;
-    final categoriesToSave = _customCategories.toList();
-    print('Saving categories: $categoriesToSave');
-    await _prefs!.setStringList(_customCategoriesKey, categoriesToSave);
+  Future<void> _initializeData() async {
+    try {
+      await fetchUserProfile();
+      await refreshDocuments();
+    } catch (e) {
+      print('Error initializing data: $e');
+      // Don't rethrow here, let individual methods handle their errors
+    }
+  }
+
+  Future<void> syncCategories() async {
+    if (_token.isEmpty) {
+      print('No token available for syncing categories');
+      return;
+    }
+
+    try {
+      print('Syncing categories with server...');
+      final url = '${ApiConfig.authUrl}/me';
+      final headers = {
+        ...ApiConfig.authHeaders(_token),
+        'Content-Type': 'application/json',
+      };
+      final body = json.encode(_customCategories.toList());
+
+      print('Sending request to $url with headers: $headers and body: $body');
+      final response = await http.put(
+        Uri.parse(url),
+        headers: headers,
+        body: body,
+      );
+
+      print('Sync categories response status: ${response.statusCode}');
+      print('Sync categories response body: ${response.body}');
+
+      if (response.statusCode != 200) {
+        throw Exception('Failed to sync categories with server');
+      }
+    } catch (e) {
+      print('Failed to sync categories with server: $e');
+      rethrow;
+    }
   }
 
   Future<bool> addCustomCategory(String category) async {
     final normalizedCategory = category.trim().toLowerCase();
-    print('Adding custom category: $normalizedCategory');
 
-    if (normalizedCategory.isEmpty || normalizedCategory.length < 2) {
-      print('Invalid category name: too short');
+    if (normalizedCategory.length < 2 ||
+        _defaultCategories.contains(normalizedCategory) ||
+        _customCategories.contains(normalizedCategory) ||
+        _customCategories.length >= MAX_CUSTOM_CATEGORIES) {
       return false;
     }
 
-    if (_defaultCategories.contains(normalizedCategory)) {
-      print('Category is a default category');
-      return false;
+    try {
+      _customCategories.add(normalizedCategory);
+      await syncCategories();
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _customCategories.remove(normalizedCategory);
+      rethrow;
     }
-
-    if (_customCategories.contains(normalizedCategory)) {
-      print('Category already exists in custom categories');
-      return false;
-    }
-
-    if (_customCategories.length >= MAX_CUSTOM_CATEGORIES) {
-      print('Maximum number of custom categories reached');
-      return false;
-    }
-
-    _customCategories.add(normalizedCategory);
-    await _saveCustomCategories();
-    _debugPrintCategories();
-    notifyListeners();
-
-    return true;
   }
 
   Future<bool> removeCustomCategory(String category) async {
     final normalizedCategory = category.toLowerCase();
-    print('Removing custom category: $normalizedCategory');
 
     if (_defaultCategories.contains(normalizedCategory)) {
-      print('Cannot remove default category');
       return false;
     }
 
-    // Check if category is in use
     final hasDocuments = _documents
         .any((doc) => doc.category.toLowerCase() == normalizedCategory);
-
     if (hasDocuments) {
-      print('Cannot remove category that has documents');
       return false;
     }
 
-    final success = _customCategories.remove(normalizedCategory);
-    if (success) {
-      await _saveCustomCategories();
-      _debugPrintCategories();
+    try {
+      _customCategories.remove(normalizedCategory);
+      await syncCategories();
       notifyListeners();
+      return true;
+    } catch (e) {
+      _customCategories.add(normalizedCategory);
+      rethrow;
     }
-    return success;
   }
 
-  bool isDefaultCategory(String category) {
-    final isDefault = _defaultCategories.contains(category.toLowerCase());
-    print('Checking if $category is default: $isDefault');
-    return isDefault;
+  // Document Management
+  void updateToken(String newToken) {
+    _token = newToken;
+    if (_token.isNotEmpty) {
+      _documentService = DocumentService(token: _token);
+      clearUserData();
+      // Don't initialize here - let the UI control when to initialize
+    } else {
+      _documentService = null;
+      clearUserData();
+    }
+    notifyListeners();
   }
 
-  bool isCustomCategory(String category) {
-    final isCustom = _customCategories.contains(category.toLowerCase());
-    print('Checking if $category is custom: $isCustom');
-    return isCustom;
+  void clearUserData() {
+    _currentUser = null;
+    _customCategories.clear();
+    _documents.clear();
+    _selectedDocuments.clear();
+    _searchHistory.clear();
+    _isLoadingProfile = false;
+    notifyListeners();
   }
+
+  Future<void> refreshDocuments() async {
+    try {
+      if (_token.isEmpty) return;
+      final docs = await documentService.getDocuments();
+      setDocuments(docs);
+    } catch (e) {
+      print('Error refreshing documents: $e');
+      rethrow;
+    }
+  }
+
+  void setDocuments(List<Document> documents) {
+    _documents = documents;
+    notifyListeners();
+  }
+
+  // Category Validation
+  bool isDefaultCategory(String category) =>
+      _defaultCategories.contains(category.toLowerCase());
+
+  bool isCustomCategory(String category) =>
+      _customCategories.contains(category.toLowerCase());
 
   bool isCategoryValid(String category) {
     final normalized = category.toLowerCase();
-    final isValid = _defaultCategories.contains(normalized) ||
+    return _defaultCategories.contains(normalized) ||
         _customCategories.contains(normalized);
-    print('Validating category $category: $isValid');
-    return isValid;
   }
 
   // Selection Methods
@@ -220,120 +289,17 @@ class DocumentProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  // Document Management
-  void updateToken(String newToken) {
-    _token = newToken;
-    if (_token.isNotEmpty) {
-      _documentService = DocumentService(token: _token);
-      refreshDocuments();
-    } else {
-      _documentService = null;
-    }
-    notifyListeners();
-  }
-
-  void setDocuments(List<Document> documents) {
-    print('Setting documents: ${documents.length}');
-    _documents = documents;
-
-    if (currentUser != null && currentUser!.customCategories.isNotEmpty) {
-      print('Loading custom categories from user profile');
-      _customCategories =
-          Set.from(currentUser!.customCategories.map((e) => e.toLowerCase()));
-      _saveCustomCategories();
-    }
-
-    // Extract unique categories from documents
-    final documentCategories = documents
-        .map((doc) => doc.category.toLowerCase())
-        .where((category) => !_defaultCategories.contains(category))
-        .toSet();
-
-    print('Found categories in documents: $documentCategories');
-    _customCategories.addAll(documentCategories);
-    _saveCustomCategories();
-
-    _debugPrintCategories();
-    notifyListeners();
-  }
-
-  void addDocument(Document document) {
-    print(
-        'Adding document: ${document.name} with category: ${document.category}');
-    final category = document.category.toLowerCase();
-
-    if (!_defaultCategories.contains(category)) {
-      _customCategories.add(category);
-      _saveCustomCategories();
-    }
-
-    _documents.add(document);
-    _debugPrintCategories();
-    notifyListeners();
-  }
-
-  void updateDocument(Document updatedDoc) {
-    final index = _documents.indexWhere((doc) => doc.id == updatedDoc.id);
-    if (index != -1) {
-      print(
-          'Updating document: ${updatedDoc.name} with category: ${updatedDoc.category}');
-      _documents[index] = updatedDoc;
-
-      // Update custom categories if needed
-      final category = updatedDoc.category.toLowerCase();
-      if (!_defaultCategories.contains(category)) {
-        _customCategories.add(category);
-        _saveCustomCategories();
-      }
-
-      _debugPrintCategories();
-      notifyListeners();
-    }
-  }
-
-  Future<void> removeDocument(String id) async {
-    try {
-      if (_token.isEmpty) throw Exception('No authentication token available');
-      await documentService.deleteDocument(id);
-      _documents.removeWhere((doc) => doc.id == id);
-      _selectedDocuments.remove(id);
-      if (_selectedDocuments.isEmpty) _isSelectionMode = false;
-      notifyListeners();
-    } catch (e) {
-      throw Exception('Failed to delete document: $e');
-    }
-  }
-
-  void reorderDocuments(String category, int oldIndex, int newIndex) {
-    final categoryDocs = _documents
-        .where((doc) => doc.category.toLowerCase() == category.toLowerCase())
-        .toList();
-
-    if (oldIndex < categoryDocs.length && newIndex < categoryDocs.length) {
-      final doc = categoryDocs.removeAt(oldIndex);
-      categoryDocs.insert(newIndex, doc);
-
-      _documents = _documents.map((d) {
-        if (d.category.toLowerCase() != category.toLowerCase()) return d;
-        return categoryDocs[categoryDocs.indexOf(d)];
-      }).toList();
-
-      notifyListeners();
-    }
-  }
-
-  // Drag and Drop
-  void startDragging() {
-    _isDragging = true;
-    notifyListeners();
-  }
-
-  void endDragging() {
-    _isDragging = false;
-    notifyListeners();
-  }
-
   // Search Methods
+  List<Document> searchDocuments(String query) {
+    if (query.isEmpty) return [];
+    final lowercaseQuery = query.toLowerCase();
+    return _documents.where((doc) {
+      return doc.name.toLowerCase().contains(lowercaseQuery) ||
+          doc.description.toLowerCase().contains(lowercaseQuery) ||
+          doc.category.toLowerCase().contains(lowercaseQuery);
+    }).toList();
+  }
+
   void addToSearchHistory(String query) {
     if (query.trim().isEmpty) return;
     _searchHistory.remove(query);
@@ -354,28 +320,87 @@ class DocumentProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  List<Document> searchDocuments(String query) {
-    if (query.isEmpty) return [];
-    final lowercaseQuery = query.toLowerCase();
-    return _documents.where((doc) {
-      return doc.name.toLowerCase().contains(lowercaseQuery) ||
-          doc.description.toLowerCase().contains(lowercaseQuery) ||
-          doc.category.toLowerCase().contains(lowercaseQuery);
-    }).toList();
+  void addDocument(Document document) {
+    print(
+        'Adding document: ${document.name} with category: ${document.category}');
+
+    // Add document to list
+    _documents.add(document);
+
+    // If category is not a default category, ensure it's in custom categories
+    final category = document.category.toLowerCase();
+    if (!_defaultCategories.contains(category)) {
+      _customCategories.add(category);
+      // Sync categories with backend
+      syncCategories();
+    }
+
+    notifyListeners();
   }
 
-  Future<void> refreshDocuments() async {
-    try {
-      if (_token.isEmpty) return;
-      final docs = await documentService.getDocuments();
-      setDocuments(docs);
-    } catch (e) {
-      print('Error refreshing documents: $e');
-      rethrow;
+  Future<void> updateDocument(Document updatedDoc) async {
+    final index = _documents.indexWhere((doc) => doc.id == updatedDoc.id);
+    if (index != -1) {
+      _documents[index] = updatedDoc;
+
+      // Update custom categories if needed
+      final category = updatedDoc.category.toLowerCase();
+      if (!_defaultCategories.contains(category)) {
+        _customCategories.add(category);
+        await syncCategories();
+      }
+
+      notifyListeners();
     }
   }
 
-  // Category Update
+  Future<void> removeDocument(String id) async {
+    try {
+      if (_token.isEmpty) throw Exception('No authentication token available');
+
+      await documentService.deleteDocument(id);
+
+      // Remove from documents list
+      _documents.removeWhere((doc) => doc.id == id);
+
+      // Clear from selection if selected
+      _selectedDocuments.remove(id);
+      if (_selectedDocuments.isEmpty) {
+        _isSelectionMode = false;
+      }
+
+      notifyListeners();
+    } catch (e) {
+      throw Exception('Failed to delete document: $e');
+    }
+  }
+
+  // Helper method to get documents by category
+  List<Document> getDocumentsByCategory(String category) {
+    return _documents
+        .where((doc) => doc.category.toLowerCase() == category.toLowerCase())
+        .toList();
+  }
+
+  void reorderDocuments(String category, int oldIndex, int newIndex) {
+    final categoryDocs = _documents
+        .where((doc) => doc.category.toLowerCase() == category.toLowerCase())
+        .toList();
+
+    if (oldIndex < categoryDocs.length && newIndex < categoryDocs.length) {
+      final doc = categoryDocs.removeAt(oldIndex);
+      categoryDocs.insert(newIndex, doc);
+
+      _documents = _documents.map((d) {
+        if (d.category.toLowerCase() != category.toLowerCase()) return d;
+        return categoryDocs[categoryDocs.indexOf(d)];
+      }).toList();
+
+      notifyListeners();
+    }
+  }
+
+  // Document Operations
   Future<void> updateDocumentCategory(
       String documentId, String newCategory) async {
     final normalizedCategory = newCategory.toLowerCase();
@@ -384,105 +409,35 @@ class DocumentProvider with ChangeNotifier {
     }
 
     try {
-      if (_token.isEmpty) throw Exception('No authentication token available');
       final updatedDoc = await documentService.updateDocument(
         documentId: documentId,
         category: normalizedCategory,
       );
-      updateDocument(updatedDoc);
+
+      final index = _documents.indexWhere((doc) => doc.id == documentId);
+      if (index != -1) {
+        _documents[index] = updatedDoc;
+        notifyListeners();
+      }
     } catch (e) {
       throw Exception('Failed to update document category: $e');
     }
   }
 
-  // Profile Management
-  Future<void> fetchUserProfile() async {
-    if (_token.isEmpty) {
-      print('No token available for fetching profile');
-      return;
-    }
-    if (_isLoadingProfile) {
-      print('Already loading profile');
-      return;
-    }
-
-    try {
-      _isLoadingProfile = true;
-      notifyListeners();
-
-      final url = '${ApiConfig.authUrl}/me';
-      final response = await http.get(
-        Uri.parse(url),
-        headers: ApiConfig.authHeaders(_token),
-      );
-
-      if (response.statusCode == 200) {
-        final userData = json.decode(response.body);
-        _currentUser = User.fromJson(userData);
-
-        // Update custom categories from user profile
-        _customCategories = Set.from(
-            _currentUser!.customCategories.map((e) => e.toLowerCase()));
-
-        // No need to save to SharedPreferences anymore since categories come from backend
-      } else {
-        throw Exception('Failed to load user profile');
-      }
-    } catch (e) {
-      print('Error fetching user profile: $e');
-      rethrow;
-    } finally {
-      _isLoadingProfile = false;
-      notifyListeners();
-    }
+  // Drag and Drop
+  void startDragging() {
+    _isDragging = true;
+    notifyListeners();
   }
 
-  // Sync categories with backend
-  Future<void> syncCategories() async {
-    if (currentUser != null && _token.isNotEmpty) {
-      try {
-        // TODO: Add API call to sync categories
-        // final serverCategories = await _documentService.getUserCategories();
-        // _customCategories = Set.from(serverCategories);
-        await _saveCustomCategories();
-        notifyListeners();
-      } catch (e) {
-        print('Failed to sync categories with server: $e');
-      }
-    }
-  }
-
-  String getShareableContent() {
-    if (_selectedDocuments.isEmpty) return '';
-
-    return _documents
-        .where((doc) => _selectedDocuments.contains(doc.id))
-        .map((doc) => '''
-Document: ${doc.name}
-Category: ${doc.category}
-Description: ${doc.description ?? 'No description'}
-Created: ${formatDate(doc.createdAt)}
-''')
-        .join('\n---\n');
-  }
-
-  void markAsShared(List<String> documentIds) {
-    for (final id in documentIds) {
-      final index = _documents.indexWhere((doc) => doc.id == id);
-      if (index != -1) {
-        final updatedDoc = _documents[index].copyWith(isShared: true);
-        _documents[index] = updatedDoc;
-      }
-    }
+  void endDragging() {
+    _isDragging = false;
     notifyListeners();
   }
 
   @override
   void dispose() {
-    _documents.clear();
-    _selectedDocuments.clear();
-    _searchHistory.clear();
-    _customCategories.clear();
+    clearUserData();
     super.dispose();
   }
 }

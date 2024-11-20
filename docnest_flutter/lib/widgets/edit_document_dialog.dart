@@ -63,62 +63,71 @@ class _EditDocumentDialogState extends State<EditDocumentDialog> {
         return Dialog(
           backgroundColor: Colors.transparent,
           elevation: 0,
-          child: Container(
-            constraints: const BoxConstraints(maxWidth: 450),
-            decoration: BoxDecoration(
-              color: theme.dialogBackgroundColor,
-              borderRadius: BorderRadius.circular(28),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
-                  blurRadius: 20,
-                  offset: const Offset(0, 10),
-                ),
-              ],
+          insetPadding:
+              const EdgeInsets.symmetric(horizontal: 32, vertical: 48),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.8,
             ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // Header
-                _buildHeader(theme),
+            child: Container(
+              constraints: const BoxConstraints(maxWidth: 450),
+              decoration: BoxDecoration(
+                color: theme.dialogBackgroundColor,
+                borderRadius: BorderRadius.circular(28),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 20,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Header
+                  _buildHeader(theme),
 
-                // Form Content
-                SingleChildScrollView(
-                  padding: const EdgeInsets.all(24),
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        _buildTextField(
-                          controller: _nameController,
-                          labelText: 'Document Name',
-                          icon: Icons.drive_file_rename_outline,
-                          validator: (value) => (value?.isEmpty ?? true)
-                              ? 'Name is required'
-                              : null,
+                  // Form Content
+                  Expanded(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.all(24),
+                      child: Form(
+                        key: _formKey,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            _buildTextField(
+                              controller: _nameController,
+                              labelText: 'Document Name',
+                              icon: Icons.drive_file_rename_outline,
+                              validator: (value) => (value?.isEmpty ?? true)
+                                  ? 'Name is required'
+                                  : null,
+                            ),
+                            const SizedBox(height: 16),
+                            _buildTextField(
+                              controller: _descriptionController,
+                              labelText: 'Description (Optional)',
+                              icon: Icons.description_outlined,
+                              maxLines: 5, // Increase the maxLines value
+                            ),
+                            const SizedBox(height: 16),
+                            _buildCategoryDropdown(
+                              provider: provider,
+                              allCategories: allCategories,
+                              theme: theme,
+                            ),
+                            const SizedBox(height: 32),
+                            _buildActionButtons(isDarkMode, theme),
+                          ],
                         ),
-                        const SizedBox(height: 16),
-                        _buildTextField(
-                          controller: _descriptionController,
-                          labelText: 'Description (Optional)',
-                          icon: Icons.description_outlined,
-                          maxLines: 3,
-                        ),
-                        const SizedBox(height: 16),
-                        _buildCategoryDropdown(
-                          provider: provider,
-                          allCategories: allCategories,
-                          theme: theme,
-                        ),
-                        const SizedBox(height: 32),
-                        _buildActionButtons(isDarkMode, theme),
-                      ],
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         );

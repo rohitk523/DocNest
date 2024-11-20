@@ -1,4 +1,5 @@
 // lib/widgets/settings_tab.dart
+import 'package:docnest_flutter/screens/about_screen.dart';
 import 'package:docnest_flutter/widgets/custom_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -102,29 +103,15 @@ class SettingsTab extends StatelessWidget {
                 },
               ),
             ),
-            ListTile(
-              leading: const Icon(Icons.notifications),
-              title: const Text('Notifications'),
-              trailing: Switch(
-                value: true,
-                onChanged: (value) {
-                  // TODO: Implement notification settings
-                },
-              ),
-            ),
             const Divider(),
             ListTile(
               leading: const Icon(Icons.info),
               title: const Text('About'),
               onTap: () {
-                // TODO: Show about dialog
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.help),
-              title: const Text('Help & Support'),
-              onTap: () {
-                // TODO: Show help and support
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const AboutScreen()),
+                );
               },
             ),
             const Divider(),
