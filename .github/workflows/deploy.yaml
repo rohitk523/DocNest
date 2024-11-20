@@ -58,8 +58,9 @@ jobs:
     - name: Download task definition
       run: |
         aws ecs describe-task-definition --task-definition ${{ env.ECS_TASK_DEFINITION }} \
-        --query 'taskDefinition' > task-definition.json
-
+        --query 'taskDefinition' \
+        --output json > task-definition.json
+      
     - name: Fill in the new image ID in the Amazon ECS task definition
       id: task-def
       uses: aws-actions/amazon-ecs-render-task-definition@v1
@@ -67,10 +68,10 @@ jobs:
         task-definition: task-definition.json
         container-name: ${{ env.CONTAINER_NAME }}
         image: ${{ steps.build-image.outputs.image }}
-
+      
     - name: Register new task definition
       run: |
-        aws ecs register-task-definition --cli-input-json file://${{ steps.task-def.outputs.task-definition }}
+        aws ecs register-task-definition --cli-input-json file://task-definition.json
 
     - name: Deploy Amazon ECS task definition
       run: |
