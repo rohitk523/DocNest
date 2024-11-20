@@ -3,6 +3,7 @@ import 'package:docnest_flutter/screens/category_documents_screen.dart';
 import 'package:docnest_flutter/widgets/add_category_dialog.dart';
 import 'package:docnest_flutter/widgets/fluid_nav_bar.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../utils/version_checker.dart';
 import '../widgets/custom_snackbar.dart';
@@ -103,6 +104,58 @@ class _HomeScreenState extends State<HomeScreen> {
         }
       }
     }
+  }
+
+  Future<bool> _onWillPop() async {
+    final theme = Theme.of(context);
+    return await showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(28),
+            ),
+            backgroundColor: theme.dialogBackgroundColor,
+            title: Text(
+              'Exit DocNest',
+              style: AppTextStyles.headline2.copyWith(
+                color: theme.colorScheme.primary,
+              ),
+            ),
+            content: Text(
+              'Are you sure you want to exit?',
+              style: AppTextStyles.body1.copyWith(
+                color: theme.colorScheme.onSurface,
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                style: TextButton.styleFrom(
+                  foregroundColor: theme.colorScheme.primary,
+                ),
+                child: Text(
+                  'Cancel',
+                  style: AppTextStyles.button,
+                ),
+              ),
+              TextButton(
+                onPressed: () {
+                  SystemNavigator.pop();
+                },
+                style: TextButton.styleFrom(
+                  foregroundColor: theme.colorScheme.error,
+                ),
+                child: Text(
+                  'Exit',
+                  style: AppTextStyles.button.copyWith(
+                    color: theme.colorScheme.error,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ) ??
+        false;
   }
 
   Future<void> _handleAuthError() async {
@@ -949,48 +1002,51 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'DocNest',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        centerTitle: true,
-        actions: [
-          IconButton(
-            icon: Icon(
-              _isGridView ? Icons.grid_view : Icons.view_list,
-              color: Theme.of(context).colorScheme.primary,
-            ),
-            onPressed: () {
-              setState(() {
-                _isGridView = !_isGridView;
-              });
-            },
+    return WillPopScope(
+      onWillPop: _onWillPop,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text(
+            'DocNest',
+            style: TextStyle(fontWeight: FontWeight.bold),
           ),
-          const SizedBox(width: 8),
-        ],
+          centerTitle: true,
+          actions: [
+            IconButton(
+              icon: Icon(
+                _isGridView ? Icons.grid_view : Icons.view_list,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+              onPressed: () {
+                setState(() {
+                  _isGridView = !_isGridView;
+                });
+              },
+            ),
+            const SizedBox(width: 8),
+          ],
+        ),
+        body: IndexedStack(
+          index: _currentIndex,
+          children: [
+            const ProfileTab(),
+            _buildHomeContent(),
+            SettingsTab(),
+          ],
+        ),
+        bottomNavigationBar: FluidNavBar(
+          currentIndex: _currentIndex,
+          onTap: (index) {
+            setState(() => _currentIndex = index);
+          },
+        ),
+        // floatingActionButton: _currentIndex == 1
+        //     ? FloatingActionButton(
+        //         child: Icon(Icons.add),
+        //         onPressed: _handleUpload,
+        //       )
+        //     : null,
       ),
-      body: IndexedStack(
-        index: _currentIndex,
-        children: [
-          const ProfileTab(),
-          _buildHomeContent(),
-          SettingsTab(),
-        ],
-      ),
-      bottomNavigationBar: FluidNavBar(
-        currentIndex: _currentIndex,
-        onTap: (index) {
-          setState(() => _currentIndex = index);
-        },
-      ),
-      // floatingActionButton: _currentIndex == 1
-      //     ? FloatingActionButton(
-      //         child: Icon(Icons.add),
-      //         onPressed: _handleUpload,
-      //       )
-      //     : null,
     );
   }
 }
