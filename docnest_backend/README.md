@@ -23,4 +23,6 @@ try number:
 23: /tmp/task-definition.json.
 24: I think its fixed 
 25: current td is 26 lets see if it changes to 27
+26: printing task definition json file to see image changes
+
 /Users/rohitkale/Downloads/docnest-key-pair.pem
