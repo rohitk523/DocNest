@@ -17,6 +17,7 @@ env:
   CONTAINER_NAME: docnest-container
 
 jobs:
+
   deploy:
     runs-on: ubuntu-latest
 
@@ -57,7 +58,7 @@ jobs:
     - name: Download task definition
       run: |
         aws ecs describe-task-definition --task-definition ${{ env.ECS_TASK_DEFINITION }} \
-        --query taskDefinition > task-definition.json
+        --query 'taskDefinition' > task-definition.json
 
     - name: Fill in the new image ID in the Amazon ECS task definition
       id: task-def
@@ -69,8 +70,7 @@ jobs:
 
     - name: Register new task definition
       run: |
-        aws ecs register-task-definition \
-        --cli-input-json file://${{ steps.task-def.outputs.task-definition }}
+        aws ecs register-task-definition --cli-input-json file://${{ steps.task-def.outputs.task-definition }}
 
     - name: Deploy Amazon ECS task definition
       run: |
