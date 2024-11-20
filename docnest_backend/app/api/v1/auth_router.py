@@ -24,37 +24,37 @@ from app.core.exceptions import (
 
 auth_router = APIRouter()
 
-@auth_router.post("/login", response_model=TokenResponse)
-async def login(
-    form_data: OAuth2PasswordRequestForm = Depends(),
-    db: Session = Depends(get_db)
-) -> Dict[str, str]:
-    try:
-        user = authenticate_user(db, form_data.username, form_data.password)
-        if not user:
-            raise InvalidCredentialsException()
+# @auth_router.post("/login", response_model=TokenResponse)
+# async def login(
+#     form_data: OAuth2PasswordRequestForm = Depends(),
+#     db: Session = Depends(get_db)
+# ) -> Dict[str, str]:
+#     try:
+#         user = authenticate_user(db, form_data.username, form_data.password)
+#         if not user:
+#             raise InvalidCredentialsException()
 
-        if not user.is_active:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Inactive user account"
-            )
+#         if not user.is_active:
+#             raise HTTPException(
+#                 status_code=status.HTTP_400_BAD_REQUEST,
+#                 detail="Inactive user account"
+#             )
 
-        # Update last login
-        user.last_login = datetime.utcnow()
-        db.commit()
+#         # Update last login
+#         user.last_login = datetime.utcnow()
+#         db.commit()
 
-        return {
-            "access_token": create_access_token(data={"sub": user.id}),
-            "token_type": "bearer",
-            "user": user  # User model now includes custom_categories
-        }
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=str(e),
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+#         return {
+#             "access_token": create_access_token(data={"sub": user.id}),
+#             "token_type": "bearer",
+#             "user": user  # User model now includes custom_categories
+#         }
+#     except Exception as e:
+#         raise HTTPException(
+#             status_code=status.HTTP_401_UNAUTHORIZED,
+#             detail=str(e),
+#             headers={"WWW-Authenticate": "Bearer"},
+#         )
 
 
 @auth_router.post("/google/signin", response_model=TokenResponse)
