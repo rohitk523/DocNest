@@ -24,5 +24,6 @@ try number:
 24: I think its fixed 
 25: current td is 26 lets see if it changes to 27
 26: printing task definition json file to see image changes.
+27: it was printing same thing trying one more step to change that
 
 /Users/rohitkale/Downloads/docnest-key-pair.pem

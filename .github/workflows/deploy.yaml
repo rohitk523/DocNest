@@ -75,6 +75,7 @@ jobs:
 
     - name: Register new task definition
       run: |
+        echo $(cat /tmp/task-definition.json | jq 'del(.taskDefinitionArn) | del(.revision) | del(.status) | del(.requiresAttributes) | del(.compatibilities) | del(.registeredAt)  | del(.registeredBy)') > /tmp/task-definition.json
         aws ecs register-task-definition --cli-input-json file:///tmp/updated-task-definition.json
 
     - name: Deploy Amazon ECS task definition
