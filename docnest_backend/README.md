@@ -21,6 +21,6 @@ try number:
 21: trying new method now
 22: removing error parameters github solution somewhere
 23: /tmp/task-definition.json.
-
+24: I think its fixed 
 
 /Users/rohitkale/Downloads/docnest-key-pair.pem
