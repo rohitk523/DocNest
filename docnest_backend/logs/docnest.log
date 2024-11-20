@@ -2095,3 +2095,6 @@ NameError: name 'distinct' is not defined
 2024-11-20 11:07:14,058 - docnest - INFO - Path: /api/v1/auth/login Method: POST Status: 200 Duration: 0.45s
 2024-11-20 11:07:54,980 - docnest - INFO - Path: /api/v1/documents/ Method: POST Status: 200 Duration: 2.73s
 2024-11-20 11:20:46,486 - docnest - INFO - Path: /api/v1/documents/ Method: POST Status: 200 Duration: 12.23s
+2024-11-20 11:39:25,732 - docnest - INFO - Path: /api/v1/documents/ Method: POST Status: 401 Duration: 0.03s
+2024-11-20 11:39:49,575 - docnest - INFO - Path: /api/v1/auth/login Method: POST Status: 200 Duration: 0.42s
+2024-11-20 11:40:07,607 - docnest - INFO - Path: /api/v1/documents/ Method: POST Status: 200 Duration: 10.29s
