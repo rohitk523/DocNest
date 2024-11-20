@@ -73,6 +73,10 @@ jobs:
         container-name: ${{ env.CONTAINER_NAME }}
         image: ${{ steps.build-image.outputs.image }}
 
+    - name: Print task definition
+      run: |
+        cat /tmp/task-definition.json
+
     - name: Register new task definition
       run: |
         echo $(cat /tmp/task-definition.json | jq 'del(.taskDefinitionArn) | del(.revision) | del(.status) | del(.requiresAttributes) | del(.compatibilities) | del(.registeredAt)  | del(.registeredBy)') > /tmp/task-definition.json
