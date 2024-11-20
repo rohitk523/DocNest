@@ -186,24 +186,30 @@ async def update_user_profile(
     MAX_CUSTOM_CATEGORIES = 20
     
     try:
+        print(f"Received custom categories: {custom_categories}")
+        
         if custom_categories is not None:
             # Validate categories length
             if len(custom_categories) > MAX_CUSTOM_CATEGORIES:
+                print(f"Custom categories length exceeded limit of {MAX_CUSTOM_CATEGORIES}")
                 raise CategoryLimitExceeded()
             
             # Validate individual categories
             for category in custom_categories:
                 if len(category.strip()) < 2:
+                    print(f"Category name '{category}' is less than 2 characters")
                     raise CategoryValidationError(
                         "Category names must be at least 2 characters long"
                     )
                 if not category.strip().replace(" ", "").isalnum():
+                    print(f"Category name '{category}' contains invalid characters")
                     raise CategoryValidationError(
                         "Category names can only contain letters, numbers, and spaces"
                     )
             
             # Normalize categories
             normalized_categories = [cat.lower().strip() for cat in custom_categories]
+            print(f"Normalized categories: {normalized_categories}")
             
             # Update user's custom categories
             current_user.custom_categories = normalized_categories
@@ -215,10 +221,11 @@ async def update_user_profile(
         
     except (CategoryLimitExceeded, CategoryValidationError) as e:
         db.rollback()
+        print(f"Error updating user profile: {e}")
         raise e
     except Exception as e:
         db.rollback()
-        print(f"Error updating user profile: {e}")
+        print(f"Unexpected error updating user profile: {e}")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Error updating profile: {str(e)}"
