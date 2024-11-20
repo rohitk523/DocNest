@@ -18,5 +18,6 @@ try number:
 18: removing task definition
 19: everything is working now adding ALB so that public ip doesnt change
 20: our last one used to deploy same ecr image again and again not the one we are pushing. I know right it fooled me.
+21: trying new method now
 
 /Users/rohitkale/Downloads/docnest-key-pair.pem
