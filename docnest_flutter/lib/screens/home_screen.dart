@@ -970,7 +970,7 @@ class _HomeScreenState extends State<HomeScreen> {
         actions: [
           IconButton(
             icon: Icon(
-              _isGridView ? Icons.view_list : Icons.grid_view,
+              _isGridView ? Icons.grid_view : Icons.view_list,
               color: Theme.of(context).colorScheme.primary,
             ),
             onPressed: () {
