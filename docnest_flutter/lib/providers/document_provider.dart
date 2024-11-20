@@ -420,11 +420,11 @@ class DocumentProvider with ChangeNotifier {
         final userData = json.decode(response.body);
         _currentUser = User.fromJson(userData);
 
-        // Load custom categories from user profile
-        if (_currentUser!.customCategories.isNotEmpty) {
-          _customCategories = Set.from(_currentUser!.customCategories);
-          _saveCustomCategories();
-        }
+        // Update custom categories from user profile
+        _customCategories = Set.from(
+            _currentUser!.customCategories.map((e) => e.toLowerCase()));
+
+        // No need to save to SharedPreferences anymore since categories come from backend
       } else {
         throw Exception('Failed to load user profile');
       }

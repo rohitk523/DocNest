@@ -1,4 +1,4 @@
-from typing import Optional, Dict, Any
+from typing import List, Optional, Dict, Any
 from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, status, Body
 from fastapi.security import OAuth2PasswordRequestForm
@@ -19,7 +19,8 @@ from app.services.google_auth_service import GoogleAuthService
 from app.core.exceptions import (
     InvalidCredentialsException,
     UserAlreadyExistsException,
-    GoogleAuthenticationError
+    GoogleAuthenticationError,
+    CategoryLimitExceeded
 )
 
 auth_router = APIRouter()
@@ -131,20 +132,41 @@ async def google_signin(
 #         )
 
 
-@auth_router.get("/me", response_model=UserResponse)
-async def read_users_me(
-    current_user: User = Depends(get_current_user)
+# In app/api/v1/router.py
+@auth_router.put("/auth/me", response_model=UserResponse)
+async def update_user_profile(
+    *,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    custom_categories: List[str] = Body(None),
 ) -> User:
     """
-    Get current authenticated user
-    
-    Args:
-        current_user: Current authenticated user from token
-        
-    Returns:
-        Current user object
+    Update current user's profile
     """
-    return current_user
+
+    MAX_CUSTOM_CATEGORIES = 20,
+    try:
+        if custom_categories is not None:
+            # Validate categories
+            if len(custom_categories) > MAX_CUSTOM_CATEGORIES:
+                raise CategoryLimitExceeded()
+                
+            # Normalize categories
+            normalized_categories = [cat.lower().strip() for cat in custom_categories]
+            
+            # Update user's custom categories
+            current_user.custom_categories = normalized_categories
+            
+        db.commit()
+        db.refresh(current_user)
+        return current_user
+        
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
 
 
 @auth_router.post("/refresh", response_model=TokenResponse)
