@@ -65,22 +65,17 @@ jobs:
       run: |
         cat /tmp/task-definition.json
 
-    - name: Fill in the new image ID in the Amazon ECS task definition
-      id: task-def
-      uses: aws-actions/amazon-ecs-render-task-definition@v1
-      with:
-        task-definition: /tmp/task-definition.json
-        container-name: ${{ env.CONTAINER_NAME }}
-        image: ${{ steps.build-image.outputs.image }}
-
-    - name: Print task definition
+    - name: Update task definition with new image
       run: |
-        cat /tmp/task-definition.json
+        jq --arg image "${{ steps.build-image.outputs.image }}" '.containerDefinitions[0].image = $image' /tmp/task-definition.json > /tmp/updated-task-definition.json
+
+    - name: Print updated task definition
+      run: |
+        cat /tmp/updated-task-definition.json
 
     - name: Register new task definition
       run: |
-        echo $(cat /tmp/task-definition.json | jq 'del(.taskDefinitionArn) | del(.revision) | del(.status) | del(.requiresAttributes) | del(.compatibilities) | del(.registeredAt)  | del(.registeredBy)') > /tmp/task-definition.json
-        aws ecs register-task-definition --cli-input-json file:///tmp/task-definition.json
+        aws ecs register-task-definition --cli-input-json file:///tmp/updated-task-definition.json
 
     - name: Deploy Amazon ECS task definition
       run: |
