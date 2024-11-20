@@ -2,7 +2,8 @@
 
 import re
 from app.models.user import User
-from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form
+from app.services.document import DocumentService
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form, Request
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from typing import List, Optional, Dict, Any
@@ -20,20 +21,22 @@ api_router = APIRouter()
 
 @api_router.post("/documents/", response_model=DocumentResponse)
 async def create_document(
+    request: Request,
     name: str = Form(...),
     description: Optional[str] = Form(None),
     category: str = Form(...),
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
-    current_user = Depends(get_current_user)
+    current_user = Depends(get_current_user),
+    
 ):
     """
     Create a new document with file upload.
     """
+    document_service = DocumentService(db=db, user=current_user, request=request)
     try:
         # Load and print current custom categories
         custom_categories = current_user.custom_categories or []
-        print(f"User custom categories: {custom_categories}")
 
         # If custom_categories is None, initialize it
         if current_user.custom_categories is None:
@@ -56,12 +59,6 @@ async def create_document(
             print(f"Added new category {category} to user's custom categories")
             valid_categories.add(category)
 
-        # Create document data
-        document_data = {
-            "name": name,
-            "description": description,
-            "category": category
-        }
         
         # Initialize S3 service
         s3_service = S3Service()
@@ -87,9 +84,15 @@ async def create_document(
             db.add(document)
             db.commit()
             db.refresh(document)
+
+
             
             print(f"Successfully created document with category: {category}")
-            return document
+            return await document_service.create_document(
+        owner_id=current_user.id,
+        document_in=document,
+        file=file
+    )
             
         except Exception as e:
             # If database operation fails, clean up the uploaded file

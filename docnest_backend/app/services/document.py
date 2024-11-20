@@ -1,20 +1,31 @@
+# app/services/document_service.py
 import os
-from fastapi import UploadFile, HTTPException, status
-from sqlalchemy.orm import Session
-from typing import List, Optional
-from datetime import datetime
+import time
 import magic
 import boto3
-from botocore.exceptions import ClientError
 import uuid
+from botocore.exceptions import ClientError
+from fastapi import UploadFile, HTTPException, status, Request, Form
+from sqlalchemy.orm import Session
+from typing import List, Optional, Tuple
+from datetime import datetime
+
 from ..models.document import Document
+from ..models.user import User
 from ..schemas.document import DocumentCreate, DocumentUpdate
 from ..core.config import settings
+from ..services.activity_logger import ActivityLogger
+from ..services.analytics_service import AnalyticsService
 
 class DocumentService:
     ALLOWED_EXTENSIONS = {'.pdf', '.doc', '.docx', '.jpg', '.jpeg', '.png'}
     
-    def __init__(self):
+    def __init__(self, db: Session, user: Optional[User] = None, request: Optional[Request] = None):
+        # Initialize core services
+        self.db = db
+        self.user = user
+        self.request = request
+        
         # Initialize S3 client
         self.s3_client = boto3.client(
             's3',
@@ -23,6 +34,10 @@ class DocumentService:
             region_name=settings.AWS_REGION
         )
         self.bucket_name = settings.AWS_BUCKET_NAME
+        
+        # Initialize logging and analytics
+        self.activity_logger = ActivityLogger(db)
+        self.analytics_service = AnalyticsService(db)
 
     def _validate_file(self, file: UploadFile) -> None:
         """Validate file size and type"""
@@ -51,14 +66,22 @@ class DocumentService:
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail=f"File too large. Maximum size is {settings.MAX_FILE_SIZE/1024/1024}MB"
                 )
+
+
+
         except Exception as e:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Error validating file: {str(e)}"
+                detail=str(e)
             )
 
-    async def _upload_to_s3(self, file: UploadFile, folder: str = "documents") -> tuple[str, int, str]:
-        """Upload file to S3 with improved key handling"""
+    async def _upload_to_s3(
+        self,
+        file: UploadFile,
+        folder: str = "documents"
+    ) -> Tuple[str, int, str]:
+        """Upload file to S3 with comprehensive error handling and monitoring"""
+        upload_start = time.time()
         try:
             # Generate unique filename
             ext = os.path.splitext(file.filename)[1].lower()
@@ -78,16 +101,20 @@ class DocumentService:
                 Bucket=self.bucket_name,
                 Key=s3_key,
                 Body=content,
-                ContentType=file_type
+                ContentType=file_type,
+                Metadata={
+                    'original_filename': file.filename,
+                    'upload_timestamp': datetime.utcnow().isoformat()
+                }
             )
 
-            if settings.DEBUG_S3_OPERATIONS:
-                print(f"Successfully uploaded to S3 with key: {s3_key}")
+
 
             await file.seek(0)
             return s3_key, file_size, file_type
 
         except Exception as e:
+            
             if settings.DEBUG_S3_OPERATIONS:
                 print(f"Error during S3 upload: {str(e)}")
             raise
@@ -155,23 +182,22 @@ class DocumentService:
 
     async def create_document(
         self,
-        db: Session,
         owner_id: str,
         document_in: DocumentCreate,
-        file: UploadFile
+        file: UploadFile,
     ) -> Document:
-        """Create a new document with file upload to S3"""
+        """Create a new document with comprehensive tracking and error handling"""
+        operation_start = time.time()
+        
         try:
-            # Validate file
+            # Validate and upload file
             self._validate_file(file)
-            
-            # Upload file to S3
             file_url, file_size, file_type = await self._upload_to_s3(
                 file,
                 folder=f"documents/{owner_id}"
             )
             
-            # Create document in database
+            # Create document
             db_document = Document(
                 name=document_in.name,
                 description=document_in.description,
@@ -182,18 +208,62 @@ class DocumentService:
                 owner_id=owner_id
             )
             
-            db.add(db_document)
-            db.commit()
-            db.refresh(db_document)
-            
+            self.db.add(db_document)
+            self.db.commit()
+            self.db.refresh(db_document)
+
+            # Log activity with the correct user
+            if self.user:  # Make sure we have a user
+                await self.activity_logger.log_activity(
+                    user=self.user,  # Pass the actual User object
+                    action="document.create",
+                    resource_type="document",
+                    resource_id=db_document.id,
+                    details={
+                        "name": db_document.name,
+                        "category": db_document.category,
+                        "size": file_size,
+                        "file_type": file_type
+                    },
+                    request=self.request
+                )
+
+                # Track analytics with the correct user
+                self.analytics_service.track_event(
+                    event_type="document_created",
+                    user=self.user,  # Pass the actual User object
+                    event_category="document",
+                    properties={
+                        "document_id": db_document.id,
+                        "category": db_document.category
+                    },
+                    request=self.request
+                )
+
             return db_document
-            
+
         except Exception as e:
-            # Clean up S3 file if database operation fails
+            # Clean up uploaded file if exists
             if 'file_url' in locals():
                 await self._delete_from_s3(file_url)
-            raise e
 
+            # Track failure
+            if self.user:
+                self.analytics_service.track_event(
+                    event_type="document_creation_failed",
+                    user=self.user,
+                    event_category="error",
+                    properties={
+                        "error": str(e),
+                        "file_name": file.filename,
+                        "attempted_category": document_in.category
+                    },
+                    request=self.request
+                )
+
+            raise
+
+    # ... [Previous S3 and helper methods remain unchanged] ...
     def get_document(self, db: Session, document_id: str, owner_id: str) -> Document:
         """Get a specific document"""
         document = db.query(Document).filter(
@@ -203,6 +273,16 @@ class DocumentService:
         
         if not document:
             raise HTTPException(status_code=404, detail="Document not found")
+        
+        # Single analytics entry for document view
+        if self.user and self.request:
+            self.analytics_service.track_event(
+                event_type="document_viewed",
+                user=self.user,
+                event_category="document",
+                properties={"document_id": document_id},
+                request=self.request
+            )
         return document
 
     def get_user_documents(
@@ -221,55 +301,80 @@ class DocumentService:
 
     async def update_document(
         self,
-        db: Session,
         document_id: str,
         owner_id: str,
         document_in: dict,
         file: Optional[UploadFile] = None
     ) -> Document:
-        """Update a document and optionally its file in S3"""
-        document = self.get_document(db, document_id, owner_id)
+        """Update document with improved error handling and tracking"""
+        operation_start = time.time()
+        document = self.get_document(document_id, owner_id)
         old_file_url = None
+        update_details = {}
 
         try:
-            # Update file if provided
             if file:
                 self._validate_file(file)
-                
-                # Store old file URL for cleanup
                 old_file_url = document.file_path
-                
-                # Upload new file to S3
                 file_url, file_size, file_type = await self._upload_to_s3(
                     file,
                     folder=f"documents/{owner_id}"
                 )
                 
-                # Update document with new file info
                 document.file_path = file_url
                 document.file_size = file_size
                 document.file_type = file_type
                 document.version += 1
+                update_details["file_updated"] = True
 
             # Update other fields
             for field, value in document_in.items():
-                if value is not None:
+                if value is not None and hasattr(document, field):
+                    old_value = getattr(document, field)
                     setattr(document, field, value)
+                    update_details[f"old_{field}"] = old_value
+                    update_details[f"new_{field}"] = value
 
-            db.commit()
-            db.refresh(document)
+            self.db.commit()
+            self.db.refresh(document)
 
-            # Delete old file from S3 after successful database update
+
+            # Delete old file if it was replaced
+            if old_file_url:
+                await self._delete_from_s3(old_file_url)
+
+            # Single analytics entry for update
+            if self.user and self.request:
+                self.analytics_service.track_event(
+                    event_type="document_updated",
+                    user=self.user,
+                    event_category="document",
+                    properties={"document_id": document_id},
+                    request=self.request
+                )
+
             if old_file_url:
                 await self._delete_from_s3(old_file_url)
 
             return document
 
         except Exception as e:
-            # Clean up new S3 file if database operation fails
             if file and 'file_url' in locals():
                 await self._delete_from_s3(file_url)
-            raise e
+            
+            if self.user:
+                self.analytics_service.track_event(
+                    event_type="document_update_failed",
+                    user=self.user,
+                    event_category="error",
+                    properties={
+                        "document_id": document_id,
+                        "error": str(e),
+                        "attempted_changes": document_in
+                    },
+                    request=self.request
+                )
+            raise
 
     async def delete_document(
         self,
@@ -295,6 +400,16 @@ class DocumentService:
             db.delete(document)
             db.commit()
 
+            # Single analytics entry for deletion
+            if self.user and self.request:
+                self.analytics_service.track_event(
+                    event_type="document_deleted",
+                    user=self.user,
+                    event_category="document",
+                    properties={"document_id": document_id},
+                    request=self.request
+                )
+
             if settings.DEBUG_S3_OPERATIONS:
                 print("Successfully deleted from database")
 
@@ -313,8 +428,13 @@ class DocumentService:
                 detail=f"Error deleting document: {str(e)}"
             )
 
-    async def generate_download_url(self, file_url: str, expires_in: int = 3600) -> str:
-        """Generate a presigned URL for downloading a file"""
+    async def generate_download_url(
+        self,
+        file_url: str,
+        document_id: str,
+        expires_in: int = 3600
+    ) -> str:
+        """Generate download URL with tracking"""
         try:
             if not file_url:
                 raise HTTPException(
@@ -334,10 +454,33 @@ class DocumentService:
                 },
                 ExpiresIn=expires_in
             )
-            
+
+            if self.user:
+                self.analytics_service.track_event(
+                    event_type="download_url_generated",
+                    user=self.user,
+                    event_category="document",
+                    properties={
+                        "document_id": document_id,
+                        "expiry_seconds": expires_in
+                    },
+                    request=self.request
+                )
+
             return url
             
-        except ClientError as e:
+        except Exception as e:
+            if self.user:
+                self.analytics_service.track_event(
+                    event_type="download_url_generation_failed",
+                    user=self.user,
+                    event_category="error",
+                    properties={
+                        "document_id": document_id,
+                        "error": str(e)
+                    },
+                    request=self.request
+                )
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Error generating download URL: {str(e)}"

@@ -8,6 +8,7 @@ from app.api.v1.router import api_router
 from app.core.config import settings
 from app.db.session import SessionLocal
 from app.core.logger import setup_logging
+from app.core.analytics_middleware import AnalyticsMiddleware
 # In main.py, add:
 from app.api.v1.auth_router import auth_router
 from app.api.v1.analytics_router import analytics_router
@@ -75,6 +76,8 @@ app.include_router(
     prefix=f"{settings.API_V1_STR}/analytics",
     tags=["Analytics and logging"])
 
+
+app.add_middleware(AnalyticsMiddleware)
 
 # Health check endpoint
 @app.get("/health")

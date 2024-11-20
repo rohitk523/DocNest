@@ -29,6 +29,7 @@ class User(Base):
         cascade="all, delete-orphan",
         lazy="dynamic"
     )
+    
     analytics_events = relationship(
         "AnalyticsEvent",
         back_populates="user",
