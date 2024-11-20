@@ -11,7 +11,10 @@ from app.core.auth import (
     create_refresh_token,
     get_current_user,
     get_password_hash
+
+
 )
+from app.core.exceptions import CategoryLimitExceeded, CategoryValidationError
 from app.models.user import User
 from app.schemas.user import UserCreate, UserResponse, TokenResponse
 from app.db.session import get_db
@@ -132,8 +135,35 @@ async def google_signin(
 #         )
 
 
-# In app/api/v1/router.py
-@auth_router.put("/auth/me", response_model=UserResponse)
+@auth_router.get("/me", response_model=UserResponse)
+async def get_current_user_profile(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+) -> User:
+    """
+    Get current user's profile information
+    
+    Returns:
+        User: Current user's profile data including custom categories
+    """
+    try:
+        # Refresh user data from database
+        db.refresh(current_user)
+        
+        # Ensure custom_categories is initialized
+        if current_user.custom_categories is None:
+            current_user.custom_categories = []
+            db.commit()
+            
+        return current_user
+    except Exception as e:
+        print(f"Error fetching user profile: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error fetching user profile: {str(e)}"
+        )
+
+@auth_router.put("/me", response_model=UserResponse)
 async def update_user_profile(
     *,
     db: Session = Depends(get_db),
@@ -141,31 +171,57 @@ async def update_user_profile(
     custom_categories: List[str] = Body(None),
 ) -> User:
     """
-    Update current user's profile
+    Update current user's profile including custom categories
+    
+    Args:
+        custom_categories: List of custom category names
+        
+    Returns:
+        User: Updated user profile
+        
+    Raises:
+        CategoryLimitExceeded: If custom categories exceed limit
+        CategoryValidationError: If category names are invalid
     """
-
-    MAX_CUSTOM_CATEGORIES = 20,
+    MAX_CUSTOM_CATEGORIES = 20
+    
     try:
         if custom_categories is not None:
-            # Validate categories
+            # Validate categories length
             if len(custom_categories) > MAX_CUSTOM_CATEGORIES:
                 raise CategoryLimitExceeded()
-                
+            
+            # Validate individual categories
+            for category in custom_categories:
+                if len(category.strip()) < 2:
+                    raise CategoryValidationError(
+                        "Category names must be at least 2 characters long"
+                    )
+                if not category.strip().replace(" ", "").isalnum():
+                    raise CategoryValidationError(
+                        "Category names can only contain letters, numbers, and spaces"
+                    )
+            
             # Normalize categories
             normalized_categories = [cat.lower().strip() for cat in custom_categories]
             
             # Update user's custom categories
             current_user.custom_categories = normalized_categories
+            current_user.modified_at = datetime.utcnow()
             
         db.commit()
         db.refresh(current_user)
         return current_user
         
+    except (CategoryLimitExceeded, CategoryValidationError) as e:
+        db.rollback()
+        raise e
     except Exception as e:
         db.rollback()
+        print(f"Error updating user profile: {e}")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
+            detail=f"Error updating profile: {str(e)}"
         )
 
 
