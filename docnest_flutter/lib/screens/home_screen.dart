@@ -852,11 +852,30 @@ class _HomeScreenState extends State<HomeScreen> {
     );
 
     if (newCategory != null && mounted) {
+      // Show loading dialog
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const AlertDialog(
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(height: 16),
+              Text('Adding custom category...'),
+            ],
+          ),
+        ),
+      );
+
       try {
         final success = await context
             .read<DocumentProvider>()
             .addCustomCategory(newCategory);
         if (success && mounted) {
+          // Dismiss loading dialog
+          Navigator.pop(context);
+
           CustomSnackBar.showSuccess(
             context: context,
             title: 'Category Added',
@@ -865,6 +884,9 @@ class _HomeScreenState extends State<HomeScreen> {
           );
         }
       } catch (e) {
+        // Dismiss loading dialog
+        Navigator.pop(context);
+
         if (mounted) {
           CustomSnackBar.showError(
             context: context,
