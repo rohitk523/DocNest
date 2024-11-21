@@ -87,7 +87,10 @@ class DocumentSharingService {
   }
 
   static Future<void> shareDocument(
-      BuildContext context, Document document, String token) async {
+    BuildContext context,
+    Document document,
+    String token,
+  ) async {
     try {
       final cacheService = CacheService();
 
@@ -182,7 +185,10 @@ class DocumentSharingService {
   }
 
   static Future<void> shareMultipleDocuments(
-      BuildContext context, List<Document> documents, String token) async {
+    BuildContext context,
+    List<Document> documents,
+    String token,
+  ) async {
     try {
       if (documents.isEmpty) {
         CustomSnackBar.showInfo(
