@@ -6,10 +6,8 @@ import '../services/documents/document_uploading_service.dart';
 import '../widgets/custom_snackbar.dart';
 import '../widgets/document_tile.dart';
 import '../widgets/quick_actions_bar.dart';
-import '../widgets/upload_dialog.dart';
 import '../providers/document_provider.dart';
 import 'package:provider/provider.dart';
-import '../services/document_service.dart';
 
 class CategoryDocumentsScreen extends StatefulWidget {
   final String category;
