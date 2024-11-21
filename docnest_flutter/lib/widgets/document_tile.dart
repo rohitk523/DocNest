@@ -423,56 +423,11 @@ class _DocumentTileState extends State<DocumentTile> {
 
   Future<void> _openDocument(BuildContext context) async {
     final provider = Provider.of<DocumentProvider>(context, listen: false);
-    final cacheService = CacheService();
-    final fileName = widget.document.name;
-
-    try {
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => const AlertDialog(
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              CircularProgressIndicator(),
-              SizedBox(height: 16),
-              Text('Opening document...'),
-            ],
-          ),
-        ),
-      );
-
-      // Try to get cached file
-      File? cachedFile = await cacheService.getCachedDocumentByName(fileName);
-
-      if (cachedFile == null || !await cachedFile.exists()) {
-        // If not cached, download and cache
-        final response = await http.get(
-          Uri.parse('${ApiConfig.documentsUrl}${widget.document.id}/download'),
-          headers: ApiConfig.authHeaders(provider.token),
-        );
-
-        if (response.statusCode != 200) {
-          throw Exception('Failed to fetch document file');
-        }
-
-        await cacheService.cacheDocumentWithName(fileName, response.bodyBytes);
-        cachedFile = await cacheService.getCachedDocumentByName(fileName);
-      }
-
-      if (context.mounted) {
-        Navigator.of(context).pop(); // Dismiss loading dialog
-      }
-
-      if (cachedFile != null) {
-        await OpenFilex.open(cachedFile.path, type: widget.document.fileType);
-      }
-    } catch (e) {
-      if (context.mounted) {
-        Navigator.of(context).pop();
-        _showErrorSnackBar(context, 'Error opening document: ${e.toString()}');
-      }
-    }
+    await DocumentSharingService.openDocument(
+      context,
+      widget.document,
+      provider.token,
+    );
   }
 
   Future<void> _handleDelete(

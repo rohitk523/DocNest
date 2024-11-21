@@ -3,6 +3,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:open_filex/open_filex.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../models/document.dart';
@@ -22,6 +23,67 @@ class DocumentSharingService {
         '.docx',
       _ => '',
     };
+  }
+
+  static Future<void> openDocument(
+    BuildContext context,
+    Document document,
+    String token,
+  ) async {
+    final cacheService = CacheService();
+    final fileName = document.name;
+
+    try {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const AlertDialog(
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(height: 16),
+              Text('Opening document...'),
+            ],
+          ),
+        ),
+      );
+
+      // Try to get cached file
+      File? cachedFile = await cacheService.getCachedDocumentByName(fileName);
+
+      if (cachedFile == null || !await cachedFile.exists()) {
+        // If not cached, download and cache
+        final response = await http.get(
+          Uri.parse('${ApiConfig.documentsUrl}${document.id}/download'),
+          headers: ApiConfig.authHeaders(token),
+        );
+
+        if (response.statusCode != 200) {
+          throw Exception('Failed to fetch document file');
+        }
+
+        await cacheService.cacheDocumentWithName(fileName, response.bodyBytes);
+        cachedFile = await cacheService.getCachedDocumentByName(fileName);
+      }
+
+      if (context.mounted) {
+        Navigator.of(context).pop(); // Dismiss loading dialog
+      }
+
+      if (cachedFile != null) {
+        await OpenFilex.open(cachedFile.path, type: document.fileType);
+      }
+    } catch (e) {
+      if (context.mounted) {
+        Navigator.of(context).pop();
+        CustomSnackBar.showError(
+          context: context,
+          title: 'Error opening document',
+          message: 'Error: ${e.toString()}',
+        );
+      }
+    }
   }
 
   static Future<void> shareDocument(
