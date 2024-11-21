@@ -937,9 +937,28 @@ class _HomeScreenState extends State<HomeScreen> {
     );
 
     if (confirmed == true && mounted) {
+      // Show loading dialog
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const AlertDialog(
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(height: 16),
+              Text('Deleting category...'),
+            ],
+          ),
+        ),
+      );
+
       try {
         final success = await provider.removeCustomCategory(category);
         if (success && mounted) {
+          // Dismiss loading dialog
+          Navigator.pop(context);
+
           CustomSnackBar.showSuccess(
             context: context,
             title: 'Category Deleted',
@@ -947,6 +966,9 @@ class _HomeScreenState extends State<HomeScreen> {
           );
         }
       } catch (e) {
+        // Dismiss loading dialog
+        Navigator.pop(context);
+
         if (mounted) {
           CustomSnackBar.showError(
             context: context,
