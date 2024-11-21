@@ -4,7 +4,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:url_launcher/url_launcher.dart';
-import '../services/api_config.dart';
+import '../config/api_config.dart';
 
 class VersionChecker {
   static const String PLAY_STORE_URL =

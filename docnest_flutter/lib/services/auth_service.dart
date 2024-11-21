@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'api_config.dart';
+import '../config/api_config.dart';
 
 class AuthService {
   final GoogleSignIn _googleSignIn = GoogleSignIn(scopes: ['email', 'profile']);

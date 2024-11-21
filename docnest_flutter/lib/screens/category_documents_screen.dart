@@ -2,6 +2,7 @@
 import 'package:docnest_flutter/screens/login_screen.dart';
 import 'package:flutter/material.dart';
 import '../models/document.dart';
+import '../services/documents/document_uploading_service.dart';
 import '../widgets/custom_snackbar.dart';
 import '../widgets/document_tile.dart';
 import '../widgets/quick_actions_bar.dart';
@@ -82,70 +83,8 @@ class _CategoryDocumentsScreenState extends State<CategoryDocumentsScreen> {
   }
 
   Future<void> _handleUpload(BuildContext context) async {
-    final provider = context.read<DocumentProvider>();
-
-    try {
-      final result = await showDialog<Map<String, dynamic>>(
-        context: context,
-        builder: (context) => UploadDocumentDialog(
-          preSelectedCategory: widget.category,
-        ),
-      );
-
-      if (result != null && context.mounted) {
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (context) => const AlertDialog(
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                CircularProgressIndicator(),
-                SizedBox(height: 16),
-                Text('Uploading document...'),
-              ],
-            ),
-          ),
-        );
-
-        final documentService = DocumentService(token: provider.token);
-
-        final uploadedDoc = await documentService.uploadDocument(
-          name: result['name'],
-          description: result['description'],
-          category: result['category'],
-          file: result['file'],
-        );
-
-        if (context.mounted) {
-          Navigator.pop(context); // Dismiss loading dialog
-          provider.addDocument(uploadedDoc);
-
-          CustomSnackBar.showSuccess(
-            context: context,
-            title: 'Success!',
-            message: 'Document uploaded successfully',
-            actionLabel: 'View',
-            onAction: () {
-              // Handle action
-            },
-          );
-        }
-      }
-    } catch (e) {
-      if (context.mounted) {
-        Navigator.popUntil(context, (route) => route.isFirst);
-
-        // For upload error
-        CustomSnackBar.showError(
-          context: context,
-          title: 'Upload Failed',
-          message: 'Error uploading document: ${e.toString()}',
-          actionLabel: 'Retry',
-          onAction: () => _handleUpload(context),
-        );
-      }
-    }
+    await DocumentUploadingService.showUploadDialog(context,
+        preSelectedCategory: widget.category);
   }
 
   @override

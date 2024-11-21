@@ -1,13 +1,13 @@
 // lib/services/document_service.dart
 import 'dart:async';
 import 'dart:io';
-import 'package:docnest_flutter/services/cache_service.dart';
+import 'package:docnest_flutter/services/documents/cache_service.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'dart:convert';
 import 'package:path/path.dart' as path;
 import '../models/document.dart';
-import 'api_config.dart';
+import '../config/api_config.dart';
 
 class DocumentService {
   final String token;

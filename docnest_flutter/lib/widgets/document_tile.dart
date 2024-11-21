@@ -8,14 +8,16 @@ import 'package:http/http.dart' as http;
 import 'package:open_filex/open_filex.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 
-import '../services/cache_service.dart';
+import '../services/documents/cache_service.dart';
+import '../services/documents/document_deletion_service.dart';
+import '../services/documents/document_sharing_service.dart';
 import '../theme/app_theme.dart';
 import '../models/document.dart';
 import '../utils/formatters.dart';
 import '../providers/document_provider.dart';
 import '../widgets/edit_document_dialog.dart';
 import '../services/document_service.dart';
-import '../services/api_config.dart';
+import '../config/api_config.dart';
 import '../widgets/document_preview.dart';
 
 class DocumentTileClipper extends CustomClipper<Path> {
@@ -217,7 +219,7 @@ class _DocumentTileState extends State<DocumentTile> {
         await _showMetadata(context);
         break;
       case 'share':
-        await _shareDocument(context);
+        await _handleShare(context);
         break;
       case 'download':
         await _downloadDocument(context);
@@ -226,7 +228,7 @@ class _DocumentTileState extends State<DocumentTile> {
         await _printDocument(context);
         break;
       case 'delete':
-        await _deleteDocument(context, provider);
+        await _handleDelete(context, provider);
         break;
       case 'edit':
         await _handleEdit(context, provider);
@@ -234,78 +236,13 @@ class _DocumentTileState extends State<DocumentTile> {
     }
   }
 
-  Future<void> _shareDocument(BuildContext context) async {
-    try {
-      final provider = Provider.of<DocumentProvider>(context, listen: false);
-      final cacheService = CacheService();
-      final fileName = widget.document.name;
-
-      // Show loading dialog
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => const AlertDialog(
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              CircularProgressIndicator(),
-              SizedBox(height: 16),
-              Text('Preparing document for sharing...'),
-            ],
-          ),
-        ),
-      );
-
-      // Try to get cached file first
-      File? cachedFile = await cacheService.getCachedDocumentByName(fileName);
-
-      if (cachedFile == null || !await cachedFile.exists()) {
-        // If not cached, download and cache
-        final response = await http.get(
-          Uri.parse('${ApiConfig.documentsUrl}${widget.document.id}/download'),
-          headers: ApiConfig.authHeaders(provider.token),
-        );
-
-        if (response.statusCode != 200) {
-          throw Exception('Failed to download document for sharing');
-        }
-
-        // Cache the downloaded file
-        await cacheService.cacheDocumentWithName(fileName, response.bodyBytes);
-        cachedFile = await cacheService.getCachedDocumentByName(fileName);
-      }
-
-      if (context.mounted && cachedFile != null) {
-        // Dismiss loading dialog
-        Navigator.pop(context);
-
-        // Share the cached file
-        final files = [cachedFile.path];
-        final text = '''
-Document: ${widget.document.name}
-Category: ${widget.document.category}
-Description: ${widget.document.description ?? 'No description'}
-Size: ${formatFileSize(widget.document.fileSize)}
-''';
-
-        await Share.shareXFiles(
-          files.map((path) => XFile(path)).toList(),
-          text: text,
-          subject: widget.document.name,
-        );
-      }
-    } catch (e) {
-      if (context.mounted) {
-        Navigator.pop(context);
-        CustomSnackBar.showError(
-          context: context,
-          title: 'Error Sharing Document',
-          message: 'Error: ${e.toString()}',
-          actionLabel: 'Retry',
-          onAction: () => _shareDocument(context),
-        );
-      }
-    }
+  Future<void> _handleShare(BuildContext context) async {
+    final provider = Provider.of<DocumentProvider>(context, listen: false);
+    await DocumentSharingService.shareDocument(
+      context,
+      widget.document,
+      provider.token,
+    );
   }
 
   Future<void> _printDocument(BuildContext context) async {
@@ -538,100 +475,13 @@ Size: ${formatFileSize(widget.document.fileSize)}
     }
   }
 
-  Future<void> _deleteDocument(
+  Future<void> _handleDelete(
       BuildContext context, DocumentProvider provider) async {
-    final confirmed = await showDialog<bool>(
+    await DocumentDeletionService.deleteSingleDocument(
       context: context,
-      builder: (BuildContext context) {
-        final theme = Theme.of(context);
-        return AlertDialog(
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: Text(
-            'Delete Document',
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: theme.colorScheme.primary,
-            ),
-          ),
-          content: Text(
-            'Are you sure you want to delete "${widget.document.name}"?',
-            style: theme.textTheme.bodyLarge?.copyWith(
-              color: theme.colorScheme.onSurface,
-            ),
-          ),
-          backgroundColor: theme.cardTheme.color,
-          actionsPadding: const EdgeInsets.symmetric(horizontal: 16),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              style: TextButton.styleFrom(
-                foregroundColor: theme.colorScheme.secondary,
-              ),
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              style: TextButton.styleFrom(
-                foregroundColor: theme.colorScheme.error,
-              ),
-              child: const Text('Delete'),
-            ),
-          ],
-        );
-      },
+      document: widget.document,
+      provider: provider,
     );
-
-    if (confirmed == true && context.mounted) {
-      try {
-        // Show loading indicator
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (BuildContext context) => const PopScope(
-            canPop: false,
-            child: AlertDialog(
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  CircularProgressIndicator(),
-                  SizedBox(height: 16),
-                  Text('Deleting document...'),
-                ],
-              ),
-            ),
-          ),
-        );
-
-        await provider.removeDocument(widget.document.id);
-
-        if (context.mounted) {
-          // Dismiss loading indicator
-          Navigator.of(context).pop();
-
-          // Show success message
-          CustomSnackBar.showSuccess(
-            context: context,
-            title: 'Document Deleted',
-            message: 'Document deleted successfully',
-          );
-        }
-      } catch (e) {
-        if (context.mounted) {
-          // Dismiss loading indicator
-          Navigator.of(context).pop();
-
-          // Show error message
-          CustomSnackBar.showError(
-            context: context,
-            title: 'Error Deleting Document',
-            message: 'Error: ${e.toString()}',
-            actionLabel: 'Retry',
-            onAction: () => _deleteDocument(context, provider),
-          );
-        }
-      }
-    }
   }
 
   void _showSnackBar(BuildContext context, String message) {

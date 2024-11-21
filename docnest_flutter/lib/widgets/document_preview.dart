@@ -5,10 +5,10 @@ import 'package:pdf_render/pdf_render.dart';
 import 'package:provider/provider.dart';
 import 'dart:ui' as ui;
 import '../models/document.dart';
-import '../services/api_config.dart';
+import '../config/api_config.dart';
 import '../utils/formatters.dart';
 import 'dart:typed_data';
-import '../services/cache_service.dart';
+import '../services/documents/cache_service.dart';
 
 class DocumentPreview extends StatefulWidget {
   final String fileType;
