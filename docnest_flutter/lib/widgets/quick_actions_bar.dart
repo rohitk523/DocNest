@@ -8,7 +8,7 @@ import '../services/documents/document_deletion_service.dart';
 import '../services/documents/document_sharing_service.dart';
 import '../services/documents/document_uploading_service.dart';
 import '../providers/document_provider.dart';
-import '../screens/home/search_widget.dart';
+import 'search_widget.dart';
 
 class QuickActionsBar extends StatelessWidget {
   const QuickActionsBar({super.key});

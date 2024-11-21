@@ -1,11 +1,10 @@
 import 'package:flutter/foundation.dart';
+import '../config/api_config.dart';
 import '../models/document.dart';
 import '../services/document_service.dart';
 import '../models/user.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import '../services/api_config.dart';
-import '../utils/formatters.dart';
 
 class DocumentProvider with ChangeNotifier {
   List<Document> _documents = [];

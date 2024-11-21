@@ -7,7 +7,6 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../utils/version_checker.dart';
 import '../widgets/custom_snackbar.dart';
-import '../widgets/profile_tab.dart';
 import '../widgets/settings_tab.dart';
 import '../widgets/upload_dialog.dart';
 import '../widgets/document_section.dart';
@@ -19,6 +18,7 @@ import '../screens/login_screen.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../utils/formatters.dart';
 import '../theme/app_theme.dart';
+import 'home/profile_tab.dart';
 
 class HomeScreen extends StatefulWidget {
   final String token;
