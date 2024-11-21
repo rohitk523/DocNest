@@ -2,15 +2,33 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'api_config.dart';
 
 class AuthService {
-  final GoogleSignIn _googleSignIn = GoogleSignIn(
-    scopes: [
-      'email',
-      'profile',
-    ],
-  );
+  final GoogleSignIn _googleSignIn = GoogleSignIn(scopes: ['email', 'profile']);
+  final _storage = const FlutterSecureStorage();
+
+  Future<String?> getStoredToken() async {
+    return await _storage.read(key: 'auth_token');
+  }
+
+  Future<Map<String, String>?> getStoredUserData() async {
+    final userDataStr = await _storage.read(key: 'user_data');
+    if (userDataStr != null) {
+      return Map<String, String>.from(json.decode(userDataStr));
+    }
+    return null;
+  }
+
+  Future<void> _persistUserSession(Map<String, dynamic> responseData) async {
+    await _storage.write(
+        key: 'auth_token', value: responseData['access_token']);
+    if (responseData['user'] != null) {
+      await _storage.write(
+          key: 'user_data', value: json.encode(responseData['user']));
+    }
+  }
 
   Future<Map<String, dynamic>> login(String email, String password) async {
     try {
@@ -24,7 +42,9 @@ class AuthService {
       );
 
       if (response.statusCode == 200) {
-        return json.decode(response.body);
+        final responseData = json.decode(response.body);
+        await _persistUserSession(responseData);
+        return responseData;
       } else {
         final errorBody = json.decode(response.body);
         throw Exception(errorBody['detail'] ?? 'Login failed');
@@ -38,43 +58,9 @@ class AuthService {
     }
   }
 
-  Future<Map<String, dynamic>> register(
-    String email,
-    String password,
-    String fullName,
-  ) async {
-    try {
-      final response = await http.post(
-        Uri.parse('${ApiConfig.authUrl}/register'),
-        headers: ApiConfig.jsonHeaders,
-        body: json.encode({
-          'email': email,
-          'password': password,
-          'full_name': fullName,
-        }),
-      );
-
-      if (response.statusCode == 200) {
-        return json.decode(response.body);
-      } else {
-        final errorBody = json.decode(response.body);
-        throw Exception(errorBody['detail'] ?? 'Registration failed');
-      }
-    } catch (e) {
-      if (e.toString().contains('Connection refused')) {
-        throw Exception(
-            'Unable to connect to server. Please check your internet connection.');
-      }
-      throw Exception('Registration failed: ${e.toString()}');
-    }
-  }
-
   Future<Map<String, dynamic>> loginWithGoogle() async {
     try {
-      // Sign out first to ensure the account picker is shown
       await _googleSignIn.signOut();
-
-      // Show account picker and get selected account
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
       if (googleUser == null) throw Exception('Google Sign In was canceled');
 
@@ -85,13 +71,13 @@ class AuthService {
       final response = await http.post(
         Uri.parse('${ApiConfig.authUrl}/google/signin'),
         headers: ApiConfig.jsonHeaders,
-        body: json.encode({
-          'token': idToken,
-        }),
+        body: json.encode({'token': idToken}),
       );
 
       if (response.statusCode == 200) {
-        return json.decode(response.body);
+        final responseData = json.decode(response.body);
+        await _persistUserSession(responseData);
+        return responseData;
       } else {
         final errorBody = json.decode(response.body);
         throw Exception(errorBody['detail'] ?? 'Google sign in failed');
@@ -111,7 +97,6 @@ class AuthService {
         Uri.parse('${ApiConfig.authUrl}/me'),
         headers: ApiConfig.authHeaders(token),
       );
-
       return response.statusCode == 200;
     } catch (e) {
       return false;
@@ -128,9 +113,13 @@ class AuthService {
       if (await _googleSignIn.isSignedIn()) {
         await _googleSignIn.signOut();
       }
+
+      // Clear stored credentials
+      await _storage.deleteAll();
     } catch (e) {
       print('Error during sign out: $e');
-      // Continue with sign out even if server request fails
+      // Still clear local storage even if server request fails
+      await _storage.deleteAll();
     }
   }
 
@@ -142,12 +131,19 @@ class AuthService {
       );
 
       if (response.statusCode == 200) {
-        return json.decode(response.body);
+        final responseData = json.decode(response.body);
+        await _persistUserSession(responseData);
+        return responseData;
       } else {
         throw Exception('Token refresh failed');
       }
     } catch (e) {
       throw Exception('Failed to refresh token: ${e.toString()}');
     }
+  }
+
+  Future<bool> isLoggedIn() async {
+    final token = await getStoredToken();
+    return token != null && await verifyToken(token);
   }
 }

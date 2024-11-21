@@ -8,9 +8,9 @@ import '../services/api_config.dart';
 
 class VersionChecker {
   static const String PLAY_STORE_URL =
-      'market://details?id=com.example.docnest_flutter';
+      'market://details?id=com.codewithrk.docnest_flutter';
   static const String FALLBACK_URL =
-      'https://play.google.com/store/apps/details?id=com.example.docnest_flutter';
+      'https://play.google.com/store/apps/details?id=com.codewithrk.docnest_flutter';
 
   static Future<void> checkVersion(BuildContext context) async {
     try {
