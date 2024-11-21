@@ -192,8 +192,8 @@ class _DocumentTileState extends State<DocumentTile> {
           Navigator.of(context).pop(); // Dismiss loading dialog
           CustomSnackBar.showSuccess(
             context: context,
-            title: 'Upload Successful',
-            message: 'Document uploaded successfully',
+            title: 'Edited Successfully',
+            message: 'Document edited successfully',
           );
         }
       }
