@@ -115,9 +115,6 @@ class _UploadDocumentDialogState extends State<UploadDocumentDialog> {
         'file': _selectedFile,
       };
 
-      // Debug print
-      print('Uploading document with data: $result');
-
       Navigator.pop(context, result);
     } catch (e) {
       if (mounted) {

@@ -94,6 +94,57 @@ class _DocumentTilePreviewState extends State<_DocumentTilePreview> {
         );
       }
 
+      // If preview not in cache, try to download and cache the file
+      if (context.mounted) {
+        final provider = Provider.of<DocumentProvider>(context, listen: false);
+        try {
+          final response = await http.get(
+            Uri.parse(
+                '${ApiConfig.documentsUrl}${widget.document.id}/download'),
+            headers: ApiConfig.authHeaders(provider.token),
+          );
+
+          if (response.statusCode == 200) {
+            final bytes = response.bodyBytes;
+
+            // Cache the downloaded file
+            await _cacheService.cacheDocumentWithName(
+                widget.document.name, bytes);
+
+            // Generate and cache preview if applicable
+            if (widget.document.fileType != null &&
+                (widget.document.fileType!.startsWith('image/') ||
+                    widget.document.fileType == 'application/pdf')) {
+              await _cacheService.savePreview(
+                widget.document.filePath!,
+                widget.document.fileType!,
+                bytes,
+              );
+
+              // Try getting the newly cached preview
+              final newPreview =
+                  await _cacheService.getPreview(widget.document.filePath!);
+              if (newPreview != null) {
+                return Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    image: DecorationImage(
+                      image: MemoryImage(newPreview),
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                );
+              }
+            }
+          }
+        } catch (downloadError) {
+          print('Error downloading document for preview: $downloadError');
+        }
+      }
+
+      // If everything fails, show category icon
       return _buildCategoryIcon();
     } catch (e) {
       print('Error loading preview: $e');

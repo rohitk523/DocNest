@@ -48,6 +48,7 @@ class DocumentUploadingService {
     }
   }
 
+  // For the static method in DocumentUploadingService
   static Future<void> handleUpload({
     required BuildContext context,
     required String name,
@@ -58,12 +59,13 @@ class DocumentUploadingService {
     final provider = context.read<DocumentProvider>();
 
     try {
-      // Show loading indicator
-      showUploadLoadingDialog(context);
+      // Use our styled loading dialog consistently
+      showUploadLoadingDialog(context); // Always use this
 
       final documentService = DocumentService(token: provider.token);
       final cacheService = CacheService();
 
+      // Rest of the upload logic...
       final uploadedDoc = await documentService.uploadDocument(
         name: name,
         description: description,
@@ -71,12 +73,10 @@ class DocumentUploadingService {
         file: file,
       );
 
-      // Cache the uploaded file
       if (file is File) {
         final bytes = await file.readAsBytes();
         await cacheService.cacheDocumentWithName(uploadedDoc.name, bytes);
 
-        // Generate and cache preview if applicable
         if (uploadedDoc.fileType?.startsWith('image/') == true ||
             uploadedDoc.fileType == 'application/pdf') {
           await cacheService.savePreview(
@@ -88,13 +88,8 @@ class DocumentUploadingService {
       }
 
       if (context.mounted) {
-        // Dismiss loading dialog
-        Navigator.of(context).pop();
-
-        // Update provider with new document
+        Navigator.of(context).pop(); // Pop our styled loading dialog
         provider.addDocument(uploadedDoc);
-
-        // Show success message
         CustomSnackBar.showSuccess(
           context: context,
           title: 'Upload Successful',
@@ -104,11 +99,18 @@ class DocumentUploadingService {
     } catch (e) {
       print('Error in handleUpload: $e');
       if (context.mounted) {
-        // Dismiss loading dialog if showing
         Navigator.popUntil(context, (route) => route.isFirst);
 
         if (e.toString().contains('Could not validate credentials')) {
-          await handleAuthError(context);
+          await const FlutterSecureStorage().delete(key: 'auth_token');
+          CustomSnackBar.showInfo(
+            context: context,
+            title: 'Session Expired',
+            message: 'Please log in again to continue',
+          );
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (context) => const LoginScreen()),
+          );
         } else {
           CustomSnackBar.showError(
             context: context,

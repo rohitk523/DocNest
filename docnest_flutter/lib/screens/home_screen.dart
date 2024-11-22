@@ -5,6 +5,7 @@ import 'package:docnest_flutter/widgets/fluid_nav_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import '../services/documents/uploading_service.dart';
 import '../utils/version_checker.dart';
 import '../widgets/custom_snackbar.dart';
 import '../widgets/settings_tab.dart';
@@ -92,14 +93,14 @@ class _HomeScreenState extends State<HomeScreen> {
         });
 
         if (e.toString().contains('Could not validate credentials')) {
-          _handleAuthError();
+          await _handleAuthError(); // No need for else clause, user will be redirected
         } else {
           CustomSnackBar.showError(
             context: context,
-            title: 'Upload Error',
-            message: 'Error uploading document: ${e.toString()}',
+            title: 'Loading Error',
+            message: 'Error loading documents: ${e.toString()}',
             actionLabel: 'Retry',
-            onAction: _handleUpload,
+            onAction: _loadDocuments,
           );
         }
       }
@@ -159,15 +160,18 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _handleAuthError() async {
-    await _storage.delete(key: 'auth_token');
+    await const FlutterSecureStorage().delete(key: 'auth_token');
     if (mounted) {
-      CustomSnackBar.showError(
+      // Close any open dialogs
+      Navigator.of(context).popUntil((route) => route.isFirst);
+
+      CustomSnackBar.showInfo(
         context: context,
         title: 'Session Expired',
-        message: 'Session expired. Please log in again.',
+        message: 'Please log in again to continue',
       );
 
-// After showing the snackbar, navigate to the login screen
+      // Navigate to login screen
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (context) => const LoginScreen()),
       );
@@ -988,59 +992,18 @@ class _HomeScreenState extends State<HomeScreen> {
       );
 
       if (result != null && mounted) {
-        // Show loading indicator
-        showDialog(
+        await DocumentUploadingService.handleUpload(
           context: context,
-          barrierDismissible: false,
-          builder: (context) => const AlertDialog(
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                CircularProgressIndicator(),
-                SizedBox(height: 16),
-                Text('Uploading document...'),
-              ],
-            ),
-          ),
-        );
-
-        final uploadedDoc = await _documentService.uploadDocument(
           name: result['name'],
           description: result['description'],
           category: result['category'],
           file: result['file'],
         );
-
-        if (mounted) {
-          // Dismiss loading dialog
-          Navigator.pop(context);
-
-          context.read<DocumentProvider>().addDocument(uploadedDoc);
-
-          CustomSnackBar.showSuccess(
-            context: context,
-            title: 'Upload Success',
-            message: 'Document uploaded successfully',
-          );
-        }
       }
     } catch (e) {
-      if (mounted) {
-        // Dismiss loading dialog if showing
-        Navigator.popUntil(context, (route) => route.isFirst);
-
-        if (e.toString().contains('Could not validate credentials')) {
-          _handleAuthError();
-        } else {
-          CustomSnackBar.showError(
-            context: context,
-            title: 'Loading Error',
-            message: 'Error loading documents: ${e.toString()}',
-            actionLabel: 'Retry',
-            onAction: _loadDocuments,
-          );
-        }
-      }
+      print('Error in _handleUpload: $e');
+      // No need for additional error handling since DocumentUploadingService
+      // already handles all error cases including session expiry
     }
   }
 

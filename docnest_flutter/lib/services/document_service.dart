@@ -268,7 +268,7 @@ class DocumentService {
 
         // If we get a 401/403, no need to retry
         if (response.statusCode == 401 || response.statusCode == 403) {
-          throw Exception('Authentication failed');
+          throw Exception('Session Expired Please SignIn again');
         }
 
         // For other status codes, try to parse error message
