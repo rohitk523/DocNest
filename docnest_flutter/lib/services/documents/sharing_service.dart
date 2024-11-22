@@ -93,13 +93,7 @@ class DocumentSharingService {
   ) async {
     try {
       final cacheService = CacheService();
-
-      // Generate proper filename with extension
       String filename = document.name;
-      if (!filename.contains('.') && document.fileType != null) {
-        final extension = _getFileExtension(document.fileType);
-        filename = '$filename$extension';
-      }
 
       // Show loading dialog
       if (context.mounted) {
