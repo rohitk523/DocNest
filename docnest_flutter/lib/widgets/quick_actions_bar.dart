@@ -4,9 +4,9 @@ import 'package:docnest_flutter/widgets/custom_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../services/documents/document_deletion_service.dart';
-import '../services/documents/document_sharing_service.dart';
-import '../services/documents/document_uploading_service.dart';
+import '../services/documents/deletion_service.dart';
+import '../services/documents/sharing_service.dart';
+import '../services/documents/uploading_service.dart';
 import '../providers/document_provider.dart';
 import 'search_widget.dart';
 

@@ -1,9 +1,12 @@
+// lib/widgets/document_section.dart
+
 import 'package:docnest_flutter/widgets/custom_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/document.dart';
 import '../utils/formatters.dart';
 import '../providers/document_provider.dart';
+import '../services/documents/editing_service.dart';
 import './document_tile.dart';
 
 class DocumentSection extends StatefulWidget {
@@ -22,61 +25,6 @@ class DocumentSection extends StatefulWidget {
 
 class _DocumentSectionState extends State<DocumentSection> {
   bool _isDropTarget = false;
-
-  Future<void> _updateDocumentCategory(
-      Document document, String newCategory) async {
-    final provider = context.read<DocumentProvider>();
-
-    try {
-      // Show loading dialog
-      if (context.mounted) {
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (context) => AlertDialog(
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const CircularProgressIndicator(),
-                const SizedBox(height: 16),
-                Text(
-                    'Moving ${document.name} to ${newCategory.toLowerCase()}...'),
-              ],
-            ),
-          ),
-        );
-      }
-
-      // Update document category
-      await provider.updateDocumentCategory(document.id, newCategory);
-
-      if (mounted) {
-        // Dismiss loading dialog
-        Navigator.of(context).pop();
-
-        // Show success message
-        CustomSnackBar.showSuccess(
-          context: context,
-          title: 'Document Moved',
-          message: 'Successfully moved to ${newCategory.toLowerCase()}',
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        // Dismiss loading dialog
-        Navigator.of(context).pop();
-
-        // Show error message
-        CustomSnackBar.showError(
-          context: context,
-          title: 'Move Failed',
-          message: 'Failed to move document: ${e.toString()}',
-          actionLabel: 'Retry',
-          onAction: () => _updateDocumentCategory(document, newCategory),
-        );
-      }
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -102,7 +50,13 @@ class _DocumentSectionState extends State<DocumentSection> {
           onAccept: (document) async {
             setState(() => _isDropTarget = false);
             provider.endDragging();
-            await _updateDocumentCategory(document, widget.title);
+
+            await DocumentEditingService.updateDocumentCategory(
+              context: context,
+              documentId: document.id,
+              newCategory: widget.title,
+              provider: provider,
+            );
           },
           onLeave: (_) {
             setState(() => _isDropTarget = false);

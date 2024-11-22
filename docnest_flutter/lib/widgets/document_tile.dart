@@ -9,8 +9,9 @@ import 'package:open_filex/open_filex.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 
 import '../services/documents/cache_service.dart';
-import '../services/documents/document_deletion_service.dart';
-import '../services/documents/document_sharing_service.dart';
+import '../services/documents/deletion_service.dart';
+import '../services/documents/editing_service.dart';
+import '../services/documents/sharing_service.dart';
 import '../theme/app_theme.dart';
 import '../models/document.dart';
 import '../utils/formatters.dart';
@@ -147,68 +148,11 @@ class _DocumentTileState extends State<DocumentTile> {
 
   Future<void> _handleEdit(
       BuildContext context, DocumentProvider provider) async {
-    if (!provider.hasValidToken) {
-      CustomSnackBar.showError(
-        context: context,
-        title: 'Log In to Edit',
-        message: 'Please log in to edit documents',
-      );
-      return;
-    }
-
-    try {
-      final result = await showDialog<Map<String, dynamic>>(
-        context: context,
-        builder: (context) => EditDocumentDialog(document: widget.document),
-      );
-
-      if (result != null && context.mounted) {
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (BuildContext context) => const AlertDialog(
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                CircularProgressIndicator(),
-                SizedBox(height: 16),
-                Text('Updating document...'),
-              ],
-            ),
-          ),
-        );
-
-        final documentService = DocumentService(token: provider.token);
-        final updatedDoc = await documentService.updateDocument(
-          documentId: widget.document.id,
-          name: result['name'],
-          description: result['description'],
-          category: result['category'],
-        );
-
-        provider.updateDocument(updatedDoc);
-
-        if (context.mounted) {
-          Navigator.of(context).pop(); // Dismiss loading dialog
-          CustomSnackBar.showSuccess(
-            context: context,
-            title: 'Edited Successfully',
-            message: 'Document edited successfully',
-          );
-        }
-      }
-    } catch (e) {
-      if (context.mounted) {
-        Navigator.of(context).pop(); // Dismiss loading dialog if showing
-        CustomSnackBar.showError(
-          context: context,
-          title: 'Error Updating Document',
-          message: 'Error updating document: $e',
-          actionLabel: 'Retry',
-          onAction: () => _handleEdit(context, provider),
-        );
-      }
-    }
+    await DocumentEditingService.editDocument(
+      context: context,
+      document: widget.document,
+      provider: provider,
+    );
   }
 
   void _handleMenuAction(BuildContext context, String action) async {

@@ -2,7 +2,7 @@
 import 'package:docnest_flutter/screens/login_screen.dart';
 import 'package:flutter/material.dart';
 import '../models/document.dart';
-import '../services/documents/document_uploading_service.dart';
+import '../services/documents/uploading_service.dart';
 import '../widgets/custom_snackbar.dart';
 import '../widgets/document_tile.dart';
 import '../widgets/quick_actions_bar.dart';
