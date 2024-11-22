@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 
 import '../services/documents/cache_service.dart';
 import '../services/documents/deletion_service.dart';
+import '../services/documents/download_service.dart';
 import '../services/documents/editing_service.dart';
 import '../services/documents/sharing_service.dart';
 import '../theme/app_theme.dart';
@@ -312,59 +313,12 @@ class _DocumentTileState extends State<DocumentTile> {
   }
 
   Future<void> _downloadDocument(BuildContext context) async {
-    try {
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => const AlertDialog(
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              CircularProgressIndicator(),
-              SizedBox(height: 16),
-              Text('Downloading document...'),
-            ],
-          ),
-        ),
-      );
-
-      final provider = Provider.of<DocumentProvider>(context, listen: false);
-
-      // First try to get from cache
-      final cachedBytes = await CacheService().getFromCache(
-        widget.document.filePath ?? '',
-        widget.document.fileType ?? '',
-      );
-
-      if (cachedBytes != null) {
-        // Use cached file
-        await _saveAndShowSuccess(context, cachedBytes);
-        return;
-      }
-
-      // If not in cache, download from server
-      final response = await http.get(
-        Uri.parse('${ApiConfig.documentsUrl}${widget.document.id}/download'),
-        headers: ApiConfig.authHeaders(provider.token),
-      );
-
-      if (response.statusCode != 200) {
-        throw Exception('Failed to download document');
-      }
-
-      await _saveAndShowSuccess(context, response.bodyBytes);
-    } catch (e) {
-      if (context.mounted) {
-        Navigator.pop(context);
-        CustomSnackBar.showError(
-          context: context,
-          title: 'Error Downloading Document',
-          message: 'Error: ${e.toString()}',
-          actionLabel: 'Retry',
-          onAction: () => _downloadDocument(context),
-        );
-      }
-    }
+    final provider = Provider.of<DocumentProvider>(context, listen: false);
+    await DocumentDownloadService.downloadDocument(
+      context,
+      widget.document,
+      provider.token,
+    );
   }
 
   Future<void> _saveAndShowSuccess(
