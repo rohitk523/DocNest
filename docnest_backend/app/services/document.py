@@ -263,7 +263,7 @@ class DocumentService:
 
             raise
 
-    # ... [Previous S3 and helper methods remain unchanged] ...
+
     def get_document(self, db: Session, document_id: str, owner_id: str) -> Document:
         """Get a specific document"""
         document = db.query(Document).filter(

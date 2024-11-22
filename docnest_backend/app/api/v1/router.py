@@ -28,78 +28,39 @@ async def create_document(
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
     current_user = Depends(get_current_user),
-    
 ):
     """
     Create a new document with file upload.
     """
     document_service = DocumentService(db=db, user=current_user, request=request)
+
     try:
-        # Load and print current custom categories
-        custom_categories = current_user.custom_categories or []
-
-        # If custom_categories is None, initialize it
-        if current_user.custom_categories is None:
-            current_user.custom_categories = []
-            db.commit()
-
         # Normalize category
         category = category.lower().strip()
-        print(f"Received category: {category}")
-        
+
         # Define all valid categories
+        custom_categories = current_user.custom_categories or []
         default_categories = ["government", "medical", "educational", "other"]
         valid_categories = set(default_categories) | set(custom_categories)
-        print(f"All valid categories: {valid_categories}")
 
         # If category doesn't exist yet, add it to user's custom categories
         if category not in valid_categories:
             current_user.custom_categories = list(set(custom_categories + [category]))
             db.commit()
-            print(f"Added new category {category} to user's custom categories")
-            valid_categories.add(category)
 
-        
-        # Initialize S3 service
-        s3_service = S3Service()
-        
-        try:
-            # Upload file to S3
-            file_path, file_size, file_type = await s3_service.upload_file(
-                file, 
-                folder=f"documents/{current_user.id}"
-            )
-            
-            # Create document in database
-            document = Document(
+        # Create document
+        document = await document_service.create_document(
+            owner_id=current_user.id,
+            document_in=DocumentCreate(
                 name=name,
                 description=description,
-                category=category,
-                file_path=file_path,
-                file_size=file_size,
-                file_type=file_type,
-                owner_id=current_user.id
-            )
-            
-            db.add(document)
-            db.commit()
-            db.refresh(document)
+                category=category
+            ),
+            file=file
+        )
 
+        return document
 
-            
-            print(f"Successfully created document with category: {category}")
-            return await document_service.create_document(
-        owner_id=current_user.id,
-        document_in=document,
-        file=file
-    )
-            
-        except Exception as e:
-            # If database operation fails, clean up the uploaded file
-            if 'file_path' in locals():
-                await s3_service.delete_file(file_path)
-            raise e
-    
     except Exception as e:
         db.rollback()
         print(f"Error creating document: {str(e)}")

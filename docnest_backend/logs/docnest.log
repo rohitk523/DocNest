@@ -3365,3 +3365,127 @@ TypeError: DocumentService.delete_document() got an unexpected keyword argument 
 2024-11-22 17:41:23,399 - docnest - INFO - Path: /openapi.json Method: GET Status: 200 Duration: 0.04s
 2024-11-22 17:41:41,476 - docnest - INFO - Path: /api/v1/auth/login Method: POST Status: 200 Duration: 0.88s
 2024-11-22 17:42:30,656 - docnest - INFO - Path: /api/v1/documents/ Method: POST Status: 200 Duration: 9.66s
+2024-11-22 18:00:11,968 - docnest - INFO - Path: /docs Method: GET Status: 200 Duration: 0.01s
+2024-11-22 18:00:12,290 - docnest - INFO - Path: /openapi.json Method: GET Status: 200 Duration: 0.01s
+2024-11-22 18:08:41,076 - docnest - INFO - Path: /api/v1/auth/login Method: POST Status: 200 Duration: 0.65s
+2024-11-22 18:09:21,207 - docnest - ERROR - Global error: 1 validation errors:
+  {'type': 'model_attributes_type', 'loc': ('response',), 'msg': 'Input should be a valid dictionary or object to extract fields from', 'input': None, 'url': 'https://errors.pydantic.dev/2.5/v/model_attributes_type'}
+  + Exception Group Traceback (most recent call last):
+  |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/_utils.py", line 85, in collapse_excgroups
+  |     yield
+  |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 190, in __call__
+  |     async with anyio.create_task_group() as task_group:
+  |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 763, in __aexit__
+  |     raise BaseExceptionGroup(
+  | ExceptionGroup: unhandled errors in a TaskGroup (1 sub-exception)
+  +-+---------------- 1 ----------------
+    | Traceback (most recent call last):
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    |     await self.app(scope, receive, _send)
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 189, in __call__
+    |     with collapse_excgroups():
+    |   File "/opt/homebrew/Cellar/python@3.11/3.11.3/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 155, in __exit__
+    |     self.gen.throw(typ, value, traceback)
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/_utils.py", line 91, in collapse_excgroups
+    |     raise exc
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 191, in __call__
+    |     response = await self.dispatch_func(request, call_next)
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/main.py", line 40, in log_requests
+    |     response = await call_next(request)
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 165, in call_next
+    |     raise app_exc
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 151, in coro
+    |     await self.app(scope, receive_or_disconnect, send_no_error)
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/cors.py", line 91, in __call__
+    |     await self.simple_response(scope, receive, send, request_headers=headers)
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/cors.py", line 146, in simple_response
+    |     await self.app(scope, receive, send)
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/exceptions.py", line 62, in __call__
+    |     await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    |     raise exc
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    |     await app(scope, receive, sender)
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/routing.py", line 762, in __call__
+    |     await self.middleware_stack(scope, receive, send)
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/routing.py", line 782, in app
+    |     await route.handle(scope, receive, send)
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/routing.py", line 297, in handle
+    |     await self.app(scope, receive, send)
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/routing.py", line 77, in app
+    |     await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    |     raise exc
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    |     await app(scope, receive, sender)
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/routing.py", line 72, in app
+    |     response = await func(request)
+    |                ^^^^^^^^^^^^^^^^^^^
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/fastapi/routing.py", line 315, in app
+    |     content = await serialize_response(
+    |               ^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/fastapi/routing.py", line 155, in serialize_response
+    |     raise ResponseValidationError(
+    | fastapi.exceptions.ResponseValidationError: 1 validation errors:
+    |   {'type': 'model_attributes_type', 'loc': ('response',), 'msg': 'Input should be a valid dictionary or object to extract fields from', 'input': None, 'url': 'https://errors.pydantic.dev/2.5/v/model_attributes_type'}
+    | 
+    +------------------------------------
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 189, in __call__
+    with collapse_excgroups():
+  File "/opt/homebrew/Cellar/python@3.11/3.11.3/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 155, in __exit__
+    self.gen.throw(typ, value, traceback)
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/_utils.py", line 91, in collapse_excgroups
+    raise exc
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 191, in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/main.py", line 40, in log_requests
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 165, in call_next
+    raise app_exc
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 151, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/cors.py", line 91, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/cors.py", line 146, in simple_response
+    await self.app(scope, receive, send)
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/middleware/exceptions.py", line 62, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    raise exc
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/routing.py", line 762, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/routing.py", line 782, in app
+    await route.handle(scope, receive, send)
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/routing.py", line 297, in handle
+    await self.app(scope, receive, send)
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/routing.py", line 77, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    raise exc
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/starlette/routing.py", line 72, in app
+    response = await func(request)
+               ^^^^^^^^^^^^^^^^^^^
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/fastapi/routing.py", line 315, in app
+    content = await serialize_response(
+              ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/rohitkale/GihubRepo/DocNest/docnest_backend/venv/lib/python3.11/site-packages/fastapi/routing.py", line 155, in serialize_response
+    raise ResponseValidationError(
+fastapi.exceptions.ResponseValidationError: 1 validation errors:
+  {'type': 'model_attributes_type', 'loc': ('response',), 'msg': 'Input should be a valid dictionary or object to extract fields from', 'input': None, 'url': 'https://errors.pydantic.dev/2.5/v/model_attributes_type'}
+
+2024-11-22 18:16:04,860 - docnest - INFO - Path: /api/v1/documents/ Method: POST Status: 200 Duration: 7.07s
+2024-11-22 18:16:47,099 - docnest - INFO - Path: /api/v1/documents/ Method: POST Status: 200 Duration: 4.72s
