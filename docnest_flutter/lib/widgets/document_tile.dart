@@ -1,4 +1,3 @@
-import 'package:docnest_flutter/widgets/custom_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
@@ -19,69 +18,142 @@ import '../providers/document_provider.dart';
 import '../widgets/edit_document_dialog.dart';
 import '../services/document_service.dart';
 import '../config/api_config.dart';
-import '../widgets/document_preview.dart';
+import '../widgets/custom_snackbar.dart';
 
 class DocumentTileClipper extends CustomClipper<Path> {
   @override
   Path getClip(Size size) {
     final path = Path();
 
-    // Adjustable values
-    const double wedgeWidth = 120.0; // Total width of the wedge
-    const double flatBottomWidth = 40.0; // Width of the flat bottom
-    const double wedgeHeight = 13.0; // Height of the wedge
-    const double cornerRadius = 20.0; // Corner radius of the main container
+    const double wedgeWidth = 120.0;
+    const double flatBottomWidth = 40.0;
+    const double wedgeHeight = 13.0;
+    const double cornerRadius = 20.0;
 
-    // Calculate center position
     final center = size.width / 2;
 
-    // Start from top-left with rounded corner
     path.moveTo(cornerRadius, 0);
-
-    // Line to start of left wedge
     path.lineTo(center - wedgeWidth / 2, 0);
-
-    // Left slant of wedge
     path.lineTo(center - flatBottomWidth / 2, wedgeHeight);
-
-    // Flat bottom of wedge
     path.lineTo(center + flatBottomWidth / 2, wedgeHeight);
-
-    // Right slant of wedge
     path.lineTo(center + wedgeWidth / 2, 0);
-
-    // Line to top-right corner
     path.lineTo(size.width - cornerRadius, 0);
-
-    // Add rounded corners
-    // Top right corner
     path.quadraticBezierTo(size.width, 0, size.width, cornerRadius);
-
-    // Right side line
     path.lineTo(size.width, size.height - cornerRadius);
-
-    // Bottom right corner
     path.quadraticBezierTo(
         size.width, size.height, size.width - cornerRadius, size.height);
-
-    // Bottom line
     path.lineTo(cornerRadius, size.height);
-
-    // Bottom left corner
     path.quadraticBezierTo(0, size.height, 0, size.height - cornerRadius);
-
-    // Left side line
     path.lineTo(0, cornerRadius);
-
-    // Top left corner
     path.quadraticBezierTo(0, 0, cornerRadius, 0);
-
     path.close();
     return path;
   }
 
   @override
   bool shouldReclip(CustomClipper<Path> oldClipper) => false;
+}
+
+class _DocumentTilePreview extends StatefulWidget {
+  final Document document;
+
+  const _DocumentTilePreview({
+    required this.document,
+  });
+
+  @override
+  State<_DocumentTilePreview> createState() => _DocumentTilePreviewState();
+}
+
+class _DocumentTilePreviewState extends State<_DocumentTilePreview> {
+  final CacheService _cacheService = CacheService();
+  late Future<Widget> _previewWidget;
+
+  @override
+  void initState() {
+    super.initState();
+    _previewWidget = _loadPreview();
+  }
+
+  Future<Widget> _loadPreview() async {
+    try {
+      if (widget.document.filePath == null) {
+        return _buildCategoryIcon();
+      }
+
+      // Check if preview exists in cache
+      final preview = await _cacheService.getPreview(widget.document.filePath!);
+      if (preview != null) {
+        return Container(
+          width: 48,
+          height: 48,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            image: DecorationImage(
+              image: MemoryImage(preview),
+              fit: BoxFit.cover,
+            ),
+          ),
+        );
+      }
+
+      return _buildCategoryIcon();
+    } catch (e) {
+      print('Error loading preview: $e');
+      return _buildCategoryIcon();
+    }
+  }
+
+  Widget _buildCategoryIcon() {
+    return Container(
+      width: 48,
+      height: 48,
+      decoration: BoxDecoration(
+        color: getCategoryColor(widget.document.category).withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Icon(
+        getCategoryIcon(widget.document.category),
+        color: getCategoryColor(widget.document.category),
+        size: 24,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<Widget>(
+      future: _previewWidget,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: Colors.grey.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Center(
+              child: SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                ),
+              ),
+            ),
+          );
+        }
+
+        if (snapshot.hasError) {
+          print('Preview error: ${snapshot.error}');
+          return _buildCategoryIcon();
+        }
+
+        return snapshot.data ?? _buildCategoryIcon();
+      },
+    );
+  }
 }
 
 class DocumentTile extends StatefulWidget {
@@ -116,13 +188,11 @@ class _DocumentTileState extends State<DocumentTile> {
 
   void _startScrolling(DragUpdateDetails details) {
     final screenHeight = MediaQuery.of(context).size.height;
-    final tileHeight = 80.0; // Adjust this value based on your tile height
+    final tileHeight = 80.0;
 
     if (details.globalPosition.dy < tileHeight) {
-      // Scroll up
       _scrollSpeed = (tileHeight - details.globalPosition.dy) / tileHeight * 10;
     } else if (details.globalPosition.dy > screenHeight - tileHeight) {
-      // Scroll down
       _scrollSpeed = (details.globalPosition.dy - (screenHeight - tileHeight)) /
           tileHeight *
           10;
@@ -168,9 +238,6 @@ class _DocumentTileState extends State<DocumentTile> {
       case 'download':
         await _downloadDocument(context);
         break;
-      case 'print':
-        await _printDocument(context);
-        break;
       case 'delete':
         await _handleDelete(context, provider);
         break;
@@ -187,15 +254,6 @@ class _DocumentTileState extends State<DocumentTile> {
       widget.document,
       provider.token,
     );
-  }
-
-  Future<void> _printDocument(BuildContext context) async {
-    try {
-      // Implement print logic here
-      _showSnackBar(context, 'Print feature coming soon');
-    } catch (e) {
-      _showErrorSnackBar(context, 'Error printing document: $e');
-    }
   }
 
   Future<void> _showMetadata(BuildContext context) async {
@@ -259,7 +317,6 @@ class _DocumentTileState extends State<DocumentTile> {
 
   Future<void> _downloadDocument(BuildContext context) async {
     try {
-      // Show download progress dialog
       showDialog(
         context: context,
         barrierDismissible: false,
@@ -277,7 +334,19 @@ class _DocumentTileState extends State<DocumentTile> {
 
       final provider = Provider.of<DocumentProvider>(context, listen: false);
 
-      // Make download request
+      // First try to get from cache
+      final cachedBytes = await CacheService().getFromCache(
+        widget.document.filePath ?? '',
+        widget.document.fileType ?? '',
+      );
+
+      if (cachedBytes != null) {
+        // Use cached file
+        await _saveAndShowSuccess(context, cachedBytes);
+        return;
+      }
+
+      // If not in cache, download from server
       final response = await http.get(
         Uri.parse('${ApiConfig.documentsUrl}${widget.document.id}/download'),
         headers: ApiConfig.authHeaders(provider.token),
@@ -287,73 +356,10 @@ class _DocumentTileState extends State<DocumentTile> {
         throw Exception('Failed to download document');
       }
 
-      // Get filename from Content-Disposition header
-      final contentDisposition = response.headers['content-disposition'];
-      String filename = '';
-      if (contentDisposition != null &&
-          contentDisposition.contains('filename=')) {
-        filename = contentDisposition.split('filename=')[1].replaceAll('"', '');
-      } else {
-        filename = widget.document.name;
-        // Add extension if not present
-        if (!filename.contains('.') && widget.document.fileType != null) {
-          filename = '$filename.${widget.document.fileType!.split('/').last}';
-        }
-      }
-
-      String? downloadsPath;
-      if (Platform.isAndroid) {
-        // Try primary path first
-        downloadsPath = '/storage/emulated/0/Download';
-        if (!Directory(downloadsPath).existsSync()) {
-          // Try alternative path
-          downloadsPath = '/storage/emulated/0/Downloads';
-          if (!Directory(downloadsPath).existsSync()) {
-            // Final fallback - get external storage and append Download
-            final extDir = await getExternalStorageDirectory();
-            if (extDir != null) {
-              downloadsPath = '${extDir.path}/Download';
-              // Create directory if it doesn't exist
-              await Directory(downloadsPath).create(recursive: true);
-            } else {
-              throw Exception('Could not find Downloads directory');
-            }
-          }
-        }
-      } else {
-        // For iOS, use documents directory
-        final directory = await getApplicationDocumentsDirectory();
-        downloadsPath = directory.path;
-      }
-
-      if (downloadsPath == null) {
-        throw Exception('Could not access Downloads directory');
-      }
-
-      // Create the full file path
-      final filePath = '$downloadsPath/$filename';
-      final file = File(filePath);
-
-      // Write the file
-      await file.writeAsBytes(response.bodyBytes);
-
-      if (context.mounted) {
-        // Dismiss loading dialog
-        Navigator.pop(context);
-
-        // Show success message
-        CustomSnackBar.showSuccess(
-          context: context,
-          title: 'Document Downloaded',
-          message: 'Document downloaded: $filename\nSaved to Downloads folder',
-        );
-      }
+      await _saveAndShowSuccess(context, response.bodyBytes);
     } catch (e) {
       if (context.mounted) {
-        // Dismiss loading dialog if showing
         Navigator.pop(context);
-
-        // Show error message
         CustomSnackBar.showError(
           context: context,
           title: 'Error Downloading Document',
@@ -365,13 +371,40 @@ class _DocumentTileState extends State<DocumentTile> {
     }
   }
 
-  Future<void> _openDocument(BuildContext context) async {
-    final provider = Provider.of<DocumentProvider>(context, listen: false);
-    await DocumentSharingService.openDocument(
-      context,
-      widget.document,
-      provider.token,
-    );
+  Future<void> _saveAndShowSuccess(
+      BuildContext context, List<int> bytes) async {
+    String? downloadsPath;
+    if (Platform.isAndroid) {
+      downloadsPath = '/storage/emulated/0/Download';
+      if (!Directory(downloadsPath).existsSync()) {
+        downloadsPath = '/storage/emulated/0/Downloads';
+        if (!Directory(downloadsPath).existsSync()) {
+          final extDir = await getExternalStorageDirectory();
+          downloadsPath = extDir?.path;
+        }
+      }
+    } else {
+      final directory = await getApplicationDocumentsDirectory();
+      downloadsPath = directory.path;
+    }
+
+    if (downloadsPath == null) {
+      throw Exception('Could not access Downloads directory');
+    }
+
+    final fileName = widget.document.name;
+    final filePath = '$downloadsPath/$fileName';
+    final file = File(filePath);
+    await file.writeAsBytes(bytes);
+
+    if (context.mounted) {
+      Navigator.pop(context);
+      CustomSnackBar.showSuccess(
+        context: context,
+        title: 'Document Downloaded',
+        message: 'Document saved to Downloads folder',
+      );
+    }
   }
 
   Future<void> _handleDelete(
@@ -383,19 +416,12 @@ class _DocumentTileState extends State<DocumentTile> {
     );
   }
 
-  void _showSnackBar(BuildContext context, String message) {
-    CustomSnackBar.showInfo(
-      context: context,
-      title: 'Information',
-      message: message,
-    );
-  }
-
-  void _showErrorSnackBar(BuildContext context, String message) {
-    CustomSnackBar.showError(
-      context: context,
-      title: 'Error',
-      message: message,
+  Future<void> _openDocument(BuildContext context) async {
+    final provider = Provider.of<DocumentProvider>(context, listen: false);
+    await DocumentSharingService.openDocument(
+      context,
+      widget.document,
+      provider.token,
     );
   }
 
@@ -452,7 +478,6 @@ class _DocumentTileState extends State<DocumentTile> {
                             padding: const EdgeInsets.all(16),
                             child: Row(
                               children: [
-                                // Preview or Checkbox
                                 isSelectionMode
                                     ? Checkbox(
                                         value: isSelected,
@@ -465,17 +490,10 @@ class _DocumentTileState extends State<DocumentTile> {
                                         ),
                                         activeColor: theme.colorScheme.primary,
                                       )
-                                    : DocumentPreview(
-                                        fileType:
-                                            widget.document.fileType ?? '',
-                                        filePath:
-                                            widget.document.filePath ?? '',
-                                        token: provider.token,
-                                        category: widget.document.category,
+                                    : _DocumentTilePreview(
                                         document: widget.document,
                                       ),
                                 const SizedBox(width: 16),
-                                // Document Info
                                 Expanded(
                                   child: Column(
                                     crossAxisAlignment:
@@ -526,7 +544,6 @@ class _DocumentTileState extends State<DocumentTile> {
                                     ],
                                   ),
                                 ),
-                                // Menu Button
                                 if (!isSelectionMode)
                                   PopupMenuButton<String>(
                                     icon: Icon(
