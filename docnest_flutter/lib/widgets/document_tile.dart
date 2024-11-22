@@ -4,8 +4,6 @@ import 'package:share_plus/share_plus.dart';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:http/http.dart' as http;
-import 'package:open_filex/open_filex.dart';
-import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 
 import '../services/documents/cache_service.dart';
 import '../services/documents/deletion_service.dart';
@@ -15,8 +13,6 @@ import '../theme/app_theme.dart';
 import '../models/document.dart';
 import '../utils/formatters.dart';
 import '../providers/document_provider.dart';
-import '../widgets/edit_document_dialog.dart';
-import '../services/document_service.dart';
 import '../config/api_config.dart';
 import '../widgets/custom_snackbar.dart';
 
