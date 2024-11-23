@@ -12,7 +12,7 @@ env:
   AWS_REGION: us-east-1
   ECR_REPOSITORY: docnest-backend
   ECS_CLUSTER: docnest-cluster-2
-  ECS_SERVICE: docnest-backend-service-3
+  ECS_SERVICE: docnest-backend-service
   ECS_TASK_DEFINITION: docnest-backend-td
   CONTAINER_NAME: docnest-container
 
