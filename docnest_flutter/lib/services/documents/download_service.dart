@@ -1,7 +1,9 @@
 import 'dart:io';
 import 'package:http/http.dart' as http;
+import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import '../../models/document.dart';
 import '../../utils/document_filename_utils.dart';
 import 'cache_service.dart';
@@ -9,6 +11,54 @@ import '../../config/api_config.dart';
 import '../../widgets/custom_snackbar.dart';
 
 class DocumentDownloadService {
+  static final FlutterLocalNotificationsPlugin _notifications =
+      FlutterLocalNotificationsPlugin();
+
+  static Future<void> initNotifications() async {
+    const androidSettings =
+        AndroidInitializationSettings('@mipmap/ic_launcher');
+    const iosSettings = DarwinInitializationSettings();
+
+    const initSettings = InitializationSettings(
+      android: androidSettings,
+      iOS: iosSettings,
+    );
+
+    await _notifications.initialize(
+      initSettings,
+      onDidReceiveNotificationResponse: (NotificationResponse response) {
+        // Handle notification tap
+        print('Notification tapped: ${response.payload}');
+      },
+    );
+  }
+
+  static Future<void> showDownloadNotification(String filename) async {
+    const androidDetails = AndroidNotificationDetails(
+      'downloads', // channel id
+      'Downloads', // channel name
+      channelDescription: 'Download notifications', // channel description
+      importance: Importance.defaultImportance,
+      priority: Priority.defaultPriority,
+      icon: '@mipmap/ic_launcher',
+    );
+
+    const iosDetails = DarwinNotificationDetails();
+
+    const notificationDetails = NotificationDetails(
+      android: androidDetails,
+      iOS: iosDetails,
+    );
+
+    await _notifications.show(
+      0, // notification id
+      'Download Complete',
+      'File saved to Downloads: $filename',
+      notificationDetails,
+      payload: filename,
+    );
+  }
+
   static Future<void> downloadDocument(
     BuildContext context,
     Document document,
@@ -75,6 +125,9 @@ class DocumentDownloadService {
           title: 'Download Complete',
           message: 'File saved to Downloads folder:\n$filename',
         );
+
+        // Show notification
+        await showDownloadNotification(filename);
       }
     } catch (e) {
       print('Download error: $e');
