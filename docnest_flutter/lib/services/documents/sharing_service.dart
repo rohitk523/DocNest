@@ -7,6 +7,7 @@ import 'package:open_filex/open_filex.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../models/document.dart';
+import '../../utils/document_filename_utils.dart';
 import 'cache_service.dart';
 import '../../config/api_config.dart';
 import '../../utils/formatters.dart';
@@ -31,7 +32,7 @@ class DocumentSharingService {
     String token,
   ) async {
     final cacheService = CacheService();
-    final fileName = document.name;
+    final filename = DocumentFilenameUtils.getProperFilename(document);
 
     try {
       showDialog(
@@ -50,7 +51,7 @@ class DocumentSharingService {
       );
 
       // Try to get cached file
-      File? cachedFile = await cacheService.getCachedDocumentByName(fileName);
+      File? cachedFile = await cacheService.getCachedDocumentByName(filename);
 
       if (cachedFile == null || !await cachedFile.exists()) {
         // If not cached, download and cache
@@ -63,8 +64,8 @@ class DocumentSharingService {
           throw Exception('Failed to fetch document file');
         }
 
-        await cacheService.cacheDocumentWithName(fileName, response.bodyBytes);
-        cachedFile = await cacheService.getCachedDocumentByName(fileName);
+        await cacheService.cacheDocumentWithName(filename, response.bodyBytes);
+        cachedFile = await cacheService.getCachedDocumentByName(filename);
       }
 
       if (context.mounted) {
@@ -93,7 +94,11 @@ class DocumentSharingService {
   ) async {
     try {
       final cacheService = CacheService();
-      String filename = document.name;
+
+      // Get proper filename with extension
+      final extension = _getFileExtension(document.fileType);
+      final filename =
+          document.name + (document.name.endsWith(extension) ? '' : extension);
 
       // Show loading dialog
       if (context.mounted) {
@@ -129,6 +134,8 @@ class DocumentSharingService {
 
         // Get temporary directory for sharing
         final tempDir = await getTemporaryDirectory();
+
+        // Create temp file with proper extension
         final tempFile = File('${tempDir.path}/$filename');
 
         // Write file to temporary directory
@@ -143,18 +150,23 @@ class DocumentSharingService {
         // Create share text with document details
         final shareText = '''
 📄 ${document.name}
-📁 Category: ${document.category}
+📁 Category: ${getCategoryDisplayName(document.category)}
 📝 Description: ${document.description ?? 'No description'}
 📅 Created: ${formatDate(document.createdAt)}
 📦 Size: ${formatFileSize(document.fileSize)}
+📎 File Type: ${_getFileTypeDisplay(document.fileType)}
 ''';
 
         // Dismiss loading dialog
         Navigator.pop(context);
 
+        // Create XFile with proper mime type
+        final shareFile =
+            XFile(cachedFile.path, mimeType: document.fileType, name: filename);
+
         // Share file and text
         await Share.shareXFiles(
-          [XFile(cachedFile.path)],
+          [shareFile],
           text: shareText,
           subject: document.name,
         );
@@ -219,11 +231,9 @@ class DocumentSharingService {
       for (final doc in documents) {
         try {
           // Generate proper filename with extension
-          String filename = doc.name;
-          if (!filename.contains('.') && doc.fileType != null) {
-            final extension = _getFileExtension(doc.fileType);
-            filename = '$filename$extension';
-          }
+          final extension = _getFileExtension(doc.fileType);
+          final filename =
+              doc.name + (doc.name.endsWith(extension) ? '' : extension);
 
           // Try cached file first
           File? cachedFile =
@@ -248,7 +258,9 @@ class DocumentSharingService {
           }
 
           if (cachedFile != null) {
-            filesToShare.add(XFile(cachedFile.path));
+            // Create XFile with proper mime type
+            filesToShare.add(
+                XFile(cachedFile.path, mimeType: doc.fileType, name: filename));
           }
         } catch (e) {
           print('Error processing document ${doc.name}: $e');
@@ -259,10 +271,11 @@ class DocumentSharingService {
         // Create share text for all documents
         final shareText = documents.map((doc) => '''
 📄 ${doc.name}
-📁 Category: ${doc.category}
+📁 Category: ${getCategoryDisplayName(doc.category)}
 📝 Description: ${doc.description ?? 'No description'}
 📅 Created: ${formatDate(doc.createdAt)}
-📦 Size: ${formatFileSize(doc.fileSize)}''').join('\n\n');
+📦 Size: ${formatFileSize(doc.fileSize)}
+📎 File Type: ${_getFileTypeDisplay(doc.fileType)}''').join('\n\n');
 
         // Dismiss loading dialog
         Navigator.pop(context);
@@ -293,5 +306,17 @@ class DocumentSharingService {
         );
       }
     }
+  }
+
+  static String _getFileTypeDisplay(String? mimeType) {
+    return switch (mimeType) {
+      'application/pdf' => 'PDF Document',
+      'image/jpeg' => 'JPEG Image',
+      'image/png' => 'PNG Image',
+      'application/msword' => 'Word Document',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document' =>
+        'Word Document',
+      _ => 'Unknown Type',
+    };
   }
 }

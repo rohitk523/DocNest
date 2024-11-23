@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import '../../models/document.dart';
+import '../../utils/document_filename_utils.dart';
 import '../document_service.dart';
 import 'cache_service.dart';
 import '../../widgets/custom_snackbar.dart';
@@ -59,13 +60,11 @@ class DocumentUploadingService {
     final provider = context.read<DocumentProvider>();
 
     try {
-      // Use our styled loading dialog consistently
-      showUploadLoadingDialog(context); // Always use this
+      showUploadLoadingDialog(context);
 
       final documentService = DocumentService(token: provider.token);
       final cacheService = CacheService();
 
-      // Rest of the upload logic...
       final uploadedDoc = await documentService.uploadDocument(
         name: name,
         description: description,
@@ -73,9 +72,11 @@ class DocumentUploadingService {
         file: file,
       );
 
+      final filename = DocumentFilenameUtils.getProperFilename(uploadedDoc);
+
       if (file is File) {
         final bytes = await file.readAsBytes();
-        await cacheService.cacheDocumentWithName(uploadedDoc.name, bytes);
+        await cacheService.cacheDocumentWithName(filename, bytes);
 
         if (uploadedDoc.fileType?.startsWith('image/') == true ||
             uploadedDoc.fileType == 'application/pdf') {
