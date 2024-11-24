@@ -2,6 +2,7 @@
 import 'package:docnest_flutter/screens/category_documents_screen.dart';
 import 'package:docnest_flutter/widgets/add_category_dialog.dart';
 import 'package:docnest_flutter/widgets/fluid_nav_bar.dart';
+import 'package:docnest_flutter/widgets/quick_actions/home_quick_actions_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -260,7 +261,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Column(
       children: [
-        const QuickActionsBar(),
+        const HomeQuickActionsBar(),
         const SizedBox(height: 16),
         Expanded(
           child: _isGridView

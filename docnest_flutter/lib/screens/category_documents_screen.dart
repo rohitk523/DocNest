@@ -1,5 +1,6 @@
 // lib/screens/category_documents_screen.dart
 import 'package:docnest_flutter/screens/login_screen.dart';
+import 'package:docnest_flutter/widgets/quick_actions/category_quick_actions_bar.dart';
 import 'package:flutter/material.dart';
 import '../models/document.dart';
 import '../services/documents/uploading_service.dart';
@@ -118,7 +119,7 @@ class _CategoryDocumentsScreenState extends State<CategoryDocumentsScreen> {
       ),
       body: Column(
         children: [
-          const QuickActionsBar(),
+          CategoryQuickActionsBar(category: widget.category),
           Expanded(
             child: RefreshIndicator(
               onRefresh: _refreshDocuments,
