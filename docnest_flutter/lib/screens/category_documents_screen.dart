@@ -6,7 +6,6 @@ import '../models/document.dart';
 import '../services/documents/uploading_service.dart';
 import '../widgets/custom_snackbar.dart';
 import '../widgets/document_tile.dart';
-import '../widgets/quick_actions_bar.dart';
 import '../providers/document_provider.dart';
 import 'package:provider/provider.dart';
 
