@@ -183,8 +183,8 @@ class _UploadDocumentDialogState extends State<UploadDocumentDialog> {
                         Expanded(
                           child: Text(
                             widget.preSelectedCategory != null
-                                ? 'Upload ${getCategoryDisplayName(widget.preSelectedCategory!)} Document'
-                                : 'Upload Document',
+                                ? 'Upload ${getCategoryDisplayName(widget.preSelectedCategory!)}'
+                                : 'Upload',
                             style: AppTextStyles.headline2.copyWith(
                               color: theme.colorScheme.primary,
                             ),
@@ -481,7 +481,7 @@ class _UploadDocumentDialogState extends State<UploadDocumentDialog> {
                                         ),
                                         const SizedBox(width: 8),
                                         Text(
-                                          'Upload Document',
+                                          'Upload',
                                           style: AppTextStyles.button.copyWith(
                                             color: isDarkMode
                                                 ? Colors.black
