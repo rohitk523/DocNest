@@ -1,6 +1,6 @@
 // lib/main.dart
-import 'package:docnest_flutter/web/screens/home/web_home_screen.dart';
-import 'package:docnest_flutter/web/screens/home/web_login_screen.dart';
+import 'package:docnest_flutter/web/screens/web_home_screen.dart';
+import 'package:docnest_flutter/web/screens/web_login_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'services/documents/download_service.dart';

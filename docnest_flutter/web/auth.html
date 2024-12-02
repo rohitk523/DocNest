@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Authentication</title>
+</head>
+<body>
+  <script>
+    window.onload = function() {
+      var hash = window.location.hash.substring(1);
+      var params = {};
+      hash.split('&').forEach(function(pair) {
+        var parts = pair.split('=');
+        params[parts[0]] = parts[1];
+      });
+      
+      if (params.id_token) {
+        window.opener.postMessage('google-token:' + params.id_token, '*');
+        window.close();
+      }
+    };
+  </script>
+</body>
+</html>

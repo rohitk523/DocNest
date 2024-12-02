@@ -2,18 +2,18 @@
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../../providers/document_provider.dart';
-import '../../../widgets/document_section.dart';
-import '../../../widgets/custom_snackbar.dart';
-import '../../../utils/formatters.dart';
-import '../../../models/document.dart';
-import '../../../services/document_service.dart';
-import '../../../services/documents/uploading_service.dart';
-import '../../../mobile/screens/login_screen.dart';
-import '../../../widgets/add_category_dialog.dart';
-import '../../../widgets/quick_actions/home_quick_actions_bar.dart';
-import '../../../mobile/screens/profile_tab.dart';
-import '../../../widgets/settings_tab.dart';
+import '../../providers/document_provider.dart';
+import '../../widgets/document_section.dart';
+import '../../widgets/custom_snackbar.dart';
+import '../../utils/formatters.dart';
+import '../../models/document.dart';
+import '../../services/document_service.dart';
+import '../../services/documents/uploading_service.dart';
+import '../../mobile/screens/login_screen.dart';
+import '../../widgets/add_category_dialog.dart';
+import '../../widgets/quick_actions/home_quick_actions_bar.dart';
+import '../../mobile/screens/profile_tab.dart';
+import '../../widgets/settings_tab.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class WebHomeScreen extends StatefulWidget {

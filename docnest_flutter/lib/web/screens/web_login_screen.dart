@@ -1,9 +1,10 @@
 // lib/screens/web_login_screen.dart
 
+import 'package:docnest_flutter/services/web_auth_service.dart';
+import 'package:docnest_flutter/web/screens/web_home_screen.dart';
 import 'package:flutter/material.dart';
-import '../../../services/auth_service.dart';
-import '../../../widgets/custom_snackbar.dart';
-import '../../../mobile/screens/home_screen.dart';
+import '../../services/auth_service.dart';
+import '../../widgets/custom_snackbar.dart';
 
 class WebLoginScreen extends StatefulWidget {
   const WebLoginScreen({Key? key}) : super(key: key);
@@ -13,7 +14,7 @@ class WebLoginScreen extends StatefulWidget {
 }
 
 class _WebLoginScreenState extends State<WebLoginScreen> {
-  final _authService = AuthService();
+  final _authService = WebAuthService();
   bool _isLoading = false;
 
   void _showErrorSnackBar(String message) {
@@ -35,7 +36,7 @@ class _WebLoginScreenState extends State<WebLoginScreen> {
 
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
-          builder: (context) => HomeScreen(token: result['access_token']),
+          builder: (context) => WebHomeScreen(token: result['access_token']),
         ),
       );
     } catch (e) {
