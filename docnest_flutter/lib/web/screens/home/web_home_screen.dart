@@ -12,7 +12,7 @@ import '../../../services/documents/uploading_service.dart';
 import '../../../mobile/screens/login_screen.dart';
 import '../../../widgets/add_category_dialog.dart';
 import '../../../widgets/quick_actions/home_quick_actions_bar.dart';
-import '../../../mobile/screens/home/profile_tab.dart';
+import '../../../mobile/screens/profile_tab.dart';
 import '../../../widgets/settings_tab.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 

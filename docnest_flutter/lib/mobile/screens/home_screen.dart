@@ -18,7 +18,7 @@ import 'login_screen.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../utils/formatters.dart';
 import '../../theme/app_theme.dart';
-import 'home/profile_tab.dart';
+import 'profile_tab.dart';
 
 class HomeScreen extends StatefulWidget {
   final String token;
