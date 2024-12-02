@@ -9,10 +9,10 @@ import '../../../utils/formatters.dart';
 import '../../../models/document.dart';
 import '../../../services/document_service.dart';
 import '../../../services/documents/uploading_service.dart';
-import '../../../screens/login_screen.dart';
+import '../../../mobile/screens/login_screen.dart';
 import '../../../widgets/add_category_dialog.dart';
 import '../../../widgets/quick_actions/home_quick_actions_bar.dart';
-import '../../../screens/home/profile_tab.dart';
+import '../../../mobile/screens/home/profile_tab.dart';
 import '../../../widgets/settings_tab.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 

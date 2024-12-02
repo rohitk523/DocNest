@@ -11,7 +11,7 @@ import 'cache_service.dart';
 import '../../widgets/custom_snackbar.dart';
 import '../../widgets/upload_dialog.dart';
 import '../../providers/document_provider.dart';
-import '../../screens/login_screen.dart';
+import '../../mobile/screens/login_screen.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class DocumentUploadingService {

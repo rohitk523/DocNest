@@ -3,7 +3,7 @@
 import 'package:flutter/material.dart';
 import '../../../services/auth_service.dart';
 import '../../../widgets/custom_snackbar.dart';
-import '../../../screens/home_screen.dart';
+import '../../../mobile/screens/home_screen.dart';
 
 class WebLoginScreen extends StatefulWidget {
   const WebLoginScreen({Key? key}) : super(key: key);

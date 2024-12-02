@@ -1,11 +1,11 @@
 // lib/widgets/settings_tab.dart
-import 'package:docnest_flutter/screens/about_screen.dart';
+import 'package:docnest_flutter/mobile/screens/about_screen.dart';
 import 'package:docnest_flutter/widgets/custom_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../theme/app_theme.dart';
 import '../services/auth_service.dart';
-import '../screens/login_screen.dart';
+import '../mobile/screens/login_screen.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart'; // Add this import
 
 class SettingsTab extends StatelessWidget {

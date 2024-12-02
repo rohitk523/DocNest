@@ -1,12 +1,12 @@
 // lib/screens/category_documents_screen.dart
-import 'package:docnest_flutter/screens/login_screen.dart';
+import 'package:docnest_flutter/mobile/screens/login_screen.dart';
 import 'package:docnest_flutter/widgets/quick_actions/category_quick_actions_bar.dart';
 import 'package:flutter/material.dart';
-import '../models/document.dart';
-import '../services/documents/uploading_service.dart';
-import '../widgets/custom_snackbar.dart';
-import '../widgets/document_tile.dart';
-import '../providers/document_provider.dart';
+import '../../models/document.dart';
+import '../../services/documents/uploading_service.dart';
+import '../../widgets/custom_snackbar.dart';
+import '../../widgets/document_tile.dart';
+import '../../providers/document_provider.dart';
 import 'package:provider/provider.dart';
 
 class CategoryDocumentsScreen extends StatefulWidget {
