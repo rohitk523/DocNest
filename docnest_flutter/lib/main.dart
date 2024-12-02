@@ -1,4 +1,6 @@
 // lib/main.dart
+import 'package:docnest_flutter/web/screens/home/web_home_screen.dart';
+import 'package:docnest_flutter/web/screens/home/web_login_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'services/documents/download_service.dart';
@@ -8,6 +10,7 @@ import 'screens/home_screen.dart';
 import 'providers/document_provider.dart';
 import 'services/auth_service.dart';
 import 'utils/error_handler.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -47,7 +50,13 @@ class MyApp extends StatelessWidget {
       title: 'DocNest',
       theme: Provider.of<ThemeProvider>(context).currentTheme,
       debugShowCheckedModeBanner: false,
-      home: isLoggedIn ? HomeScreen(token: token!) : const LoginScreen(),
+      home: isLoggedIn
+          ? kIsWeb
+              ? WebHomeScreen(token: token!)
+              : HomeScreen(token: token!)
+          : kIsWeb
+              ? const WebLoginScreen()
+              : const LoginScreen(),
     );
   }
 }
